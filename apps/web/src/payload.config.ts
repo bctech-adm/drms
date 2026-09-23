@@ -35,11 +35,16 @@ import { WebSessions } from './collections/WebSessions'
 import { WorkSchedules } from './collections/WorkSchedules'
 import { CompanySettings } from './globals/CompanySettings'
 import { tasks } from './jobs/tasks'
-import { getEnv, readSecret } from './lib/env'
+import { smtpEmailAdapter } from './email/adapter'
+import { getEnv, parseSmtpEnv, readSecret } from './lib/env'
 import { loggerOptions } from './lib/logger'
 import { MAX_UPLOAD_BYTES } from './collections/media/factory'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Outbound SMTP only when SMTP_* is fully configured (all-or-nothing, validated here because the
+// adapter is built with the config); otherwise Payload's console adapter (dev/tests/migrate).
+const smtp = parseSmtpEnv(process.env)
 
 // ADR 0004: one sharp instance (the one passed to buildConfig), concurrency 1 (RAM budget).
 sharp.concurrency(1)
@@ -106,10 +111,15 @@ export default buildConfig({
   // ADR 0004 §2: ≤ 8 MiB per file, 5 files, request ≤ 10 MiB (Traefik buffering-pk/AppSec 10 MiB).
   upload: { limits: { fileSize: MAX_UPLOAD_BYTES, files: 5, fields: 30 }, requestSizeLimit: 10 * 1024 * 1024 },
   endpoints: v1Endpoints,
+  email: smtp ? smtpEmailAdapter(smtp) : undefined,
   jobs: {
     tasks,
     // The worker process (dist/worker.mjs) calls handleSchedules() + run(); no autoRun in web.
     deleteJobOnComplete: false,
+    // REST /api/payload-jobs/{run,handle-schedules,cancel} default to "any logged-in user": jobs
+    // are queued by server code and run ONLY by the worker via the Local API (which bypasses
+    // this access), so the HTTP surface is closed (e.g. no sendEmail runs inside the web process).
+    access: { run: () => false, queue: () => false, cancel: () => false },
   },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   onInit: async (payload) => {

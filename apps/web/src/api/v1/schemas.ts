@@ -124,3 +124,10 @@ export const DeviceRevoke = z
   .object({ reason: z.string().trim().min(3).max(500) })
   .strict()
   .meta({ id: 'DeviceRevoke' })
+
+export const TestEmailQueued = z
+  .object({
+    queued: z.literal(true),
+    jobId: z.string().meta({ description: 'payload_jobs id of the sendEmail job (sent by the worker)' }),
+  })
+  .meta({ id: 'TestEmailQueued' })
