@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { RIWAYAT_TAB } from '@/admin/config'
+
 import { denyAll } from '@/access/roles'
 import { reasonOnChange, withAudit } from '@/audit/hooks'
 import { byVisibleRequest, denyDeleteLogged } from '@/domain/expense/access'
@@ -26,6 +28,7 @@ export const Settlements: CollectionConfig = withAudit(
       group: 'Keuangan',
       useAsTitle: 'docNo',
       defaultColumns: ['docNo', 'request', 'status', 'transferredTotal', 'receiptsTotal', 'difference', 'settlementType'],
+      components: { views: { edit: RIWAYAT_TAB } },
     },
     access: {
       read: byVisibleRequest('request'),

@@ -1,0 +1,57 @@
+import type { Payload, TypedUser } from 'payload'
+import Link from 'next/link'
+import React from 'react'
+
+import { rolesOf } from '@/access/roles'
+
+/**
+ * admin.components.afterNavLinks: entries of the F2 work views with badge counts (US-19 "badge
+ * jumlah antrian"). Counts respect the user's read access (overrideAccess:false).
+ */
+export async function F2NavLinks({ payload, user }: { payload: Payload; user?: TypedUser }) {
+  if (!user) return null
+  const roles = rolesOf(user)
+  const office = roles.includes('pk-finance') || roles.includes('pk-owner')
+  let transfers = 0
+  let lpj = 0
+  if (office) {
+    const [t, l] = await Promise.all([
+      payload.count({
+        collection: 'expense-requests',
+        where: {
+          or: [
+            { and: [{ type: { equals: 'advance' } }, { status: { equals: 'approved' } }] },
+            { and: [{ type: { equals: 'reimburse' } }, { status: { equals: 'receipts_verified' } }] },
+          ],
+        },
+        user,
+        overrideAccess: false,
+      }),
+      payload.count({ collection: 'expense-requests', where: { status: { in: ['lpj_submitted', 'lpj_verified'] } }, user, overrideAccess: false }),
+    ])
+    transfers = t.totalDocs
+    lpj = l.totalDocs
+  }
+  const link: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '4px 0', textDecoration: 'none' }
+  const pill: React.CSSProperties = { background: 'var(--theme-error-500)', color: '#fff', borderRadius: 10, padding: '0 7px', fontSize: 11, fontWeight: 700 }
+  return (
+    <div style={{ margin: '12px 0', paddingTop: 8, borderTop: '1px solid var(--theme-elevation-100)' }}>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Alur kerja</div>
+      <Link href="/admin/persetujuan" style={link}>
+        Persetujuan
+      </Link>
+      {office ? (
+        <>
+          <Link href="/admin/antrian-transfer" style={link}>
+            Antrian Transfer {transfers > 0 ? <span style={pill}>{transfers}</span> : null}
+          </Link>
+          <Link href="/admin/verifikasi-lpj" style={link}>
+            Verifikasi LPJ {lpj > 0 ? <span style={pill}>{lpj}</span> : null}
+          </Link>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+export default F2NavLinks

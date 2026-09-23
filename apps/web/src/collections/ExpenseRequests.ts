@@ -1,5 +1,7 @@
 import { APIError, ValidationError, type CollectionAfterChangeHook, type CollectionBeforeChangeHook, type CollectionConfig, type Field } from 'payload'
 
+import { RIWAYAT_TAB } from '@/admin/config'
+
 import { relId, userId } from '@/access/roles'
 import { fieldNever, rolesAllowed } from '@/access/policies'
 import { normalizeValue, reasonOnChange, withAudit } from '@/audit/hooks'
@@ -138,6 +140,7 @@ export const ExpenseRequests: CollectionConfig = withAudit(
       group: 'Keuangan',
       defaultColumns: ['docNo', 'type', 'title', 'status', 'grandTotal', 'createdBy', 'updatedAt'],
       listSearchableFields: ['docNo', 'title'],
+      components: { views: { edit: RIWAYAT_TAB } },
     },
     access: {
       read: requestReadAccess,
@@ -149,6 +152,8 @@ export const ExpenseRequests: CollectionConfig = withAudit(
     hooks: { beforeChange: [beforeChange], afterChange: [auditLines, notify] },
     fields: [
       { name: 'docNo', type: 'text', label: 'Nomor', unique: true, index: true, access: system, admin: { ...ro, position: 'sidebar' } },
+      // M16 / US-46: "Cetak PDF" (audited API download); UI only, no column.
+      { name: 'pdfLinks', type: 'ui', label: 'PDF', admin: { position: 'sidebar', components: { Field: '@/admin/components/PdfLinks#PdfLinks' } } },
       {
         name: 'type',
         type: 'select',

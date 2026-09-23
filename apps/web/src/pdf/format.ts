@@ -67,12 +67,16 @@ export function subtitleOf(docNo: string | null | undefined, companyCode: string
  */
 export function pdfSafe(text: string | null | undefined): string {
   if (!text) return ''
-  return text
-    .replace(/[→⇒]/g, '->')
-    .replace(/[≤]/g, '<=')
-    .replace(/[≥]/g, '>=')
-    .replace(/[   ]/g, ' ')
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
-    .replace(/[^\u0009\u000a\u000d -~ -ÿŒœŠšŸŽžƒˆ˜–—‘’‚“”„†‡•…‰‹›€™]/g, '?')
+  const printable = Array.from(text)
+    .filter((c) => {
+      const code = c.codePointAt(0) ?? 0
+      return code >= 0x20 ? code !== 0x7f : c === '\n' || c === '\t' || c === '\r'
+    })
+    .join('')
+  return printable
+    .replace(/[\u{2192}\u{21d2}]/gu, '->')
+    .replace(/\u{2264}/gu, '<=')
+    .replace(/\u{2265}/gu, '>=')
+    .replace(/[\u{a0}\u{2007}\u{202f}]/gu, ' ')
+    .replace(/[^\u{9}\u{a}\u{d}\u{20}-\u{7e}\u{a1}-\u{ff}\u{152}\u{153}\u{160}\u{161}\u{178}\u{17d}\u{17e}\u{192}\u{2c6}\u{2dc}\u{2013}\u{2014}\u{2018}\u{2019}\u{201a}\u{201c}\u{201d}\u{201e}\u{2020}\u{2021}\u{2022}\u{2026}\u{2030}\u{2039}\u{203a}\u{20ac}\u{2122}]/gu, '?')
 }

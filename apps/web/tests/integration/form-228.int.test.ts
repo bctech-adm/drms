@@ -106,7 +106,7 @@ describe('form 228/PB-DRMS/20/IX/2026 (F2 acceptance fixture)', () => {
   })
 
   it('receipts are attached per line (Reimburse: required before submit, US-38)', async () => {
-    for (const [i, rc] of FORM_228.receipts.entries()) {
+    for (const rc of FORM_228.receipts) {
       // Synthetic FICTIONAL receipt photo (bitmap text), 2400 px wide → resized to ≤ 2000 px.
       const photo = await receiptImage([rc.vendorName.slice(0, 22), `NO ${rc.receiptNo}`, `TGL ${rc.receiptDate}${rc.receiptTime ? ` ${rc.receiptTime}` : ''}`, `TOTAL RP ${formatAmount(rc.amount)}`, 'TERIMA KASIH'], { width: 2400, px: 14 })
       const img = await upload('/api/v1/media/receipts', citra, photo, 'image/jpeg')

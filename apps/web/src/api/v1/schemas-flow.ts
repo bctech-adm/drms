@@ -521,3 +521,30 @@ export const ReadAllResult = z.object({ updated: z.number().int() }).meta({ id: 
 
 export const FileCollectionEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'company']).meta({ id: 'FileCollection' })
 export const PdfQuery = z.object({ variant: z.enum(['standard', 'internal']).optional().meta({ description: 'internal = with receipt validation flags (Finance/Owner/Admin).' }) }).meta({ id: 'PdfQuery' })
+
+export const ApprovalInbox = z
+  .object({
+    budgetWarnPct: z.number(),
+    items: z.array(
+      z.object({
+        id,
+        docNo: z.string().nullable(),
+        type: RequestTypeEnum,
+        typeLabel: z.string(),
+        status: RequestStatusEnum,
+        statusLabel: z.string(),
+        title: z.string(),
+        scope: z.string().meta({ description: 'Project or cost center code + name.' }),
+        requesters: z.string().meta({ description: '"Diajukan Oleh" names joined with ", ".' }),
+        grandTotal: rupiah,
+        approvedAmount: rupiah.nullable(),
+        neededDate: z.string().nullable(),
+        requestDate: z.string().nullable(),
+        step: z.enum(['acknowledge', 'approve']),
+        level: z.number().int().nullable(),
+        budget: z.object({ basis: z.enum(['project', 'none']), pctBefore: z.number().nullable(), pctAfter: z.number().nullable(), overWarn: z.boolean() }),
+        flags: z.object({ warning: z.number().int(), info: z.number().int() }),
+      }),
+    ),
+  })
+  .meta({ id: 'ApprovalInbox' })

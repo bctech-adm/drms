@@ -13,6 +13,7 @@ import { recordTransfer, voidTransfer } from '@/domain/expense/transfers'
 import { acknowledge, approve, cancel, complete, reject, submit, withdraw } from '@/domain/expense/workflow'
 import { receiptsComplete, requestLpjRevision, settle, submitLpj, verifyLpj } from '@/domain/expense/lpj'
 import { requestHistory } from '@/domain/history'
+import { approvalInbox } from '@/domain/expense/queues'
 
 import { HttpError, json, problem, v1 } from '../http'
 import {
@@ -197,6 +198,17 @@ export const transferQueueEndpoint = v1({
     }
     return json({ items, nextCursor: null })
   },
+})
+
+/**
+ * GET /approvals/inbox (architecture §6.3, US-26/US-59): requests waiting for the caller's
+ * "Diketahui" or approval with budget impact % before → after and open flag counts.
+ */
+export const approvalInboxEndpoint = v1({
+  path: '/approvals/inbox',
+  method: 'get',
+  transactional: true, // budget figures use the request transaction handle
+  handler: async ({ req }) => json(await approvalInbox(req)),
 })
 
 // ---------------------------------------------------------------- drafts
@@ -449,6 +461,7 @@ export const EXPENSE_ENDPOINTS = [
   updateRequestEndpoint,
   historyEndpoint,
   transferQueueEndpoint,
+  approvalInboxEndpoint,
   submitEndpoint,
   withdrawEndpoint,
   cancelEndpoint,
