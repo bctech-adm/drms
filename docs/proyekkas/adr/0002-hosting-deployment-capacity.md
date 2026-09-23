@@ -1,6 +1,6 @@
 # ADR 0002 — Hosting, deployment, repo layout, jobs and capacity
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved, see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** `/opt/infra/CLAUDE.md` §3.1, §3.5, §3.7, §4; platform ADR `/opt/infra/docs/adr/0004-capacity.md`
@@ -59,15 +59,17 @@ No npm workspace coupling to `apps/mobile`; `packages/api-contract` is the only 
 | `drms-pk-web` | prod | `node server.js` | `proxy`, `db` | **640m** | 0.75 | Next standalone + Payload admin + `/api/v1`; sharp resize; synchronous single-doc PDF (ADR 0008) |
 | `drms-pk-worker` | prod | `node dist/worker.mjs` (loop: `payload.jobs.handleSchedules()` + `payload.jobs.run()`) | `db`, `proxy`* | **320m** | 0.25 | notifications/FCM, reminders cron, Odoo outbox (ADR 0009), report exports. *`proxy` only for egress to FCM/Odoo/Keycloak — if egress can be done without `proxy`, drop it |
 | `drms-pk-migrate` | prod | `payload migrate` (image target `migrate`, full deps + tsx) | `db` | 384m | 0.5 | one-shot, `restart: "no"`; web/worker `depends_on: {drms-pk-migrate: {condition: service_completed_successfully}}` |
-| `drms-pk-stg` | staging | `node server.js` with Payload `autoRun` jobs **in-process** | `proxy`, `db` | **512m** | 0.5 | web+jobs combined to save RAM (platform ADR 0004 pattern "web+worker digabung") |
+| ~~`drms-pk-stg`~~ | staging | ~~`node server.js` with Payload `autoRun` jobs in-process~~ | — | ~~512m~~ | — | **superseded by §7** (F1 foundation): staging runs separate web + worker like prod |
 | `drms-pk-stg-migrate` | staging | as prod migrate | `db` | 384m | 0.5 | one-shot |
+
+> The staging topology **as deployed** is in §7; the rows above are the F0 decision.
 
 Worker entry (**verified in the F1 spike**, report §e): `node apps/web/dist/worker.mjs` — an esbuild bundle
 (`apps/web/scripts/build-worker.mjs`) of `src/worker/index.ts`, which imports `payload.config.ts` directly and
 loops `payload.jobs.handleSchedules({allQueues:true})` + `payload.jobs.run({allQueues:true, limit:10})` every
 30 s, writing a heartbeat file. It runs from the **runner image** (no tsx, no Next server), resolving externals
 (`sharp`, `pg-native`, `drizzle-kit`, `next`, `react`, …) from the standalone `node_modules`. Healthcheck =
-heartbeat file age < 90 s. Env **`TZ=Asia/Makassar`** on the worker (and on staging web with `autoRun`), see §4.
+heartbeat file age < 90 s. Env **`TZ=Asia/Makassar`** on the worker (and on the web, §7), see §4.
 Throughput at the default 10 jobs / 30 s tick ≈ 20 jobs/min → tune `limit`/interval in F1. The fallback
 (`payload jobs:run --cron` from the migrate image) is no longer needed.
 
@@ -85,7 +87,8 @@ Media volumes (ADR 0004): `drms_pk_media_prod` → `/data/media` (rw) on web+wor
   only other member is `traefik` — **not** `proxy` (infra runbook `/opt/infra/docs/runbooks/proyekkas-drms-onboarding.md`
   §Langkah 0, infra `main` commit `c557c28`). The app does **not** reach `keycloak:8080`; see ADR 0003 §6.
   The table in §2 still says `proxy` for readability of the F0 decision; read it as `drms-kas-edge`. Egress
-  network for the worker (FCM/Keycloak/Odoo): not yet fixed by infra (open F1 item).
+  network for the worker (FCM/Keycloak/Odoo): **resolved in F1** — the worker joins `drms-kas-edge` too, plus
+  `drms-kc-admin-stg` for the Keycloak Admin API (§7).
 - Compose + `.env` (600) at **`/opt/infra/web/clients/drms-proyekkas/`** (prod) and
   **`/opt/infra/staging/drms-proyekkas/`** (staging). Reason: CLAUDE.md §3.1 places client web apps under
   `web/clients/<slug>/`, and `infra-deploy`'s `STACK_RE` (`^seg(/seg){0,2}$`) accepts at most 3 path
@@ -109,7 +112,7 @@ company-settings, default 3), `reminder.missingReceipts`, `reminder.budgetThresh
 the worker's `handleSchedules()` (never both bin and autoRun — docs warn about duplicate queuing).
 Cron times evaluated in **Asia/Makassar**. **Verified in F1** (spike §e): Payload 3.90.1 schedules have **no
 timezone option** (`ScheduleConfig` = `cron`, `queue`, `hooks`; `handleSchedules` builds `new Cron(cron, {sloppyRanges:true})`
-without a timezone), so cron is evaluated in the **process TZ** → the worker (and staging web with `autoRun`)
+without a timezone), so cron is evaluated in the **process TZ** → the worker (web and worker both set `TZ`)
 runs with `TZ=Asia/Makassar` and cron expressions are written in WITA. Observed: `'0 0 * * *'` →
 `2026-09-23T16:00:00Z` with `TZ=Asia/Makassar`, `2026-09-24T00:00:00Z` with `TZ=UTC`.
 
@@ -155,11 +158,60 @@ staging always-on); (b) move PDF render to worker; (c) escalate to user (platfor
 
 Disk: see ADR 0004 (≈ 6 GB/year media at assumed volumes) + DB ≈ 0.5–1 GB/year (ESTIMATE); host has 167 G free.
 
+**F1 foundation update (staging deployed with separate web + worker, §7):** the `drms-pk-stg` 512m row above
+no longer applies. Staging steady = 640 + 320 = **960 MiB** of limits; with prod planned at 960 MiB the
+steady total becomes **1 920 MiB ≈ 75 %** of the 2 568 MiB client budget (+384 MiB transient migrate →
+2 304 MiB ≈ 90 %). Measured staging idle (infra Lead, `docker stats`, 2026-09-23 after deploy): web
+**82 MiB**, worker **47 MiB** — far below the limits, but the budget is planned on `mem_limit`. Before prod,
+revisit the staging limits (reduction step (a) above) with the F6 load-test data.
+
+## 7. Staging as deployed (F1 foundation, 2026-09-23)
+
+Source: `deploy/staging/docker-compose.yml` (repo) → installed by the infra Lead at
+`/opt/infra/staging/drms-proyekkas/` (compose project `drms-proyekkas-stg`), runbook
+`/opt/infra/docs/runbooks/proyekkas-drms-onboarding.md` Langkah 5. Live at
+**`https://drms-kas.staging.bimacreative.tech`** (Let's Encrypt production certificate; `GET /api/v1/health` 200).
+
+| Service | Image | Command | Networks | mem_limit | cpus | `DATABASE_POOL_MAX` |
+|---|---|---|---|---:|---:|---:|
+| `drms-pk-stg-migrate` | `PK_MIGRATE_IMAGE` | `payload migrate` (one-shot, `restart: "no"`, **owner** DSN) | `db` | 384m | 0.5 | 2 |
+| `drms-pk-stg` (web :3000) | `PK_WEB_IMAGE` | `node server.js` (no `autoRun`) | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 384m (was 640m) | 0.75 | 5 |
+| `drms-pk-stg-worker` | `PK_WEB_IMAGE` | `node apps/web/dist/worker.mjs` | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 192m (was 320m) | 0.25 | 3 |
+| `drms-pk-stg-seed` (profile `seed`, one-shot) | `PK_MIGRATE_IMAGE` | `payload run src/seed/index.ts` (app DSN) | `db` | 384m | 0.5 | 2 |
+
+- web and worker `depends_on: drms-pk-stg-migrate: service_completed_successfully`. The web container name
+  `drms-pk-stg` is fixed by the Traefik service URL (`drms-pk-stg:3000`). `NODE_OPTIONS` web 448 / worker 224.
+- **DB connections:** `pk_drms_stg_app` has `CONNECTION LIMIT 10` (verified `pg_roles.rolconnlimit`) →
+  pools web 5 + worker 3 + seed 2 = 10 ≤ 10 (the migrate pool uses the owner role, limit 2). A pool of
+  **1 deadlocks**: a transaction holds its connection while Payload needs a second one (observed in the F1
+  image smoke test, compose comment). `DATABASE_POOL_MAX` is validated 1–20 (default 6, `src/lib/env.ts`).
+- **Networks:** `drms-kas-edge` = ingress from Traefik + egress; `drms-kc-admin-stg` = Keycloak Admin API
+  (ADR 0003 §6); migrate and seed are on `db` only.
+- **Secrets:** Compose file secrets under `./secrets/` (never in git), `*_FILE` env vars; the owner DSN only
+  in migrate. Compose (non-swarm) ignores `uid/gid/mode` of file secrets → the files must be owned by the
+  container uid **1001** (mode 0400).
+- **Images: `TEMPORARY(2026-09-23)` built locally on the VPS until GHCR** — tags `proyekkas-{web,migrate}:<ver>-stg-<sha>`
+  (first deploy `0.1.0-stg-3b05b83`), no registry digest; switch to `ghcr.io/<org>/proyekkas-{web,migrate}:<tag>@sha256:<digest>`
+  once CI publishes (§5; CI does not push images yet).
+- **Upgrade:** build/pull a **new tag** (never overwrite a tag) → DB dump (`backup.sh run`) → infra Lead edits
+  `PK_WEB_IMAGE`/`PK_MIGRATE_IMAGE` in `.env` → `docker compose up -d` (migrate runs, then web/worker are
+  recreated; ≈ 15–20 s downtime). If `deploy/staging/docker-compose.yml` changed, the infra Lead reviews and
+  copies it verbatim first.
+- **Rollback:** old images are kept → put the previous tags back in `.env` → `docker compose up -d` (migrate
+  is a no-op when all migrations are recorded). Non-backward-compatible migration → restore the pre-deploy
+  dump (destructive, Lead/user confirmation). Never `down -v`.
+- **Follow-up for prod (not blocking staging):** host uid 1001 is the host user **`deploy`**
+  (`getent passwd 1001`), so the secret files are owned by `deploy` (mitigated on staging: `deploy` cannot
+  traverse the 750 root-owned stack dirs — infra runbook). For prod, run the containers with a uid **not
+  mapped to a host user** (the infra pattern of uid 10101) and own the secret files by that uid.
+- Differences to the F0 decision: staging no longer combines web + jobs (`autoRun` is not used anywhere;
+  the worker is the only job runner, `payload.config.ts`); both web and worker join `drms-kc-admin-stg`.
+
 ## Alternatives
 
 | Alternative | Rejected because |
 |---|---|
-| Separate worker in staging too | +256–320 MiB for no functional benefit |
+| ~~Separate worker in staging too~~ | F0 rejection (+256–320 MiB) **reversed in F1** (§7): staging now mirrors prod so jobs/cron are tested on the prod layout |
 | `prodMigrations` (migrate at web boot) | App role must not own DDL (ADR 0006); concurrent boots race |
 | pg-boss (control-plane) | Second queue system; Payload tasks get Local API/`req` natively (ADR 0001) |
 | Separate repos web/mobile | Contract drift; monorepo keeps OpenAPI + Dart client in one PR |
@@ -169,8 +221,8 @@ Disk: see ADR 0004 (≈ 6 GB/year media at assumed volumes) + DB ≈ 0.5–1 GB/
 
 - One image → consistent code across web/worker/migrate; migrate image is larger (dev deps + tsx) but
   only runs one-shot.
-- Staging runs jobs in-process: cron behaviour differs slightly from prod (documented; QA tests jobs on
-  prod-like layout in CI).
+- ~~Staging runs jobs in-process~~ — superseded (§7): staging runs the same web + worker split as prod, at the
+  cost of +448 MiB of limits vs the F0 plan (§6 F1 update).
 - RAM budget tight; measurement is an F1 acceptance gate.
 
 ## Security implications
@@ -203,3 +255,15 @@ None. (Possible platform follow-up: `infra-deploy` health-gated rollback, alread
   instead of `proxy`, staging routers `drms-pk-stg-{auth,api-v1,api-rest,web}`; infra `main` `c557c28`,
   runbook `/opt/infra/docs/runbooks/proyekkas-drms-onboarding.md`); §4 cron uses process TZ (no per-schedule
   timezone, verified); §5 webpack build, build env ≥ 2 GiB; §6 measured RAM recorded, limits kept until F6.
+- **2026-09-23 (F1 foundation, staging deployed):** new §7 "Staging as deployed" (verified against
+  `deploy/staging/docker-compose.yml` and the live `/opt/infra/staging/drms-proyekkas/`): separate web 640m +
+  worker 320m + one-shot migrate + seed (profile); web/worker on `drms-kas-edge` + `db` + `drms-kc-admin-stg`,
+  migrate/seed on `db` only; pools 5 + 3 + 2 ≤ `pk_drms_stg_app` CONNECTION LIMIT 10 (pool 1 deadlocks);
+  images built locally on the VPS (`TEMPORARY` until GHCR); upgrade/rollback by image tag in `.env`; measured
+  idle web 82 MiB / worker 47 MiB. §2 staging `autoRun` row superseded; §3 worker egress resolved; §6 budget
+  recomputed (1 920 MiB steady ≈ 75 % with prod). Prod follow-up: container uid not mapped to a host user
+  (uid 1001 = host `deploy`; infra pattern 10101). Status stays accepted.
+
+- 2026-09-23 (user decision, F1): staging limits lowered to **web 384m (heap 256 MB) / worker 192m (heap 128 MB)**
+  to relieve the client RAM budget (planned steady staging+prod was ≈ 1 920 MiB ≈ 75 %). Basis: measured idle
+  82/47 MiB and light-load peak 205/51 MiB (F1 spike g). Prod limits stay 640/320 until measured in F6.

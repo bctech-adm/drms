@@ -1,7 +1,7 @@
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi'
 import { z } from 'zod'
 
-import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready } from './schemas'
+import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready, TestEmailQueued } from './schemas'
 
 /**
  * Builds the /api/v1 OpenAPI 3.1 document from the zod schemas (architecture §6.4). Pure module
@@ -48,6 +48,20 @@ export function buildOpenApiDocument(version: string) {
       503: { description: 'Degraded', content: { 'application/json': { schema: Ready } } },
     },
   })
+  // HEAD is documented (not left implicit): uptime monitors rely on it, and it is a real
+  // endpoint (headOf() in http.ts) — same status as GET, no body.
+  registry.registerPath({
+    method: 'head',
+    path: '/health',
+    summary: 'Liveness (HEAD: status only, no body)',
+    responses: { 200: { description: 'Process up' } },
+  })
+  registry.registerPath({
+    method: 'head',
+    path: '/health/ready',
+    summary: 'Readiness (HEAD: status only, no body)',
+    responses: { 200: { description: 'Ready' }, 503: { description: 'Degraded' } },
+  })
   registry.registerPath({
     method: 'get',
     path: '/me',
@@ -87,6 +101,16 @@ export function buildOpenApiDocument(version: string) {
       body: { content: { 'application/json': { schema: DeviceRevoke } } },
     },
     responses: { 200: { description: 'Revoked', content: { 'application/json': { schema: Device } } }, ...problemResponses(400, 401, 404, 426, 429) },
+  })
+  registry.registerPath({
+    method: 'post',
+    path: '/admin/test-email',
+    summary: 'Admin only: queue one test email to the caller\'s own address (audited; 3/hour per admin + mailbox budget)',
+    security,
+    responses: {
+      202: { description: 'Queued; sent by the worker', content: { 'application/json': { schema: TestEmailQueued } } },
+      ...problemResponses(401, 403, 409, 429, 503),
+    },
   })
   registry.registerPath({
     method: 'get',

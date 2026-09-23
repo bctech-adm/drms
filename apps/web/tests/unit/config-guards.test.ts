@@ -103,8 +103,18 @@ describe('Payload config guards', () => {
 
   it('/api/v1 endpoints are registered as root endpoints', () => {
     const paths = config.endpoints.map((e) => `${e.method} ${e.path}`)
-    for (const p of ['get /v1/health', 'get /v1/health/ready', 'get /v1/me', 'get /v1/masters', 'post /v1/devices/register', 'post /v1/devices/:id/revoke', 'get /v1/openapi.json']) {
+    for (const p of ['get /v1/health', 'head /v1/health', 'get /v1/health/ready', 'head /v1/health/ready', 'get /v1/me', 'get /v1/masters', 'post /v1/devices/register', 'post /v1/devices/:id/revoke', 'post /v1/admin/test-email', 'get /v1/openapi.json']) {
       expect(paths).toContain(p)
     }
+  })
+
+  it('jobs: REST run/queue/cancel closed (worker uses the Local API); no email adapter without SMTP_*', async () => {
+    const access = config.jobs.access ?? {}
+    for (const fn of [access.run, access.queue, access.cancel]) {
+      expect(typeof fn).toBe('function')
+      expect(await (fn as (a: unknown) => unknown)({ req: { user: { id: 1, roles: ['pk-admin'] } } })).toBe(false)
+    }
+    expect(config.jobs.tasks?.map((t) => t.slug)).toContain('sendEmail')
+    expect(config.email).toBeUndefined()
   })
 })

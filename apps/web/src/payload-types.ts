@@ -165,6 +165,7 @@ export interface Config {
   jobs: {
     tasks: {
       auditDailyAnchor: TaskAuditDailyAnchor;
+      sendEmail: TaskSendEmail;
       inline: {
         input: unknown;
         output: unknown;
@@ -842,7 +843,8 @@ export interface AuditLog {
     | 'sync_offline'
     | 'period_close'
     | 'period_reopen'
-    | 'schema_maintenance';
+    | 'schema_maintenance'
+    | 'email_test';
   field?: string | null;
   lineNo?: number | null;
   oldValue?:
@@ -1140,7 +1142,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'auditDailyAnchor';
+        taskSlug: 'inline' | 'auditDailyAnchor' | 'sendEmail';
         taskID: string;
         input?:
           | {
@@ -1173,7 +1175,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'auditDailyAnchor') | null;
+  taskSlug?: ('inline' | 'auditDailyAnchor' | 'sendEmail') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -2235,6 +2237,20 @@ export interface TaskAuditDailyAnchor {
     day: string;
     rows: number;
     maxId: number;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSendEmail".
+ */
+export interface TaskSendEmail {
+  input: {
+    userId: number;
+    subject: string;
+    text: string;
+  };
+  output: {
+    messageId?: string | null;
   };
 }
 /**

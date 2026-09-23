@@ -2,10 +2,14 @@
 
 All notable changes to ProyekKas are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). No version has been released or tagged yet;
-`package.json` / `apps/web/package.json` are at `0.1.0` (scaffold).
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-09-23
+
+F0 design + F1 foundation (GATE F1 approved by the user 2026-09-23). Staging runs image `0.1.0-stg-f8529e6`
+at `https://drms-kas.staging.bimacreative.tech`; first admin login (password + TOTP) and real SMTP delivery verified.
 
 ### Added
 - **F0 discovery & design** (GATE F0 approved by user 2026-09-23): requirements v1.1, open client questions,
@@ -20,6 +24,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   Next (`dist/worker.mjs`), nonce CSP proxy, receipt resize (≤ 2000 px JPEG q82, `sha256Original`),
   production Dockerfile (webpack build). Spike-only code (`apps/web/spike/**`, `spike-*` collections/tasks)
   is to be removed in F1.
+- **F1 foundation** (`develop` `e2bf46b`): masters, users/role sync via the Keycloak Admin API, devices,
+  web-sessions, append-only audit + `pk_protect_columns` migrations, numbering with `number_issued` audit,
+  media collections, `/api/v1` skeleton + `packages/api-contract/openapi.json`, idempotent seed (fictional
+  default data; real data only via `SEED_DATA_FILE` at deploy time, existing rows never overwritten),
+  `deploy/staging/` compose, CI workflow. Spike-only code removed.
+- **Staging deployed** at `https://drms-kas.staging.bimacreative.tech` (infra Lead,
+  `/opt/infra/staging/drms-proyekkas/`): separate web (640m) + worker (320m) + one-shot migrate; images built
+  locally on the VPS until GHCR (temporary). Measured idle RAM web 82 MiB, worker 47 MiB.
+- **Outbound email (SMTP)**: `@payloadcms/email-nodemailer` 3.90.1 (MIT; nodemailer 9.1.1 MIT-0) configured
+  from `SMTP_HOST/PORT/USER/FROM_ADDRESS/FROM_NAME` + `SMTP_PASSWORD_FILE` (all-or-nothing, From must equal
+  `SMTP_USER`; STARTTLS required on 587, certificate verification on). From is forced by the adapter. Mailbox
+  limit 30/h (burst 10) → DB-backed token bucket `mail_rate_buckets` shared by web + worker (burst 5, 24/h,
+  ≤ 29 in any hour). Mails go through the Jobs queue (`sendEmail`, worker, retried with backoff; input holds
+  the user id, not the address). `POST /api/v1/admin/test-email` (Admin, own address, audited `email_test`,
+  3/h). REST `/api/payload-jobs/*` closed (worker uses the Local API). Without SMTP_* → console adapter.
+- Public GitHub repository `bctech-adm/drms`; CI green on the first run (run 35857158248, commit `e2bf46b`).
 
 ### Changed
 - ADR 0001, 0002, 0003, 0006, 0007 and `architecture.md` revised with the F1 spike results and the user
@@ -30,6 +50,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `drms-kas-edge`; back-channel logout disabled; cron evaluated in process `TZ=Asia/Makassar`; measured
   RAM (web idle 108 / peak 205 MiB, worker idle 47 / peak 51 MiB), limits kept until F6.
 - `phase-plan.md`: F1 spike gate passed; F1 item 7 (infra) done — infra `main` commit `c557c28`.
+- ADR 0002, 0003, 0004, 0006, 0007, `architecture.md` and `phase-plan.md` updated with the F1 foundation
+  outcomes (Revision history in each): staging topology as deployed (ADR 0002 §7; pools 5 + 3 + 2 ≤
+  CONNECTION LIMIT 10); Keycloak role lookup via `role-mappings/realm/available`, service account
+  `manage-users` + `view-users` only, Admin API via internal networks `drms-kc-admin[-stg]`, first staging
+  admin bootstrap; `action` enum + `user_roles` text; role names derived from `current_user`; counter
+  monotonic trigger. Remaining F1: `HEAD` health (in progress), SMTP adapter (pending infra), F1 gate review.
+
+### Fixed
+- Docs: company-logo media slug is `media-company` (was `media-company-logo` in `requirements-v1.1.md` and
+  `traceability-matrix.md`).
 
 ### Security
 - **Public-repo sanitization**: client reference inputs (form image, requirements v1.0, lead prompt) removed

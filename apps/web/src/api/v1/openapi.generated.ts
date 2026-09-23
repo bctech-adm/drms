@@ -426,6 +426,25 @@ export const openapiDocument = {
           "reason"
         ],
         "additionalProperties": false
+      },
+      "TestEmailQueued": {
+        "type": "object",
+        "properties": {
+          "queued": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "jobId": {
+            "type": "string",
+            "description": "payload_jobs id of the sendEmail job (sent by the worker)"
+          }
+        },
+        "required": [
+          "queued",
+          "jobId"
+        ]
       }
     },
     "parameters": {}
@@ -444,6 +463,14 @@ export const openapiDocument = {
                 }
               }
             }
+          }
+        }
+      },
+      "head": {
+        "summary": "Liveness (HEAD: status only, no body)",
+        "responses": {
+          "200": {
+            "description": "Process up"
           }
         }
       }
@@ -471,6 +498,17 @@ export const openapiDocument = {
                 }
               }
             }
+          }
+        }
+      },
+      "head": {
+        "summary": "Readiness (HEAD: status only, no body)",
+        "responses": {
+          "200": {
+            "description": "Ready"
+          },
+          "503": {
+            "description": "Degraded"
           }
         }
       }
@@ -872,6 +910,81 @@ export const openapiDocument = {
             }
           },
           "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/test-email": {
+      "post": {
+        "summary": "Admin only: queue one test email to the caller's own address (audited; 3/hour per admin + mailbox budget)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Queued; sent by the worker",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestEmailQueued"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
             "description": "Problem",
             "content": {
               "application/problem+json": {

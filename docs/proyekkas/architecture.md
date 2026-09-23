@@ -1,6 +1,6 @@
 # ProyekKas — Architecture (Phase 0)
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved, see §17 Revision history) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy (see §17 Revision history) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Inputs:** `f0-brief.md` (binding decisions §2, direction §3; updated 2026-09-23 with the line-total
   decision), `reference/proyekkas-kebutuhan-pengembangan.md` (requirements v1.0), `reference/prompt-lead-proyekkas.md`
   ("Temuan tambahan" 1–10), `reference/contoh-form-pengajuan-biaya-drms.jpg`, `/opt/infra/CLAUDE.md`,
@@ -134,8 +134,17 @@ flowchart LR
 | `drms-pk-web` | prod | runner / `node server.js` | `proxy`, `db` | 640m | `drms_pk_media_prod:/data/media` |
 | `drms-pk-worker` | prod | runner / `node dist/worker.mjs` | `db` (+ egress) | 320m | `drms_pk_media_prod:/data/media` |
 | `drms-pk-migrate` | prod | migrate / `payload migrate` (one-shot) | `db` | 384m | — |
-| `drms-pk-stg` | staging | runner / `node server.js` + jobs `autoRun` | `proxy`, `db` | 512m | `drms_pk_media_stg:/data/media` |
-| `drms-pk-stg-migrate` | staging | migrate (one-shot) | `db` | 384m | — |
+| `drms-pk-stg` | staging | runner / `node server.js` (no `autoRun`) | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 640m | `drms_pk_media_stg:/data/media` |
+| `drms-pk-stg-worker` | staging | runner / `node apps/web/dist/worker.mjs` | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 320m | `drms_pk_media_stg:/data/media` |
+| `drms-pk-stg-migrate` | staging | migrate (one-shot, owner role) | `db` | 384m | — |
+| `drms-pk-stg-seed` | staging | migrate image / `payload run src/seed/index.ts` (profile `seed`, one-shot, app role) | `db` | 384m | `drms_pk_media_stg:/data/media` |
+
+> **Staging as deployed (F1 foundation, 2026-09-23):** live at `https://drms-kas.staging.bimacreative.tech`,
+> compose `deploy/staging/docker-compose.yml` installed by the infra Lead at `/opt/infra/staging/drms-proyekkas/`.
+> Web and worker are separate (like prod); DB pools web 5 + worker 3 + seed 2 ≤ `pk_drms_stg_app` CONNECTION
+> LIMIT 10 (pool 1 deadlocks). Images built locally on the VPS until GHCR (`TEMPORARY`). Measured idle: web
+> 82 MiB, worker 47 MiB. Upgrade/rollback by image tag in `.env`. Details: ADR 0002 §7. Prod rows above
+> are still the plan; prod web/worker will join `drms-kas-edge` + `db` + `drms-kc-admin`.
 
 Shared (existing, not changed by ProyekKas except coordinated config): `traefik`, `crowdsec`, `postgres`,
 `keycloak`. Hardening per ADR 0002 §2 (read-only rootfs, tmpfs, uid 1001, cap_drop ALL,
@@ -178,6 +187,10 @@ flowchart TB
 > `https://auth.bimacreative.tech` (hairpin through Traefik). In the diagram read `proxy` as `drms-kas-edge`
 > for `W`/`S`, and the `internal http` edges as `https via traefik`. Source: infra runbook
 > `/opt/infra/docs/runbooks/proyekkas-drms-onboarding.md` (infra `main` `c557c28`); ADR 0003 §6.
+> **Since infra H5 (F1 foundation):** web and worker also join the `--internal` network
+> `drms-kc-admin[-stg]`, where Traefik carries the alias `auth.bimacreative.tech`; the Keycloak Admin API is
+> reachable only that way (router `ClientIP(subnet) && PathPrefix(/admin/realms/<realm>/)`); public-hairpin
+> `/admin*` is 403 platform-wide. The diagram also omits the staging worker (`drms-pk-stg-worker`).
 
 ### 3.2 Hostnames (decided by user 2026-09-23: platform subdomain)
 - prod: `drms-kas.bimacreative.tech` — needs ONE new manual A record → `31.97.50.221` at Hostinger (not covered by
@@ -232,6 +245,14 @@ form-action 'self' https://auth.bimacreative.tech; frame-ancestors 'none'
 ### 3.4 Volumes & data
 Named volumes `drms_pk_media_prod`, `drms_pk_media_stg` (ADR 0004). DBs in shared cluster (ADR 0006 §1).
 Backups: DB via existing dynamic dump; media via NEW `MEDIA_VOLUMES` entry in `backup.sh` (§15).
+
+**Seed data (F1 foundation, `apps/web/src/seed/`):** the repo ships only a **fictional default dataset**
+(`DEFAULT_SEED_DATA` in `data.ts`). Real client master data is loaded **at deploy time** from an untracked
+JSON file named by `SEED_DATA_FILE` (same shape, strict schema validation; never committed — on staging it
+would be a Compose secret file, see the compose comments). The seed is idempotent: each record is looked up
+by its natural key and only created when missing — **existing rows are never overwritten** (company settings:
+only empty fields are filled). It runs as the app role through the Local API (audit `source=system`).
+Optional first admin link: `SEED_ADMIN_EMAIL` + `SEED_ADMIN_KEYCLOAK_SUB` (ADR 0003 §2).
 
 ---
 
@@ -1121,14 +1142,15 @@ evidence (open decision, needs Lead/user).
 ## 10. Numbering
 ADR 0007: `document-sequences` master + counters table, tokens incl. `{MM_ROMAN}`, default expense request
 `{seq}/PB-{COMPANY}/{DD}/{MM_ROMAN}/{YYYY}` → `228/PB-DRMS/20/IX/2026`, allocation at submit inside the
-transaction via row-locking `UPDATE … RETURNING`, unique backstop, TZ Asia/Makassar, reset policy =
-client question (default yearly).
+transaction via row-locking `UPDATE … RETURNING`, unique backstop, TZ Asia/Makassar; expense-request
+reset policy `never` (user 2026-09-23, ADR 0007 §3). F1: counter trigger allows `next_value` only to
+increase; every allocation writes a `number_issued` audit row.
 
 ---
 
 ## 11. Jobs & cron
-Payload Jobs Queue (ADR 0002 §4). Worker loop: `handleSchedules()` + `run({ queue })` every 30 s (prod);
-staging `autoRun`. Tasks: reminders (late progress report N days, missing receipts after transfer +N days,
+Payload Jobs Queue (ADR 0002 §4). Worker loop: `handleSchedules()` + `run({ queue })` every 30 s (prod
+and staging — staging no longer uses `autoRun`, ADR 0002 §7). Tasks: reminders (late progress report N days, missing receipts after transfer +N days,
 budget ≥ 85 %/100 %), attendance auto-close at midnight WITA, notifications fan-out (in-app + FCM),
 report exports, Odoo outbox dispatch (F7), media orphan sweep, idempotency/web-session purge, daily
 audit hash anchor (optional). Jobs are idempotent (dedupe key per business event, Payload task
@@ -1157,7 +1179,7 @@ audit hash anchor (optional). Jobs are idempotent (dedupe key per business event
 |---|---:|---:|---|
 | drms-pk-web (prod) | 640 | 0.75 | ESTIMATE |
 | drms-pk-worker (prod) | 320 | 0.25 | ESTIMATE |
-| drms-pk-stg (web+jobs) | 512 | 0.5 | ESTIMATE |
+| ~~drms-pk-stg (web+jobs)~~ | ~~512~~ | ~~0.5~~ | superseded F1: staging web 640 / 0.75 + worker 320 / 0.25 (ADR 0002 §7); steady total with prod ≈ 1 920 MiB (≈ 75 %), measured idle web 82 / worker 47 MiB |
 | **Steady total** | **1 472** | 1.5 | of ≈ 2 568 MiB client budget (platform ADR 0004) → **57 %**, fits |
 | migrate one-shot (deploy only) | +384 | 0.5 | transient peak 1 856 MiB (72 %) |
 | Postgres / Keycloak / Traefik | 0 new | — | load inside existing limits |
@@ -1209,7 +1231,8 @@ measurement gate is F1 (idle) and F6 (load).
 > alongside the `(payload)` route group, spike §a), 2 (except `__Host-` cookie over HTTPS and the
 > `/api/users/logout` inactivity path, verify on staging), 3, 4, 5 (no TZ option → process `TZ`), 6, 7,
 > 8 (minimal CSP §3.3), 10 (ADR 0002 §6). Partly open — 9 (resize verified; HEIC decode and legibility at
-> 2000 px still UNVERIFIED). Still open — 11–14. New — Admin REST reachability from `drms-kas-edge` through `ipallowlist-admin` (ADR 0003 §6).
+> 2000 px still UNVERIFIED). Still open — 11–14. ~~New — Admin REST reachability from `drms-kas-edge` through `ipallowlist-admin`~~ — closed in F1 foundation
+> (internal networks `drms-kc-admin[-stg]`, ADR 0003 §6).
 1. ~~Root custom endpoints path~~ — resolved (docs + source, §6.1); remaining: Next.js route handlers `/auth/*` coexisting with Payload's `(payload)` route group (F1 smoke).
 2. Payload admin works fully with `disableLocalStrategy` + custom cookie strategy (logout, account view, `me`) (ADR 0003).
 3. Keycloak 26.7.4 access tokens contain `sid`; minimal realm-management roles to delete sessions; internal `http://keycloak:8080` requests yield public `iss` (ADR 0003).
@@ -1235,3 +1258,8 @@ measurement gate is F1 (idle) and F6 (load).
   nonce-strict without `'strict-dynamic'`, `form-action 'self' https://auth.bimacreative.tech`; no
   `json`/`code` editors); §6.3 back-channel logout endpoint unused; §7.4 generic-REST expectation 403 /
   `{user:null}`; §14 upload guard hook; §16 spike status.
+- **2026-09-23 (F1 foundation, staging deployed):** §3.1 staging as deployed (separate web + worker, migrate,
+  seed; networks incl. `drms-kc-admin-stg`; pools 5+3+2 ≤ 10; local images `TEMPORARY` until GHCR; measured
+  idle 82/47 MiB) and Admin API via internal networks (infra H5); §3.4 seed policy (fictional default,
+  `SEED_DATA_FILE` at deploy time, never overwrites); §10 reset `never` + counter/audit guards; §11 worker in
+  staging; §13 staging capacity superseded; §16 Admin REST item closed.
