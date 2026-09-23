@@ -95,8 +95,10 @@ export interface Config {
     receipts: Receipt;
     'receipt-flags': ReceiptFlag;
     transfers: Transfer;
+    settlements: Settlement;
     'cash-entries': CashEntry;
     'period-closings': PeriodClosing;
+    notifications: Notification;
     devices: Device;
     'web-sessions': WebSession;
     'audit-logs': AuditLog;
@@ -143,8 +145,10 @@ export interface Config {
     receipts: ReceiptsSelect<false> | ReceiptsSelect<true>;
     'receipt-flags': ReceiptFlagsSelect<false> | ReceiptFlagsSelect<true>;
     transfers: TransfersSelect<false> | TransfersSelect<true>;
+    settlements: SettlementsSelect<false> | SettlementsSelect<true>;
     'cash-entries': CashEntriesSelect<false> | CashEntriesSelect<true>;
     'period-closings': PeriodClosingsSelect<false> | PeriodClosingsSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     devices: DevicesSelect<false> | DevicesSelect<true>;
     'web-sessions': WebSessionsSelect<false> | WebSessionsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
@@ -182,6 +186,7 @@ export interface Config {
     tasks: {
       auditDailyAnchor: TaskAuditDailyAnchor;
       sendEmail: TaskSendEmail;
+      reimburseAutoClose: TaskReimburseAutoClose;
       inline: {
         input: unknown;
         output: unknown;
@@ -842,6 +847,7 @@ export interface ExpenseRequest {
   grandTotal?: number | null;
   approvedAmount?: number | null;
   transferredTotal?: number | null;
+  verifiedReceiptsTotal?: number | null;
   attachments?: (number | MediaAttachment)[] | null;
   approvalRule?: (number | null) | ApprovalRule;
   approvalSnapshot?:
@@ -1186,6 +1192,39 @@ export interface CashEntry {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settlements".
+ */
+export interface Settlement {
+  id: number;
+  docNo?: string | null;
+  request: number | ExpenseRequest;
+  status: 'draft' | 'submitted' | 'revision' | 'verified' | 'settled';
+  usageNotes?: string | null;
+  transferredTotal?: number | null;
+  receiptsTotal?: number | null;
+  verifiedReceiptsTotal?: number | null;
+  difference?: number | null;
+  settlementType?: ('none' | 'refund' | 'shortfall') | null;
+  financeNotes?: string | null;
+  submitCount?: number | null;
+  submittedAt?: string | null;
+  submittedBy?: (number | null) | User;
+  verifiedAt?: string | null;
+  verifiedBy?: (number | null) | User;
+  settledAt?: string | null;
+  settledBy?: (number | null) | User;
+  refundCashEntry?: (number | null) | CashEntry;
+  shortfallTransfer?: (number | null) | Transfer;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "period-closings".
  */
 export interface PeriodClosing {
@@ -1198,6 +1237,25 @@ export interface PeriodClosing {
   reopenedBy?: (number | null) | User;
   reopenedAt?: string | null;
   reopenReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  user: number | User;
+  event: string;
+  title: string;
+  body: string;
+  docType?: string | null;
+  docId?: string | null;
+  docNo?: string | null;
+  readAt?: string | null;
+  pushStatus: 'skipped' | 'pending' | 'sent' | 'failed';
+  uuid?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1465,7 +1523,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'auditDailyAnchor' | 'sendEmail';
+        taskSlug: 'inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose';
         taskID: string;
         input?:
           | {
@@ -1498,7 +1556,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'auditDailyAnchor' | 'sendEmail') | null;
+  taskSlug?: ('inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1624,6 +1682,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transfers';
         value: number | Transfer;
+      } | null)
+    | ({
+        relationTo: 'settlements';
+        value: number | Settlement;
       } | null)
     | ({
         relationTo: 'cash-entries';
@@ -2118,6 +2180,7 @@ export interface ExpenseRequestsSelect<T extends boolean = true> {
   grandTotal?: T;
   approvedAmount?: T;
   transferredTotal?: T;
+  verifiedReceiptsTotal?: T;
   attachments?: T;
   approvalRule?: T;
   approvalSnapshot?: T;
@@ -2265,6 +2328,35 @@ export interface TransfersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "settlements_select".
+ */
+export interface SettlementsSelect<T extends boolean = true> {
+  docNo?: T;
+  request?: T;
+  status?: T;
+  usageNotes?: T;
+  transferredTotal?: T;
+  receiptsTotal?: T;
+  verifiedReceiptsTotal?: T;
+  difference?: T;
+  settlementType?: T;
+  financeNotes?: T;
+  submitCount?: T;
+  submittedAt?: T;
+  submittedBy?: T;
+  verifiedAt?: T;
+  verifiedBy?: T;
+  settledAt?: T;
+  settledBy?: T;
+  refundCashEntry?: T;
+  shortfallTransfer?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "cash-entries_select".
  */
 export interface CashEntriesSelect<T extends boolean = true> {
@@ -2310,6 +2402,24 @@ export interface PeriodClosingsSelect<T extends boolean = true> {
   reopenedBy?: T;
   reopenedAt?: T;
   reopenReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  user?: T;
+  event?: T;
+  title?: T;
+  body?: T;
+  docType?: T;
+  docId?: T;
+  docNo?: T;
+  readAt?: T;
+  pushStatus?: T;
+  uuid?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2839,6 +2949,16 @@ export interface TaskSendEmail {
   };
   output: {
     messageId?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskReimburseAutoClose".
+ */
+export interface TaskReimburseAutoClose {
+  input?: unknown;
+  output: {
+    closed: number;
   };
 }
 /**

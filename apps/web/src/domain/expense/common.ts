@@ -47,6 +47,7 @@ export type RequestDoc = {
   grandTotal?: number | null
   approvedAmount?: number | null
   transferredTotal?: number | null
+  verifiedReceiptsTotal?: number | null
   approvalRule?: unknown
   approvalSnapshot?: ApprovalSnapshot | null
   approvalCycle?: number | null

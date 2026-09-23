@@ -8,6 +8,8 @@ import { budgetImpact, type ApprovalSnapshot } from './rules'
 import { allowedActions } from './state'
 import { REQUEST_TYPE_LABELS, statusLabel, FLAG_LABELS, type FlagKind } from './types'
 import { receiptsOf } from './receipts'
+import { settlementOfRequest } from './lpj'
+import { SETTLEMENT_STATUS_LABELS } from './settlement-rules'
 
 type Named = { id: number; name?: string; code?: string; email?: string; plateNo?: string; plateDisplay?: string } | null
 
@@ -91,6 +93,7 @@ export async function detail(req: PayloadRequest, id: number) {
     budget = { basis: projectDoc.budget ? 'project' : 'none', pctBefore: b.before, pctAfter: b.after }
   }
   const snap = (doc.approvalSnapshot ?? null) as ApprovalSnapshot | null
+  const lpj = doc.type === 'advance' ? await settlementOfRequest(req, id) : null
 
   return {
     ...listItem({ ...flat, project: doc.project, costCenter: doc.costCenter, createdBy: doc.createdBy } as RequestDoc),
@@ -188,6 +191,28 @@ export async function detail(req: PayloadRequest, id: number) {
       proofId: relId(t.proof) ?? null,
       voidReason: (t.voidReason as string) ?? null,
     })),
+    verifiedReceiptsTotal: doc.verifiedReceiptsTotal ?? null,
+    settlement: lpj
+      ? {
+          id: lpj.id,
+          docNo: lpj.docNo ?? null,
+          status: lpj.status,
+          statusLabel: SETTLEMENT_STATUS_LABELS[lpj.status],
+          usageNotes: lpj.usageNotes ?? null,
+          transferredTotal: lpj.transferredTotal ?? null,
+          receiptsTotal: lpj.receiptsTotal ?? null,
+          verifiedReceiptsTotal: lpj.verifiedReceiptsTotal ?? null,
+          difference: lpj.difference ?? null,
+          settlementType: lpj.settlementType ?? null,
+          financeNotes: lpj.financeNotes ?? null,
+          submitCount: lpj.submitCount ?? 0,
+          submittedAt: lpj.submittedAt ?? null,
+          verifiedAt: lpj.verifiedAt ?? null,
+          settledAt: lpj.settledAt ?? null,
+          refundCashEntryId: relId(lpj.refundCashEntry) ?? null,
+          shortfallTransferId: relId(lpj.shortfallTransfer) ?? null,
+        }
+      : null,
     budget,
     openWarningFlags: flags.filter((f) => f.status === 'open' && f.level === 'warning').length,
     allowedActions: allowedActions(ctx),

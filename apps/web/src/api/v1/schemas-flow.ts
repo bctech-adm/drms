@@ -55,6 +55,11 @@ export const ActionEnum = z
     'transfer_void',
     'complete',
     'resubmit',
+    'receipts_complete',
+    'lpj_submit',
+    'lpj_request_revision',
+    'lpj_verify',
+    'settle',
   ])
   .meta({ id: 'RequestAction' })
 
@@ -287,6 +292,29 @@ export const ExpenseRequestDetail = ExpenseRequestListItem.extend({
       voidReason: z.string().nullable(),
     }),
   ),
+  verifiedReceiptsTotal: rupiah.nullable(),
+  settlement: z
+    .object({
+      id,
+      docNo: z.string().nullable(),
+      status: z.enum(['draft', 'submitted', 'revision', 'verified', 'settled']),
+      statusLabel: z.string(),
+      usageNotes: z.string().nullable(),
+      transferredTotal: rupiah.nullable(),
+      receiptsTotal: rupiah.nullable().meta({ description: 'Σ active receipts at the last LPJ submit.' }),
+      verifiedReceiptsTotal: rupiah.nullable(),
+      difference: z.number().int().nullable().meta({ description: 'transferred − receipts (verified after verification): > 0 refund, < 0 shortfall.' }),
+      settlementType: z.enum(['none', 'refund', 'shortfall']).nullable(),
+      financeNotes: z.string().nullable().meta({ description: 'Latest revision note from Finance (US-08).' }),
+      submitCount: z.number().int(),
+      submittedAt: z.string().nullable(),
+      verifiedAt: z.string().nullable(),
+      settledAt: z.string().nullable(),
+      refundCashEntryId: id.nullable(),
+      shortfallTransferId: id.nullable(),
+    })
+    .nullable()
+    .meta({ id: 'Settlement', description: 'T5 LPJ (Uang Muka only; null before "Nota Lengkap").' }),
   budget: z
     .object({ basis: z.enum(['project', 'none']), pctBefore: z.number().nullable(), pctAfter: z.number().nullable() })
     .meta({ description: 'US-26 preview (committed % before → after); cost centers: "none" (Q-24).' }),
@@ -300,6 +328,24 @@ export const ExpenseRequestDetail = ExpenseRequestListItem.extend({
   createdAt: z.string().nullable(),
 }).meta({ id: 'ExpenseRequestDetail' })
 
+export const LpjSubmitBody = z
+  .object({ usageNotes: z.string().trim().min(3).max(2000).optional().meta({ description: 'Required at the first submit; kept on resubmit when omitted.' }) })
+  .strict()
+  .meta({ id: 'LpjSubmitBody' })
+
+export const RevisionBody = z.object({ note: reason }).strict().meta({ id: 'LpjRevisionBody' })
+
+export const SettleBody = z
+  .object({
+    cashAccountId: id,
+    date: businessDate.optional().meta({ description: 'KM date (refund) or transfer date (shortfall); default today.' }),
+    bankRef: z.string().trim().min(1).max(64).optional().meta({ description: 'Shortfall: required.' }),
+    proofMediaId: id.nullable().optional().meta({ description: 'Shortfall: media-transfer-proofs id (required). Refund: media-attachments id (optional).' }),
+    amount: rupiahPos.optional().meta({ description: 'Optional echo; must equal the server-computed |difference|.' }),
+  })
+  .strict()
+  .meta({ id: 'SettleBody' })
+
 export const HistoryItem = z
   .object({
     serverTime: z.string(),
@@ -312,7 +358,12 @@ export const HistoryItem = z
     statusTo: z.string().nullable(),
     reason: z.string().nullable(),
     userId: z.number().int().nullable(),
+    userName: z.string().nullable(),
     source: z.string().nullable(),
+    appVersion: z.string().nullable(),
+    deviceId: z.string().nullable(),
+    docType: z.string().meta({ description: 'expense_request, or a satellite: receipt, transfer, settlement, cash_entry.' }),
+    docNo: z.string().nullable(),
   })
   .meta({ id: 'HistoryItem' })
 export const History = z.object({ items: z.array(HistoryItem) }).meta({ id: 'History' })
@@ -428,3 +479,45 @@ export const TransferResult = z
   .meta({ id: 'TransferResult' })
 
 export const Created = z.object({ id }).meta({ id: 'Created' })
+
+export const SettleResult = z
+  .object({
+    request: ExpenseRequestDetail,
+    settlementType: z.enum(['none', 'refund', 'shortfall']),
+    amount: rupiah,
+    refundCashEntryId: id.nullable(),
+    refundCashEntryNo: z.string().nullable(),
+    shortfallTransferId: id.nullable(),
+    shortfallTransferNo: z.string().nullable(),
+    shortfallCashEntryId: id.nullable(),
+  })
+  .meta({ id: 'SettleResult' })
+
+export const Notification = z
+  .object({
+    id,
+    uuid: z.string(),
+    event: z.string(),
+    title: z.string(),
+    body: z.string(),
+    docType: z.string().nullable(),
+    docId: z.string().nullable(),
+    docNo: z.string().nullable(),
+    readAt: z.string().nullable(),
+    createdAt: z.string(),
+  })
+  .meta({ id: 'Notification' })
+export const NotificationList = z
+  .object({ items: z.array(Notification), unreadCount: z.number().int(), nextCursor: z.string().nullable() })
+  .meta({ id: 'NotificationList' })
+export const NotificationQuery = z
+  .object({
+    unread: z.enum(['true', 'false']).optional().meta({ description: 'true = only unread.' }),
+    limit: z.coerce.number().int().min(1).max(100).default(30),
+    cursor: z.string().max(64).optional(),
+  })
+  .meta({ id: 'NotificationQuery' })
+export const ReadAllResult = z.object({ updated: z.number().int() }).meta({ id: 'NotificationsReadAll' })
+
+export const FileCollectionEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'company']).meta({ id: 'FileCollection' })
+export const PdfQuery = z.object({ variant: z.enum(['standard', 'internal']).optional().meta({ description: 'internal = with receipt validation flags (Finance/Owner/Admin).' }) }).meta({ id: 'PdfQuery' })

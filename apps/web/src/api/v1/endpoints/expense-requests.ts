@@ -9,6 +9,8 @@ import { addReceipt, editReceipt, rejectReceipt, removeReceipt, resubmitReceipts
 import { allowedActions } from '@/domain/expense/state'
 import { recordTransfer, voidTransfer } from '@/domain/expense/transfers'
 import { acknowledge, approve, cancel, complete, reject, submit, withdraw } from '@/domain/expense/workflow'
+import { receiptsComplete, requestLpjRevision, settle, submitLpj, verifyLpj } from '@/domain/expense/lpj'
+import { requestHistory } from '@/domain/history'
 
 import { HttpError, json, v1 } from '../http'
 import {
@@ -17,6 +19,9 @@ import {
   ExpenseRequestUpdate,
   FlagReviewBody,
   ListQuery,
+  LpjSubmitBody,
+  RevisionBody,
+  SettleBody,
   ReasonBody,
   ReceiptCreate,
   ReceiptUpdate,
@@ -120,36 +125,37 @@ export const getRequestEndpoint = v1({
   },
 })
 
-/** GET /expense-requests/{id}/history — "Riwayat" data (US-35): audit rows of the document. */
+/**
+ * GET /expense-requests/{id}/history — "Riwayat" (US-35): audit rows of the request and its
+ * satellites (receipts, transfers, LPJ; cash entries for Finance/Owner/Admin) with who / when /
+ * old → new / source + device.
+ */
 export const historyEndpoint = v1({
   path: '/expense-requests/:id/history',
   method: 'get',
+  transactional: true,
   handler: async ({ req, params }) => {
     const id = idParam(params)
     await loadVisible(req, id)
-    const res = await req.payload.find({
-      collection: 'audit-logs',
-      where: { and: [{ docType: { equals: 'expense_request' } }, { docId: { equals: String(id) } }] },
-      sort: 'id',
-      limit: 1000,
-      depth: 0,
-      overrideAccess: true, // SYSTEM-READ: history of a request the caller may read (checked above)
-      req,
-    })
-    const unwrap = (v: unknown) => (v && typeof v === 'object' && 'v' in (v as object) ? (v as { v: unknown }).v : (v ?? null))
+    const rows = await requestHistory(req, id)
     return json({
-      items: res.docs.map((a) => ({
-        serverTime: a.serverTime ?? null,
+      items: rows.map((a) => ({
+        serverTime: a.serverTime,
         action: a.action,
-        field: a.field ?? null,
-        lineNo: a.lineNo ?? null,
-        oldValue: unwrap(a.oldValue),
-        newValue: unwrap(a.newValue),
-        statusFrom: a.statusFrom ?? null,
-        statusTo: a.statusTo ?? null,
-        reason: a.reason ?? null,
-        userId: a.userId ?? null,
-        source: a.source ?? null,
+        field: a.field,
+        lineNo: a.lineNo,
+        oldValue: a.oldValue,
+        newValue: a.newValue,
+        statusFrom: a.statusFrom,
+        statusTo: a.statusTo,
+        reason: a.reason,
+        userId: a.userId,
+        userName: a.userName,
+        source: a.source,
+        appVersion: a.appVersion,
+        deviceId: a.deviceId,
+        docType: a.docType,
+        docNo: a.docNo,
       })),
     })
   },
@@ -343,6 +349,40 @@ export const voidTransferEndpoint = v1({
   },
 })
 
+// ---------------------------------------------------------------- T5 LPJ & settlement (Uang Muka)
+
+export const receiptsCompleteEndpoint = action('receipts-complete', EmptyBody, (req, id) => receiptsComplete(req, id))
+export const lpjSubmitEndpoint = action('lpj/submit', LpjSubmitBody, (req, id, b) => submitLpj(req, id, { usageNotes: b.usageNotes }))
+export const lpjRevisionEndpoint = action('lpj/request-revision', RevisionBody, (req, id, b) => {
+  req.context.auditReason = b.note
+  return requestLpjRevision(req, id, b.note)
+})
+export const lpjVerifyEndpoint = action('lpj/verify', EmptyBody, (req, id) => verifyLpj(req, id))
+
+export const settleEndpoint = v1({
+  path: '/expense-requests/:id/settle',
+  method: 'post',
+  roles: ['pk-finance'],
+  body: SettleBody,
+  rateLimit: ACTION_LIMIT,
+  transactional: true,
+  idempotent: true,
+  handler: async ({ req, body, params }) => {
+    const id = idParam(params)
+    const r = await settle(req, id, body)
+    return json({
+      request: await detail(req, id),
+      settlementType: r.type,
+      amount: r.amount,
+      refundCashEntryId: r.refundEntry?.id ?? null,
+      refundCashEntryNo: r.refundEntry?.entryNo ?? null,
+      shortfallTransferId: r.shortfall?.id ?? null,
+      shortfallTransferNo: r.shortfall?.docNo ?? null,
+      shortfallCashEntryId: r.shortfall?.cashEntryId ?? null,
+    })
+  },
+})
+
 export const EXPENSE_ENDPOINTS = [
   listRequestsEndpoint,
   createRequestEndpoint,
@@ -368,5 +408,10 @@ export const EXPENSE_ENDPOINTS = [
   reviewFlagEndpoint,
   transferEndpoint,
   voidTransferEndpoint,
+  receiptsCompleteEndpoint,
+  lpjSubmitEndpoint,
+  lpjRevisionEndpoint,
+  lpjVerifyEndpoint,
+  settleEndpoint,
 ]
 

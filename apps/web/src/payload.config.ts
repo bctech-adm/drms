@@ -27,11 +27,13 @@ import { ExpenseRequests } from './collections/ExpenseRequests'
 import { Holidays } from './collections/Holidays'
 import { MEDIA_COLLECTIONS } from './collections/media'
 import { NotificationTemplates } from './collections/NotificationTemplates'
+import { Notifications } from './collections/Notifications'
 import { PeriodClosings } from './collections/PeriodClosings'
 import { Projects } from './collections/Projects'
 import { ProjectStages } from './collections/ProjectStages'
 import { ReceiptFlags } from './collections/ReceiptFlags'
 import { Receipts } from './collections/Receipts'
+import { Settlements } from './collections/Settlements'
 import { StageTemplates } from './collections/StageTemplates'
 import { TeamAssignments } from './collections/TeamAssignments'
 import { Transfers } from './collections/Transfers'
@@ -81,7 +83,7 @@ export const MASTER_COLLECTIONS = [
   DocumentSequences,
 ]
 
-/** F2a business documents (T1–T4, T6–T8, period closing). */
+/** F2 business documents (T1–T8, period closing). */
 export const FLOW_COLLECTIONS = [
   ExpenseRequests,
   ExpenseLineSnapshots,
@@ -89,6 +91,7 @@ export const FLOW_COLLECTIONS = [
   Receipts,
   ReceiptFlags,
   Transfers,
+  Settlements,
   CashEntries,
   PeriodClosings,
 ]
@@ -106,7 +109,7 @@ export default buildConfig({
     avatar: 'default',
     meta: { titleSuffix: ' — ProyekKas DRMS' },
   },
-  collections: [Users, ...MASTER_COLLECTIONS, ...FLOW_COLLECTIONS, Devices, WebSessions, AuditLogs, ...MEDIA_COLLECTIONS],
+  collections: [Users, ...MASTER_COLLECTIONS, ...FLOW_COLLECTIONS, Notifications, Devices, WebSessions, AuditLogs, ...MEDIA_COLLECTIONS],
   globals: [CompanySettings],
   // Admin UI in Bahasa Indonesia (ADR 0001 §5; @payloadcms/translations/languages/id @3.90.1).
   i18n: { supportedLanguages: { id }, fallbackLanguage: 'id' },

@@ -220,11 +220,15 @@ export async function verifyReceipt(req: PayloadRequest, requestId: number, rece
   })
 }
 
-/** US-39: Finance rejects a receipt (reason) → request goes to "Revisi Nota". */
+/**
+ * US-39: Finance rejects a receipt (reason) → Reimburse goes to "Revisi Nota". Uang Muka LPJ review
+ * (US-21): the receipt is rejected (excluded from the verified total) and the request stays in
+ * "LPJ Diajukan" — Finance then asks for a revision or verifies the LPJ.
+ */
 export async function rejectReceipt(req: PayloadRequest, requestId: number, receiptId: number, reason: string) {
   const doc = await loadVisible(req, requestId, { lock: true })
   const ctx = await actorContext(req, doc)
-  requireAction(ctx, 'receipt_reject')
+  requireAction(ctx, doc.type === 'advance' ? 'receipt_verify' : 'receipt_reject')
   const r = await loadReceipt(req, requestId, receiptId)
   if (r.status === 'removed' || r.status === 'rejected') fail(409, 'Nota sudah ditolak/dihapus.')
   req.context.auditReason = reason
@@ -236,6 +240,7 @@ export async function rejectReceipt(req: PayloadRequest, requestId: number, rece
     overrideAccess: true, // SYSTEM-WRITE: rejection after guard
     req,
   })
+  if (doc.type === 'advance') return loadRaw(req, requestId)
   return updateRequest(req, requestId, { status: 'receipt_revision' }, reason)
 }
 
