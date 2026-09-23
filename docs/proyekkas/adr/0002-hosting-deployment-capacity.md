@@ -175,8 +175,8 @@ Source: `deploy/staging/docker-compose.yml` (repo) → installed by the infra Le
 | Service | Image | Command | Networks | mem_limit | cpus | `DATABASE_POOL_MAX` |
 |---|---|---|---|---:|---:|---:|
 | `drms-pk-stg-migrate` | `PK_MIGRATE_IMAGE` | `payload migrate` (one-shot, `restart: "no"`, **owner** DSN) | `db` | 384m | 0.5 | 2 |
-| `drms-pk-stg` (web :3000) | `PK_WEB_IMAGE` | `node server.js` (no `autoRun`) | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 640m | 0.75 | 5 |
-| `drms-pk-stg-worker` | `PK_WEB_IMAGE` | `node apps/web/dist/worker.mjs` | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 320m | 0.25 | 3 |
+| `drms-pk-stg` (web :3000) | `PK_WEB_IMAGE` | `node server.js` (no `autoRun`) | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 384m (was 640m) | 0.75 | 5 |
+| `drms-pk-stg-worker` | `PK_WEB_IMAGE` | `node apps/web/dist/worker.mjs` | `drms-kas-edge`, `db`, `drms-kc-admin-stg` | 192m (was 320m) | 0.25 | 3 |
 | `drms-pk-stg-seed` (profile `seed`, one-shot) | `PK_MIGRATE_IMAGE` | `payload run src/seed/index.ts` (app DSN) | `db` | 384m | 0.5 | 2 |
 
 - web and worker `depends_on: drms-pk-stg-migrate: service_completed_successfully`. The web container name
@@ -263,3 +263,7 @@ None. (Possible platform follow-up: `infra-deploy` health-gated rollback, alread
   idle web 82 MiB / worker 47 MiB. §2 staging `autoRun` row superseded; §3 worker egress resolved; §6 budget
   recomputed (1 920 MiB steady ≈ 75 % with prod). Prod follow-up: container uid not mapped to a host user
   (uid 1001 = host `deploy`; infra pattern 10101). Status stays accepted.
+
+- 2026-09-23 (user decision, F1): staging limits lowered to **web 384m (heap 256 MB) / worker 192m (heap 128 MB)**
+  to relieve the client RAM budget (planned steady staging+prod was ≈ 1 920 MiB ≈ 75 %). Basis: measured idle
+  82/47 MiB and light-load peak 205/51 MiB (F1 spike g). Prod limits stay 640/320 until measured in F6.

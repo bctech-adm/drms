@@ -85,7 +85,7 @@ services:
       <<: *app-env
       SERVICE_NAME: drms-pk-stg
       DATABASE_POOL_MAX: "5"
-      NODE_OPTIONS: --max-old-space-size=448
+      NODE_OPTIONS: --max-old-space-size=256
     secrets: *app-secrets
     tmpfs:
       - /tmp:uid=1001,gid=1001,mode=0700
@@ -99,7 +99,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
-    mem_limit: 640m
+    mem_limit: 384m
     cpus: 0.75
 
   # Payload Jobs worker outside Next (spike e). Cron evaluated in process TZ → TZ=Asia/Makassar.
@@ -115,7 +115,7 @@ services:
       <<: *app-env
       SERVICE_NAME: drms-pk-stg-worker
       DATABASE_POOL_MAX: "3"
-      NODE_OPTIONS: --max-old-space-size=224
+      NODE_OPTIONS: --max-old-space-size=128
       WORKER_HEARTBEAT_FILE: /tmp/worker-heartbeat
       WORKER_INTERVAL_MS: "30000"
     secrets: *app-secrets
@@ -131,7 +131,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 60s
-    mem_limit: 320m
+    mem_limit: 192m
     cpus: 0.25
 
   # Idempotent seed (APP role, audit source=system). Optional bootstrap admin via
