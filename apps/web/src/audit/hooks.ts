@@ -137,6 +137,17 @@ function rowsFor(
 ): AuditRow[] {
   return changes.map((c) => {
     const special = actionFor?.(c, operation, context)
+    if (special === 'status_change') {
+      return {
+        ...base,
+        action: special,
+        field: c.field,
+        oldValue: c.oldValue,
+        newValue: c.newValue,
+        statusFrom: typeof c.oldValue === 'string' ? c.oldValue : undefined,
+        statusTo: typeof c.newValue === 'string' ? c.newValue : undefined,
+      }
+    }
     if (special) return { ...base, action: special, field: c.field, oldValue: c.oldValue, newValue: c.newValue }
     if (operation === 'update' && c.field === 'active' && typeof c.newValue === 'boolean') {
       return {

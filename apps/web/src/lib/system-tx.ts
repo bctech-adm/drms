@@ -1,4 +1,14 @@
+import { sql } from '@payloadcms/db-postgres'
 import { createLocalReq, type Payload, type PayloadRequest } from 'payload'
+
+import { getRequestTx } from './tx'
+
+/** Runs all pending DEFERRED constraint triggers now (errors surface), then defers again. */
+export async function forceDeferredChecks(req: PayloadRequest): Promise<void> {
+  const tx = await getRequestTx(req)
+  await tx.execute(sql`SET CONSTRAINTS ALL IMMEDIATE`)
+  await tx.execute(sql`SET CONSTRAINTS ALL DEFERRED`)
+}
 
 /**
  * Runs `fn` in ONE explicit DB transaction with a fresh local req (ADR 0007 fallback pattern):
@@ -27,6 +37,11 @@ export async function withReqTransaction<T>(req: PayloadRequest, fn: () => Promi
   req.transactionID = id
   try {
     const result = await fn()
+    // Payload's commitTransaction swallows COMMIT errors (@payloadcms/drizzle 3.90.1
+    // transactions/commitTransaction.js + beginTransaction.js `.catch`), so a failing DEFERRED
+    // constraint trigger would roll back silently while the caller reports success. Force every
+    // deferred check to run now, inside the transaction, where an error still propagates.
+    await forceDeferredChecks(req)
     await req.payload.db.commitTransaction(id)
     return result
   } catch (err) {

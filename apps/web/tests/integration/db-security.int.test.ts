@@ -58,6 +58,11 @@ describe('grants (least privilege)', () => {
     expect(r.rows.map((x) => x.table_name)).toEqual([
       'approval_rules_steps',
       'expense_categories_rels',
+      // F2a: Payload rewrites these children on every parent update; locked content is protected
+      // by the deferred freeze check (content_hash), not by withholding DELETE.
+      'expense_requests_lines',
+      'expense_requests_rels',
+      'idempotency_keys', // purge of expired keys
       'payload_jobs',
       'payload_jobs_log',
       'payload_kv',

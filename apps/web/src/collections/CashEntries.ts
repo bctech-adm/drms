@@ -1,0 +1,75 @@
+import type { CollectionConfig } from 'payload'
+
+import { denyAll } from '@/access/roles'
+import { byRole } from '@/access/policies'
+import { reasonOnChange, withAudit } from '@/audit/hooks'
+import { denyDeleteLogged } from '@/domain/expense/access'
+import { uuidField } from '@/fields/common'
+
+import { businessDateField, ro } from './fields-f2'
+
+/**
+ * T6/T7 Kas masuk / keluar — own single-entry cash book (ADR 0005). CLASS B: flat, no DELETE,
+ * posted rows never change amount/direction/account/date (DB trigger `pk_cash_entries_guard`);
+ * void = reversal row (`reversalOf`) + original `status=void` with reason (T8, US-24). Period lock
+ * (ADR 0005 §6): the DB rejects inserts/edits dated on or before the end of the last closed period
+ * (`period_closings`). `period` and `posted_at` are set by the DB.
+ * Read: Finance/Owner/Admin (requirements §4 "Kas & bank"; PM gets summaries via dashboards, F3).
+ * Writes: domain service only (/api/v1/cash-entries, transfers).
+ */
+export const CashEntries: CollectionConfig = withAudit(
+  {
+    slug: 'cash-entries',
+    labels: { singular: 'Transaksi kas', plural: 'Transaksi kas' },
+    admin: { group: 'Keuangan', useAsTitle: 'entryNo', defaultColumns: ['entryNo', 'entryDate', 'direction', 'amount', 'cashAccount', 'sourceType', 'status'] },
+    access: {
+      read: byRole({ 'pk-finance': true, 'pk-owner': true, 'pk-admin': true }),
+      create: denyAll,
+      update: denyAll,
+      delete: denyDeleteLogged('cash_entry'),
+    },
+    fields: [
+      { name: 'entryNo', type: 'text', label: 'Nomor', unique: true, index: true, admin: ro },
+      businessDateField('entryDate', 'Tanggal', { required: true, index: true, admin: ro }),
+      { name: 'period', type: 'text', label: 'Periode (YYYY-MM)', index: true, admin: ro },
+      { name: 'direction', type: 'select', required: true, options: [{ label: 'Masuk', value: 'in' }, { label: 'Keluar', value: 'out' }], admin: ro },
+      { name: 'amount', type: 'number', label: 'Nominal (Rp)', required: true, admin: ro },
+      { name: 'cashAccount', type: 'relationship', relationTo: 'cash-accounts', required: true, index: true, admin: ro },
+      { name: 'category', type: 'relationship', relationTo: 'expense-categories', label: 'Kategori (keluar)', admin: ro },
+      { name: 'cashInSource', type: 'relationship', relationTo: 'cash-in-sources', label: 'Sumber (masuk)', admin: ro },
+      { name: 'project', type: 'relationship', relationTo: 'projects', admin: ro },
+      { name: 'costCenter', type: 'relationship', relationTo: 'cost-centers', admin: ro },
+      { name: 'vehicle', type: 'relationship', relationTo: 'vehicles', admin: ro },
+      { name: 'description', type: 'textarea', label: 'Keterangan', maxLength: 1000, admin: ro },
+      { name: 'proof', type: 'upload', relationTo: 'media-attachments', label: 'Bukti', admin: ro },
+      {
+        name: 'sourceType',
+        type: 'select',
+        required: true,
+        options: ['transfer', 'settlement_refund', 'manual', 'reversal', 'opening'].map((v) => ({ label: v, value: v })),
+        admin: ro,
+      },
+      { name: 'expenseRequest', type: 'relationship', relationTo: 'expense-requests', index: true, admin: ro },
+      { name: 'transfer', type: 'relationship', relationTo: 'transfers', admin: ro },
+      { name: 'status', type: 'select', required: true, defaultValue: 'posted', index: true, options: [{ label: 'Posted', value: 'posted' }, { label: 'Void', value: 'void' }], admin: ro },
+      { name: 'reversalOf', type: 'relationship', relationTo: 'cash-entries', label: 'Jurnal balik dari', admin: ro },
+      { name: 'reversedBy', type: 'relationship', relationTo: 'cash-entries', label: 'Dibalik oleh', admin: ro },
+      { name: 'voidReason', type: 'text', admin: ro },
+      { name: 'voidedBy', type: 'relationship', relationTo: 'users', admin: ro },
+      { name: 'voidedAt', type: 'date', admin: ro },
+      { name: 'postedBy', type: 'relationship', relationTo: 'users', admin: ro },
+      { name: 'postedAt', type: 'date', admin: { ...ro, date: { pickerAppearance: 'dayAndTime' } } },
+      uuidField(),
+    ],
+  },
+  {
+    docType: 'cash_entry',
+    docNo: (d) => (typeof d.entryNo === 'string' ? d.entryNo : undefined),
+    exclude: ['period', 'postedAt'],
+    reasonRules: [
+      reasonOnChange(['voidReason'], 'Alasan wajib diisi saat void.'),
+      reasonOnChange(['description', 'category', 'cashInSource', 'project', 'costCenter', 'vehicle', 'proof'], 'Alasan wajib diisi saat mengedit transaksi kas.'),
+    ],
+    actionFor: (c) => (c.field === 'status' && c.newValue === 'void' ? 'void' : undefined),
+  },
+)

@@ -1,7 +1,8 @@
-import type { Access } from 'payload'
+import type { Access, Where } from 'payload'
 
 import { anyRole } from '@/access/roles'
-import { byRole, ownUser, rolesAllowed } from '@/access/policies'
+import { anyOf, byRole, ownUser, rolesAllowed, type Rule } from '@/access/policies'
+import { visibleRequestIds } from '@/domain/expense/access'
 
 import { mediaCollection } from './factory'
 
@@ -13,12 +14,31 @@ import { mediaCollection } from './factory'
  * Read access until the owning business documents exist (F2): Finance/Owner/Admin all, others
  * only what they uploaded themselves. F2 replaces this with owner-document-derived Where rules.
  */
+const ownerRequestRule: Rule = async ({ req }) => {
+  const ids = await visibleRequestIds(req)
+  if (ids.length === 0) return false
+  const where: Where = { and: [{ ownerDocType: { equals: 'expense_request' } }, { ownerDocId: { in: ids.map(String) } }] }
+  return where
+}
+
 const ownOrOffice: Access = byRole({
   'pk-admin': true,
   'pk-owner': true,
   'pk-finance': true,
   'pk-pm': ownUser('uploadedBy'),
   'pk-staff': ownUser('uploadedBy'),
+})
+
+/**
+ * F2a: files of business documents are also readable by everyone who may read the owning
+ * expense request (owner link set by the domain service, immutable once set — DB trigger).
+ */
+const ownerLinked: Access = byRole({
+  'pk-admin': true,
+  'pk-owner': true,
+  'pk-finance': true,
+  'pk-pm': anyOf(ownUser('uploadedBy'), ownerRequestRule),
+  'pk-staff': anyOf(ownUser('uploadedBy'), ownerRequestRule),
 })
 
 const thumb = {
@@ -30,6 +50,13 @@ const thumb = {
   formatOptions: { format: 'webp' as const, options: { quality: 70 } },
 }
 
+/**
+ * JPEG thumbnail for collections whose `mimeTypes` do not include image/webp: Payload validates
+ * every generated size against the collection's mimeTypes (`sizes.thumb.mimeType: Invalid file
+ * type 'image/webp'` — found in F2a: image uploads of transfer proofs/attachments always failed).
+ */
+const thumbJpeg = { ...thumb, formatOptions: { format: 'jpeg' as const, options: { quality: 70 } } }
+
 export const MediaReceipts = mediaCollection({
   slug: 'media-receipts',
   labels: { singular: 'Foto nota', plural: 'Foto nota' },
@@ -37,7 +64,7 @@ export const MediaReceipts = mediaCollection({
   resizeOptions: { width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true },
   formatOptions: { format: 'jpeg', options: { quality: 82, mozjpeg: true } },
   imageSizes: [thumb],
-  access: { read: ownOrOffice, create: rolesAllowed('pk-staff', 'pk-pm', 'pk-finance', 'pk-admin') },
+  access: { read: ownerLinked, create: rolesAllowed('pk-staff', 'pk-pm', 'pk-finance', 'pk-admin') },
 })
 
 export const MediaTransferProofs = mediaCollection({
@@ -46,10 +73,10 @@ export const MediaTransferProofs = mediaCollection({
   mimeTypes: ['image/jpeg', 'image/png', 'application/pdf'],
   resizeOptions: { width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true },
   formatOptions: { format: 'jpeg', options: { quality: 80, mozjpeg: true } },
-  imageSizes: [thumb],
+  imageSizes: [thumbJpeg],
   maxBytesByMime: { 'application/pdf': 2 * 1024 * 1024 },
   disposition: 'attachment',
-  access: { read: ownOrOffice, create: rolesAllowed('pk-finance') },
+  access: { read: ownerLinked, create: rolesAllowed('pk-finance') },
 })
 
 export const MediaSelfies = mediaCollection({
@@ -68,7 +95,7 @@ export const MediaProgressPhotos = mediaCollection({
   resizeOptions: { width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true },
   // JPEG so PDF reports can embed it (@react-pdf/image: JPEG/PNG/SVG only, ADR 0004 §Context).
   formatOptions: { format: 'jpeg', options: { quality: 78, mozjpeg: true } },
-  imageSizes: [thumb],
+  imageSizes: [thumbJpeg],
   access: { read: ownOrOffice, create: rolesAllowed('pk-pm', 'pk-owner') },
 })
 
@@ -96,10 +123,10 @@ export const MediaAttachments = mediaCollection({
   mimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
   resizeOptions: { width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true },
   formatOptions: { format: 'jpeg', options: { quality: 82, mozjpeg: true } },
-  imageSizes: [thumb],
+  imageSizes: [thumbJpeg],
   maxBytesByMime: { 'application/pdf': 5 * 1024 * 1024 },
   disposition: 'attachment',
-  access: { read: ownOrOffice, create: rolesAllowed('pk-staff', 'pk-pm', 'pk-finance', 'pk-admin') },
+  access: { read: ownerLinked, create: rolesAllowed('pk-staff', 'pk-pm', 'pk-finance', 'pk-admin') },
 })
 
 export const MEDIA_COLLECTIONS = [
