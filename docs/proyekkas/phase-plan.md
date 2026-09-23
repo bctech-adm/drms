@@ -1,6 +1,6 @@
 # ProyekKas — Phase plan F0–F7
 
-- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging); F2 status updated 2026-09-23 (F2a done, F2b in progress) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Basis:** `architecture.md`, ADR 0001–0008 (this folder), ADR 0009–0011 (other agent), requirements v1.0
   (+ v1.1 in parallel), `/opt/infra/CLAUDE.md` §1 (workflow: stop and report at the end of every phase, wait
   for user approval), §5 (Definition of Done).
@@ -109,6 +109,18 @@
   manual cash in/out, void/reversal, period closing lock, PDF "Pengajuan Biaya" (ADR 0008), in-app
   notifications (push arrives in F4), admin custom views (approval inbox, transfer queue, LPJ verification,
   "Riwayat" tab).
+- **Status (2026-09-23):**
+  - **F2a — DONE** (merged to `develop` `c8c1af6`): expense requests (advance + reimburse) with lines,
+    requesters, "Diketahui"/approval positions + signatures, approval rules (US-34; default Owner-only,
+    Q-31; "Diketahui" required, Q-07), receipts + validation flags, Reimburse receipt verification
+    ("Nota Terverifikasi"), transfers with one automatic KK, manual cash in/out, void/reversal (KM/KK),
+    period close/re-open, DB guards (ADR 0005/0006), `Idempotency-Key`, `/api/v1` endpoints + OpenAPI, form
+    228 fixture in the integration tests. Onboarding prerequisite: PM per project / manager per cost center
+    (architecture §5.2). Also fixed the F1 WebP-thumbnail upload defect (architecture §9.1).
+  - **F2b — IN PROGRESS:** LPJ/settlement (submit/revision/verify, refund KM / shortfall transfer), PDF
+    "Pengajuan Biaya" (ADR 0008), admin custom views (approval inbox, transfer queue, LPJ verification,
+    "Riwayat"), in-app notifications, authenticated file endpoint.
+  - F2 acceptance gate below still open (PDF review, full §7.4 suite, PDF RSS measurement).
 - **Dependencies:** F1 gate.
 - **Agents / estimate:** nextjs-developer 26–36 pd · qa-security 7–9 pd · analyst 1–2 pd · docs 1–2 pd →
   **35–49 pd**.

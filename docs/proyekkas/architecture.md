@@ -1,6 +1,6 @@
 # ProyekKas — Architecture (Phase 0)
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy (see §17 Revision history) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) the F1 foundation / staging deploy and F2a (see §17 Revision history) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Inputs:** `f0-brief.md` (binding decisions §2, direction §3; updated 2026-09-23 with the line-total
   decision), `reference/proyekkas-kebutuhan-pengembangan.md` (requirements v1.0), `reference/prompt-lead-proyekkas.md`
   ("Temuan tambahan" 1–10), `reference/contoh-form-pengajuan-biaya-drms.jpg`, `/opt/infra/CLAUDE.md`,
@@ -864,35 +864,75 @@ return transfer (proof optional per US-23 — client question).
 
 ### 5.2 T1 — Reimburse
 
+As implemented in F2a (`apps/web/src/domain/expense/state.ts`, table `TRANSITIONS`; labels `types.ts`
+`STATUS_LABELS`). Revised 2026-09-23: the F0 draft went `Disetujui → Ditransfer` directly; F2a adds the
+explicit status **"Nota Terverifikasi (Antri Transfer)"** (`receipts_verified`) between Finance's receipt
+verification and the transfer, plus "Menunggu Diketahui" and withdraw (shared with §5.1).
+
 ```mermaid
 stateDiagram-v2
   [*] --> Draft
+  state "Menunggu Diketahui" as MK
   state "Menunggu Approval" as MA
   state "Disetujui" as DS
   state "Revisi Nota" as RN
+  state "Nota Terverifikasi (Antri Transfer)" as NV
   state "Ditransfer" as DT
   state "Selesai" as SE
   state "Ditolak" as TO
   state "Dibatalkan" as BA
 
-  Draft --> MA : submit [every line has a receipt] / docNo, snapshot, sign
-  Draft --> BA : discard (reason)
-  MA --> DS : approve (all levels) [approver not requester]
+  Draft --> MK : submit [every line has a receipt, rule requires Diketahui] / docNo, snapshot, sign
+  Draft --> MA : submit [rule without Diketahui] / docNo, snapshot, sign
+  Draft --> BA : cancel (reason)
+  MK --> MA : acknowledge (Diketahui Oleh)
+  MK --> TO : reject by acknowledger (reason)
+  MK --> Draft : withdraw [no decision] (reason)
+  MA --> Draft : withdraw [no decision] (reason)
+  MA --> MA : approve level n, not last
+  MA --> DS : approve last level [approver not requester or creator] / approvedAmount := grandTotal
   MA --> TO : reject (reason)
-  MA --> BA : cancel [no decision yet] (reason)
+  MK --> BA : cancel [no decision] (reason)
+  MA --> BA : cancel [no decision] (reason)
+  DS --> NV : Finance verifies receipts (verify_receipts)
   DS --> RN : Finance rejects a receipt (reason)
-  RN --> DS : requester fixes receipts [grandTotal unchanged]
-  RN --> MA : requester changes amounts / re-approval required
-  DS --> DT : Finance verifies all receipts valid, then transfers [amount = approvedAmount] / T3 + T7
+  NV --> RN : Finance rejects a receipt (reason)
+  RN --> DS : requester resubmits receipts [grandTotal unchanged]
+  RN --> MA : requester resubmits with changed amounts / re-approval
+  NV --> DT : transfer [amount = approvedAmount] / T3 + one KK (ADR 0005)
+  DT --> NV : transfer voided (T8 reversal, reason)
+  DT --> SE : complete (requester or Finance)
   DS --> BA : cancel by Finance/Owner (reason)
-  DT --> DS : transfer voided (T8, reason)
-  DT --> SE : requester confirms receipt OR auto after N days (setting)
+  NV --> BA : cancel by Finance/Owner (reason)
+  RN --> BA : cancel by Finance/Owner (reason)
   TO --> [*]
   SE --> [*]
   BA --> [*]
 ```
 Finance receipt verification happens **before** transfer (lead prompt #1); receipt flags (§5.6) are shown
-but do not block. Finance cannot change `approvedAmount` (G3).
+but do not block. Finance cannot change `approvedAmount` (G3). The "auto-complete after N days" setting of
+the F0 draft is **not implemented in F2a** (`complete` is a manual action). For Uang Muka (§5.1) F2a
+implements the same submit / acknowledge / withdraw / approve / reject / cancel front part and
+`Disetujui (Antri Transfer) → Ditransfer` with void back; the receipt/LPJ part is F2b.
+
+**Onboarding prerequisite (Q-07 default).** The seeded default approval rule ("Default — Owner (semua
+nominal)", `apps/web/src/seed/data.ts`) has `acknowledge: 'required'`, `acknowledgeBy: 'scope_manager'`.
+At submit the acknowledger is resolved from the project's PM or the cost center's manager
+(`domain/expense/snapshot.ts`); if none is set (or it is a requester/creator, Q-08) **submit returns 409**
+(`Pihak "Diketahui Oleh" tidak dapat ditentukan…`). Staging and every client onboarding must therefore set
+the PM on each project and the manager on each cost center (or change the rule) before requests can be
+submitted.
+
+**Business dates** (`requestDate`, `neededDate`, `periodFrom/To`, `transferDate`, receipt dates,
+`entryDate`, …) are stored as **text `YYYY-MM-DD`** in the company TZ (`collections/fields-f2.ts`
+`businessDateField`, + DB CHECK), not as `timestamptz`, so period-lock and flag comparisons are TZ-free.
+
+**Where transitions are enforced.** Status transitions are enforced in the **domain service**
+(`TRANSITIONS` + `allowedActions`) and the `expense-requests` `beforeChange` **hook** (status diff without
+the transition context → 403). The **DB does not encode the transition graph**; it enforces content
+freeze (`content_hash` + deferred checks), amounts (`approved_amount = grand_total` only on approval,
+transfer amount = approved amount, `grand_total = Σ lines`), append-only/Class B rules and the period lock
+(ADR 0005, ADR 0006 §2).
 
 ### 5.3 T5 — LPJ (settlement document)
 
@@ -941,7 +981,7 @@ current budget + addition` (not the snapshot).
 | G3 | **Finance cannot change the approved amount**: transfer amount is copied from `approvedAmount` server-side; any change to lines/total after approval returns the request to Menunggu Approval (reimburse) or is rejected (advance) | service + field access (`approvedAmount`, `lines` update=false after approval) |
 | G4 | **No hard delete**: `access.delete = () => false` on all business collections; DB role has no DELETE on Class A/B tables; `beforeDelete` logs `delete_attempt` | Payload + DB (ADR 0006) |
 | G5 | **Period lock**: no insert/update of cash entries dated ≤ lock date; transfers/settlements dated in a closed period are refused | service + DB trigger (ADR 0005) |
-| G6 | Status only changes through listed transitions (table-driven state machine); `status` field access update=false; hook rejects status diff without `context.transition` | service + hook |
+| G6 | Status only changes through listed transitions (table-driven state machine); `status` field access update=false; hook rejects status diff without the transition context (F2a: `context.pkTransition`) | service + hook (not DB, see §5.2) |
 | G7 | Reason mandatory for: cancel, reject, void, LPJ revision, receipt reject, attendance correction, stage weight change, project archive, user deactivation, period reopen | service + audit hook |
 | G8 | Edit/cancel by requester only while Draft or Menunggu Approval with no decision rows (US-04) | service |
 | G9 | Bank account must belong to one of the requesters and be `active` (verified status shown; blocking = client question) | service |
@@ -1121,6 +1161,11 @@ APK compresses first (ADR 0010: target ≤ 2000 px, JPEG) → upload multipart �
 `beforeOperation`: rename to UUID, SHA-256 of received bytes → sharp: auto-orient, resize `inside`,
 re-encode (JPEG/WebP/PNG per collection), strip metadata → `/data/media/<collection>/` → thumbnail size.
 Targets per collection: ADR 0004 §2. Original discarded (flagged to client).
+**Fixed in F2a** (`apps/web/src/collections/media/index.ts`): Payload validates every generated image size
+against the collection's `mimeTypes`, so the shared WebP thumbnail was rejected (`sizes.thumb.mimeType:
+Invalid file type 'image/webp'`) on collections that do not accept `image/webp` — every image upload to
+`media-transfer-proofs`, `media-attachments` and `media-progress-photos` failed (F1 defect). These use a JPEG
+thumbnail (`thumbJpeg`); `media-receipts` (accepts WebP) keeps the WebP thumbnail.
 
 ### 9.2 Access
 Via collection `read` access derived from owner document; APK via `/api/v1/files/...`; HMAC signed
@@ -1263,3 +1308,9 @@ measurement gate is F1 (idle) and F6 (load).
   idle 82/47 MiB) and Admin API via internal networks (infra H5); §3.4 seed policy (fictional default,
   `SEED_DATA_FILE` at deploy time, never overwrites); §10 reset `never` + counter/audit guards; §11 worker in
   staging; §13 staging capacity superseded; §16 Admin REST item closed.
+- **2026-09-23 (F2a):** verified against `develop` `c8c1af6`. §5.2 Reimburse redrawn as implemented: new status
+  "Nota Terverifikasi (Antri Transfer)" (`receipts_verified`), "Menunggu Diketahui", withdraw; auto-complete
+  not implemented. Business dates stored as text `YYYY-MM-DD`. Status transitions enforced in service + hook;
+  the DB enforces content/amounts/locks, not transitions (G6 row updated). Onboarding prerequisite: default
+  rule requires "Diketahui" (Q-07) → submit 409 until the project PM / cost-center manager is set. §9.1 webp
+  thumbnail fix recorded.

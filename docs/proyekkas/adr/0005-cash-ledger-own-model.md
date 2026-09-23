@@ -1,6 +1,6 @@
 # ADR 0005 — Cash & bank: own append-only ledger (not Odoo `account`), Odoo-mappable
 
-- **Status:** accepted (user, GATE F0 2026-09-23) 
+- **Status:** accepted (user, GATE F0 2026-09-23); implementation recorded after F2a (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §4 (Kas & bank), §7 T3/T5–T8, §8, §9 ("Tutup buku bulanan");
@@ -64,6 +64,30 @@ path `/usr/lib/python3/dist-packages/odoo/addons/`):
    linked to the project) and *realised* (Σ verified receipt amounts of LPJ-verified/reimburse requests);
    computed views, not ledger columns.
 
+### As implemented (F2a, `develop` `c8c1af6`)
+
+Verified in `apps/web/src/domain/cash/{ledger,periods}.ts`, `domain/expense/transfers.ts`,
+`migrations/20260923_133050_f2a_security.ts`, `domain/numbering.ts`:
+- **One KK per transfer.** `recordTransfer()` posts exactly one `out` entry (`sourceType=transfer`) for the
+  approved amount, linked to the request and the transfer (`transfers.cash_entry_id`, set once). Its
+  `category` is taken from the request lines: the lines' single category when all lines share one, else
+  empty — the per-category breakdown comes from the request lines (US-25), not from split ledger rows.
+- **Reversals are numbered in the KM/KK series.** `voidEntry()` inserts the reversal through the same
+  `postEntry()` path, so it takes a `KM/…` (reversal of an `out`) or `KK/…` (reversal of an `in`) number from
+  the `cash_in`/`cash_out` sequence of its date. There is **no `cash-reversals` collection**; the
+  `reversal` doc type of ADR 0007 §1 exists in the type list but has no seeded sequence and is unused.
+  Reversal description `Jurnal balik <entryNo>: <reason>`; the original gets `status=void`, `voidReason`,
+  `voidedBy/At`, `reversedBy`. A reversal row cannot itself be voided; a transfer's KK is voided only via
+  the transfer void (`POST …/transfers/{tid}/void`), which returns the request to its transfer queue.
+- **Lock = latest closed period.** DB function `pk_cash_lock_date()` = last day of the latest period with
+  `status='closed'` (mirrored by the pure `lockDate()`); used by the `cash_entries`/`transfers` triggers and
+  by the service (409 before the DB would reject). Closing: Finance/Owner, only months already past,
+  audited `period_close`; at most one `closed` row per period (partial unique index).
+- **Re-open = only the latest closed period**, Owner only (`pk-owner`), reason mandatory (API schema: 3–1000
+  chars), row set to `status=reopened` with `reopenedBy/At/reopenReason`, audited `period_reopen`.
+- Manual entry edits (§5) implemented as specified: manual + posted + open period only, descriptive fields
+  only, reason stored as the audit reason.
+
 ### Odoo mapping hints (for ADR 0009, not binding here)
 
 | ProyekKas | Odoo 19 |
@@ -110,3 +134,12 @@ permanent; changes only by additive migrations. Moving the system of record to O
 ## Proposed CLAUDE.md changes (need user approval; author does not edit)
 
 None.
+
+## Revision history
+
+- **2026-09-23 (F0 gate):** accepted by user.
+- **2026-09-23 (F2a):** "As implemented" section added, verified against `develop` `c8c1af6`: one KK per
+  transfer (category = the lines' single category, else empty); reversals numbered in the KM/KK series (no
+  `cash-reversals` collection, `reversal` sequence unused); lock = last day of the latest closed period
+  (`pk_cash_lock_date()`); only the latest closed period can be re-opened, Owner only, reason required.
+  Status stays accepted.

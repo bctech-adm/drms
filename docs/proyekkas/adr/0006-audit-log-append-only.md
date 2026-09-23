@@ -1,6 +1,6 @@
 # ADR 0006 — Append-only audit log, DB roles and immutability enforcement
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) the F1 foundation and F2a (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §8 (audit structure + events), §4 rules, US-35; lead prompt "Audit log
@@ -99,6 +99,34 @@ localized fields or versions (these create child tables that Payload rewrites wi
 expense request live in the mutable `expense_requests_lines` child table while in Draft; once submitted,
 the domain service snapshots them into `expense_line_snapshots` (Class A) for the audit/PDF trail.
 
+**Implemented (F2a, `migrations/20260923_133050_f2a_security.ts`, `develop` `c8c1af6`):**
+- The mutable child tables Payload rewrites on every parent update, **`expense_requests_lines`** and
+  **`expense_requests_rels`** (requesters), are the only F2a tables granted DELETE to the app role (plus
+  `idempotency_keys` for the expiry purge). DELETE/INSERT there is harmless while the request is editable
+  (statuses `draft`, `receipt_revision`). On every transition **out of** an editable status the BEFORE UPDATE
+  guard `pk_expense_requests_guard` sets `expense_requests.content_hash` = md5 of the lines + requesters
+  (`pk_expense_content_hash()`); while locked, header columns outside a whitelist (`status`, `updated_at`,
+  `current_level`, `approved_amount`, `content_hash`, `transferred_total`, `cancel_reason`, `reject_reason`)
+  and the hash itself are immutable (SQLSTATE 42501). **DEFERRABLE INITIALLY DEFERRED constraint triggers**
+  on the parent and both child tables (`pk_expense_frozen_check`) re-check at commit that the recomputed hash
+  still matches and that `grand_total = Σ lines.total` — so Payload's delete-and-reinsert of unchanged rows
+  passes, while any real change to a locked request fails. `approved_amount` changes only on
+  `pending_approval → approved` and must equal `grand_total` (G3).
+- **Class A `expense_line_snapshots`** (collection `expense-line-snapshots`, flat; `reason` =
+  `submit|approve|receipts_resubmit`, `cycle`, `grandTotal`, `contentHash`, `data` json): `taken_at` forced to
+  `clock_timestamp()`, UPDATE/DELETE/TRUNCATE rejected by trigger and revoked; same for `approvals`
+  (+ G1 in the DB: requester/creator never decides, one decision per level, one position per person).
+- Class B guards on `receipts`, `receipt_flags`, `transfers`, `cash_entries`, `period_closings` (ADR 0005).
+- New table **`idempotency_keys`** (PK `user_id, key`; `request_hash`, stored 2xx response, `expires_at`,
+  TTL 72 h; `src/lib/idempotency.ts`): G15 for mutating `/api/v1` POSTs, required for APK requests.
+- **Payload swallows COMMIT errors.** Read in `@payloadcms/drizzle` 3.90.1
+  `dist/transactions/commitTransaction.js`: `try { await session.resolve() } catch (_) { await session.reject() }`
+  — a COMMIT that fails (e.g. a deferred constraint trigger) is rolled back **silently** and the caller sees
+  success. Therefore every transaction the app owns forces the deferred checks **inside** the transaction
+  before committing: `forceDeferredChecks()` (`SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED`)
+  in `withReqTransaction()` (`src/lib/system-tx.ts`) and in the `expense-requests` `afterChange` hook, so a
+  violation surfaces as a real error. Re-verify on every Payload upgrade.
+
 Enforcement per class (in migrations, owner role):
 ```sql
 -- pseudo-config, not final
@@ -129,7 +157,8 @@ numeric(9,6) · `lng` numeric(9,6) · `device_time` timestamptz (offline only, c
 `deactivate`, `reactivate`, `delete_attempt`, `void`, `view_sensitive`, `login`, `logout`, `login_failed`,
 `session_revoked`, `role_change`, `role_sync`, `device_register`, `device_revoke`, `number_issued`, `export`,
 `print`, `sign`, `acknowledge`, `flag_raised`, `flag_reviewed`, `sync_odoo`, `sync_offline`, `period_close`,
-`period_reopen`, `schema_maintenance` (a new value = a migration). `user_roles` is a Payload `text` field
+`period_reopen`, `schema_maintenance` (a new value = a migration). Added since: `email_test` (F1 SMTP
+migration) and **`approve`, `reject`, `verify`** (F2a flow migration `20260923_133049_f2a_flow.ts`). `user_roles` is a Payload `text` field
 (`varchar`), written as `roles.join(',')` (`src/audit/writer.ts`). Payload column types differ from the sketch:
 `id` serial, `tx_id`/`user_id` numeric, `ip` varchar, `source` enum; `server_time` NOT NULL (security migration).
 Payload collection `audit-logs` exposes it read-only: `access.create/update/delete = () => false` (writes
@@ -227,3 +256,9 @@ the DB before first deploy is free; after deploy it needs dump/restore.
   `pk_protect_columns` trigger for immutable-once-set columns (+ `uuid` on every table). §3 `action` is the
   Postgres enum `enum_audit_logs_action` with the extended value set (incl. `number_issued`,
   `schema_maintenance`); `user_roles` is text (comma-separated), not `text[]`. Status stays accepted.
+- **2026-09-23 (F2a):** verified against `develop` `c8c1af6`. §2: `expense_requests_lines/_rels` get DELETE
+  (editable statuses only); after the lock they are protected by `content_hash` + DEFERRED constraint
+  triggers (hash and Σ lines re-checked at commit); Class A `expense-line-snapshots` (and `approvals`);
+  `idempotency_keys` table; Payload `commitTransaction` swallows COMMIT errors (read in `@payloadcms/drizzle`
+  3.90.1) → deferred checks are forced inside the transaction. §3: new audit enum values `approve`,
+  `reject`, `verify` (and `email_test` from F1). Status stays accepted.

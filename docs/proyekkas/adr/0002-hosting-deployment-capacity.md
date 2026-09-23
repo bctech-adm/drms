@@ -1,6 +1,6 @@
 # ADR 0002 — Hosting, deployment, repo layout, jobs and capacity
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved), the F1 foundation / staging deploy and F2a (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** `/opt/infra/CLAUDE.md` §3.1, §3.5, §3.7, §4; platform ADR `/opt/infra/docs/adr/0004-capacity.md`
@@ -129,6 +129,13 @@ CRITICAL), npm audit → build image (targets runner + migrate) → push GHCR (t
   The Next 16 default (Turbopack) was OOM-killed (exit 137) at 1 536 MiB and 1 900 MiB cgroup caps;
   webpack succeeded under 1 900 MiB (sampled peaks 1 074–1 589 MiB, ≈ 5 min). The CI runner or any VPS-side
   build environment needs **≥ 2 GiB**.
+- **Type checking outside `next build` (F2a, commit `cea7ae6`):** with the F2a code, `next build` ran its
+  TypeScript check in a second Node process while the webpack process was still resident and exceeded the
+  2 GiB build cap (exit 137 at "Running TypeScript", measured with `docker build --memory 2g`). The production
+  build therefore sets `typescript: { ignoreBuildErrors: true }` in `apps/web/next.config.ts`. Type safety is
+  **not** dropped: `npm run typecheck` (`tsc --noEmit`) is a required step of the CI `verify` job, and the
+  image `build` job runs only after it (`needs: [verify, integration, security]` in
+  `.github/workflows/ci.yml`). Any local/VPS image build must run `npm run typecheck` first.
 - Required infra changes (coordinate with infra session): migrate ordering via `depends_on` (above) works
   with the current wrapper; **health-gated rollback** in `infra-deploy` is still a TODO of the platform.
 
@@ -267,3 +274,7 @@ None. (Possible platform follow-up: `infra-deploy` health-gated rollback, alread
 - 2026-09-23 (user decision, F1): staging limits lowered to **web 384m (heap 256 MB) / worker 192m (heap 128 MB)**
   to relieve the client RAM budget (planned steady staging+prod was ≈ 1 920 MiB ≈ 75 %). Basis: measured idle
   82/47 MiB and light-load peak 205/51 MiB (F1 spike g). Prod limits stay 640/320 until measured in F6.
+- **2026-09-23 (F2a):** §5 production build sets `typescript.ignoreBuildErrors` because `next build` OOMs at
+  the 2 GiB cap during type checking; `npm run typecheck` stays a required CI gate (build job
+  `needs: [verify, integration, security]`). Verified in `apps/web/next.config.ts` and `.github/workflows/ci.yml`
+  at `develop` `c8c1af6`. Status stays accepted.

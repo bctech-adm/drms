@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+F2a (expense request core) merged to `develop` (`c8c1af6`); F2b (LPJ/settlement, PDF, admin views,
+notifications, file endpoint) in progress.
+
+### Added
+- **F2a expense request flow** (`apps/web`): collections `expense-requests` (+ lines), `approval-rules`,
+  `approvals`, `expense-line-snapshots`, `receipts`, `receipt-flags`, `transfers`, `cash-entries`,
+  `period-closings`; T1 state machines (advance, reimburse incl. "Nota Terverifikasi (Antri Transfer)",
+  "Menunggu Diketahui", withdraw); approval rules (default Owner-only; "Diketahui" required, Q-07);
+  receipts with validation flags; transfers posting exactly one KK; manual cash in/out; void/reversal
+  numbered in the KM/KK series; monthly closing and Owner-only re-open of the latest closed period;
+  `/api/v1` expense-request, cash and media endpoints + OpenAPI; `Idempotency-Key` (table `idempotency_keys`,
+  72 h; required for the APK); historical number registration for the form-228 fixture without touching the
+  live counter; audit actions `approve`, `reject`, `verify`.
+
+### Changed
+- ADR 0001, 0002, 0005, 0006, 0007, `architecture.md` (§5.2, G6, §9.1) and `phase-plan.md` updated with the
+  F2a outcomes (Revision history in each; statuses stay accepted). Business dates stored as text `YYYY-MM-DD`.
+- Build: `next build` skips its own type check (`typescript.ignoreBuildErrors`) because it OOMs at the 2 GiB
+  build cap; `npm run typecheck` remains a required CI gate before the image build.
+- **Onboarding/staging prerequisite:** set the PM on every project and the manager on every cost center —
+  with the default approval rule, submit returns 409 until the "Diketahui Oleh" party can be resolved.
+
+### Fixed
+- Image uploads to `media-transfer-proofs`, `media-attachments` and `media-progress-photos` always failed:
+  the WebP thumbnail was rejected by the collections' `mimeTypes`; these now use a JPEG thumbnail.
+
+### Security
+- DB guards (F2a security migration): request content frozen outside Draft/Revisi Nota via `content_hash` +
+  DEFERRED constraint triggers (child tables `expense_requests_lines/_rels` keep DELETE only for Payload's
+  rewrite); `approvals` and `expense_line_snapshots` append-only (Class A, G1 in the DB); Class B guards on
+  receipts, transfers (amount = approved amount), cash entries and period closings; period lock trigger.
+- Payload 3.90.1 swallows COMMIT errors (`@payloadcms/drizzle` `commitTransaction`) → deferred checks are
+  forced inside every app-owned transaction so a violation fails the request instead of silently rolling back.
+
 ## [0.1.0] - 2026-09-23
 
 F0 design + F1 foundation (GATE F1 approved by the user 2026-09-23). Staging runs image `0.1.0-stg-f8529e6`
