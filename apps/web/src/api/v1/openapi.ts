@@ -48,6 +48,20 @@ export function buildOpenApiDocument(version: string) {
       503: { description: 'Degraded', content: { 'application/json': { schema: Ready } } },
     },
   })
+  // HEAD is documented (not left implicit): uptime monitors rely on it, and it is a real
+  // endpoint (headOf() in http.ts) — same status as GET, no body.
+  registry.registerPath({
+    method: 'head',
+    path: '/health',
+    summary: 'Liveness (HEAD: status only, no body)',
+    responses: { 200: { description: 'Process up' } },
+  })
+  registry.registerPath({
+    method: 'head',
+    path: '/health/ready',
+    summary: 'Readiness (HEAD: status only, no body)',
+    responses: { 200: { description: 'Ready' }, 503: { description: 'Degraded' } },
+  })
   registry.registerPath({
     method: 'get',
     path: '/me',

@@ -446,6 +446,14 @@ export const openapiDocument = {
             }
           }
         }
+      },
+      "head": {
+        "summary": "Liveness (HEAD: status only, no body)",
+        "responses": {
+          "200": {
+            "description": "Process up"
+          }
+        }
       }
     },
     "/health/ready": {
@@ -471,6 +479,17 @@ export const openapiDocument = {
                 }
               }
             }
+          }
+        }
+      },
+      "head": {
+        "summary": "Readiness (HEAD: status only, no body)",
+        "responses": {
+          "200": {
+            "description": "Ready"
+          },
+          "503": {
+            "description": "Degraded"
           }
         }
       }

@@ -445,6 +445,14 @@
             }
           }
         }
+      },
+      "head": {
+        "summary": "Liveness (HEAD: status only, no body)",
+        "responses": {
+          "200": {
+            "description": "Process up"
+          }
+        }
       }
     },
     "/health/ready": {
@@ -470,6 +478,17 @@
                 }
               }
             }
+          }
+        }
+      },
+      "head": {
+        "summary": "Readiness (HEAD: status only, no body)",
+        "responses": {
+          "200": {
+            "description": "Ready"
+          },
+          "503": {
+            "description": "Degraded"
           }
         }
       }
