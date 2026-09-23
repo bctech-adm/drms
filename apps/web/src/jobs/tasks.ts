@@ -37,4 +37,43 @@ export const auditDailyAnchorTask: TaskConfig<{
   },
 }
 
-export const tasks = [auditDailyAnchorTask]
+/**
+ * Outbound email to ONE app user, ALWAYS through the queue → sent by the worker (not in the web
+ * request): SMTP latency/outages never block a request, and a send refused by the mailbox rate
+ * guard (EmailRateLimitedError, src/email/rate-guard.ts) or a transient SMTP error is retried with
+ * exponential backoff (150 s base, 6 attempts ≈ 2.6 h) instead of being lost.
+ * The input holds the USER ID, not the address: Payload logs the job input on task errors, and
+ * addresses must not end up in logs/Loki (PII); the address is resolved when sending. Inactive or
+ * address-less users are skipped. From is forced by the adapter; without SMTP (dev) Payload's
+ * console adapter logs the mail instead.
+ */
+export const sendEmailTask: TaskConfig<{
+  input: { userId: number; subject: string; text: string }
+  output: { messageId: string }
+}> = {
+  slug: 'sendEmail',
+  inputSchema: [
+    { name: 'userId', type: 'number', required: true },
+    { name: 'subject', type: 'text', required: true, maxLength: 200 },
+    { name: 'text', type: 'textarea', required: true, maxLength: 20_000 },
+  ],
+  outputSchema: [{ name: 'messageId', type: 'text' }],
+  retries: { attempts: 6, backoff: { type: 'exponential', delay: 150_000 } },
+  handler: async ({ input, req, job }) => {
+    const user = await req.payload
+      .findByID({ collection: 'users', id: input.userId, depth: 0, select: { email: true, active: true }, overrideAccess: true /* SYSTEM-READ: recipient address */, req })
+      .catch(() => null)
+    if (!user?.email || user.active === false) {
+      req.payload.logger.warn({ msg: 'email skipped (user missing, inactive or without address)', jobId: job.id, userId: input.userId })
+      return { output: { messageId: '' } }
+    }
+    const info = (await req.payload.sendEmail({ to: user.email, subject: input.subject, text: input.text })) as
+      | { messageId?: string }
+      | undefined
+    const messageId = typeof info?.messageId === 'string' ? info.messageId : ''
+    req.payload.logger.info({ msg: 'email sent', jobId: job.id, userId: input.userId, messageId })
+    return { output: { messageId } }
+  },
+}
+
+export const tasks = [auditDailyAnchorTask, sendEmailTask]

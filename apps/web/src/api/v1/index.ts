@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 
+import { testEmailEndpoint } from './endpoints/admin'
 import { registerDeviceEndpoint, revokeDeviceEndpoint } from './endpoints/devices'
 import { healthEndpoint, healthHeadEndpoint, readyEndpoint, readyHeadEndpoint } from './endpoints/health'
 import { mastersEndpoint } from './endpoints/masters'
@@ -16,5 +17,6 @@ export const v1Endpoints: Endpoint[] = [
   mastersEndpoint,
   registerDeviceEndpoint,
   revokeDeviceEndpoint,
+  testEmailEndpoint,
   openapiEndpoint,
 ]

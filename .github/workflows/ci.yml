@@ -70,6 +70,28 @@ jobs:
         env:
           PG_SUPERUSER_URL: postgres://postgres:ci-throwaway-superuser@127.0.0.1:5432/postgres
         run: node apps/web/test-env/ci-bootstrap.mjs
+      - name: Throwaway SMTP sink (Mailpit, MIT; STARTTLS required + AUTH, throwaway CA, loopback only)
+        run: |
+          d="$RUNNER_TEMP/smtp"; mkdir -p "$d"; cd "$d"
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -days 1 -subj "/CN=pk-smtp CI CA"
+          openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr -subj "/CN=localhost"
+          printf 'subjectAltName=DNS:localhost\nextendedKeyUsage=serverAuth\n' > ext.cnf
+          openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 1 -extfile ext.cnf
+          p="$(openssl rand -hex 24)"; echo "::add-mask::$p"
+          printf '%s' "$p" > smtp_password; echo "no-reply@pk-smtp.test:$p" > auth.txt; chmod 644 ./*
+          docker run -d --name pk-smtp-mailpit --memory 96m --cap-drop ALL --security-opt no-new-privileges:true \
+            -p 127.0.0.1:1025:1025 -p 127.0.0.1:8025:8025 -v "$d:/certs:ro" \
+            axllent/mailpit:v1.31.2@sha256:74d609a42ec279aa63c6b4622a6fa9b5408d1ad5b1d76a1c4be40a265ce0863d \
+            --smtp-tls-cert /certs/server.crt --smtp-tls-key /certs/server.key --smtp-require-starttls \
+            --smtp-auth-file /certs/auth.txt --smtp-disable-rdns --max 100
+          {
+            echo "PK_TEST_SMTP_HOST=localhost"
+            echo "PK_TEST_SMTP_PORT=1025"
+            echo "PK_TEST_SMTP_USER=no-reply@pk-smtp.test"
+            echo "PK_TEST_SMTP_PASSWORD_FILE=$d/smtp_password"
+            echo "PK_TEST_MAILPIT_API=http://127.0.0.1:8025"
+            echo "NODE_EXTRA_CA_CERTS=$d/ca.crt"
+          } >> "$GITHUB_ENV"
       - name: Integration tests
         run: |
           export PK_TEST_DATABASE_URL="postgres://pk_test_app:${PK_F1_APP_PASSWORD}@127.0.0.1:5432/pk_test"

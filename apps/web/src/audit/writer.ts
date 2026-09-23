@@ -37,6 +37,7 @@ export const AUDIT_ACTIONS = [
   'period_close',
   'period_reopen',
   'schema_maintenance',
+  'email_test',
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 

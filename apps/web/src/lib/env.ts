@@ -15,12 +15,80 @@ export const FILE_SECRETS = [
   'PAYLOAD_SECRET',
   'OIDC_WEB_CLIENT_SECRET',
   'KC_ADMIN_CLIENT_SECRET',
+  'SMTP_PASSWORD',
 ] as const
 
 const postgresUrl = z.string().regex(/^postgres(ql)?:\/\/\S+$/, 'must be a postgres:// URL')
 const httpUrl = z.url({ protocol: /^https?$/, message: 'must be an http(s) URL' })
 const bool = z.enum(['true', 'false']).default('false').transform((v) => v === 'true')
 const clientId = z.string().regex(/^[A-Za-z0-9._-]{1,64}$/)
+
+/**
+ * Outbound SMTP (mailbox no-reply@bimacreative.tech on mail.bimacreative.tech; limits and design in
+ * src/email/adapter.ts + src/email/rate-guard.ts). All-or-nothing: without SMTP_HOST (dev/tests/migrate) Payload
+ * keeps its console adapter. The From address MUST equal the authenticated mailbox (SMTP_USER):
+ * the mail server rejects/flags other senders (SPF/DMARC alignment + sender login maps).
+ */
+const SMTP_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM_ADDRESS', 'SMTP_FROM_NAME'] as const
+const smtpFields = {
+  SMTP_HOST: z
+    .string()
+    .regex(/^(?=.{1,253}$)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/, 'must be a hostname')
+    .optional(),
+  /** 465 = implicit TLS; any other port = STARTTLS, which is REQUIRED (requireTLS) before AUTH. */
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  SMTP_USER: z.email().optional(),
+  SMTP_PASSWORD: z.string().min(8, 'min 8 chars').optional(),
+  SMTP_FROM_ADDRESS: z.email().optional(),
+  /** Display name only; no characters that could break or inject into the From header. */
+  SMTP_FROM_NAME: z.string().regex(/^[^\r\n<>"@\\]{1,64}$/, 'max 64 chars, no CR/LF < > " @ \\').optional(),
+}
+type SmtpFieldsOut = { [K in keyof typeof smtpFields]?: z.output<(typeof smtpFields)[K]> }
+
+function refineSmtp(env: SmtpFieldsOut, ctx: z.RefinementCtx): void {
+  const set = SMTP_KEYS.filter((k) => env[k] !== undefined && env[k] !== '')
+  if (set.length === 0) return
+  for (const k of SMTP_KEYS) {
+    if (!set.includes(k)) ctx.addIssue({ code: 'custom', path: [k], message: 'required when any SMTP_* is set (all-or-nothing)' })
+  }
+  if (env.SMTP_FROM_ADDRESS && env.SMTP_USER && env.SMTP_FROM_ADDRESS.toLowerCase() !== env.SMTP_USER.toLowerCase()) {
+    ctx.addIssue({ code: 'custom', path: ['SMTP_FROM_ADDRESS'], message: 'must equal SMTP_USER (the authenticated mailbox)' })
+  }
+}
+
+export type SmtpConfig = {
+  host: string
+  port: number
+  user: string
+  password: string
+  fromAddress: string
+  fromName: string
+  /** EHLO name = APP_URL host (a real FQDN); nodemailer's fallback is "[127.0.0.1]" in containers. */
+  ehloName?: string
+}
+
+function hostOf(url: string | undefined): string | undefined {
+  try {
+    return url ? new URL(url).hostname || undefined : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Validated SMTP settings, or null when SMTP is not configured. */
+export function smtpConfigOf(env: SmtpFieldsOut & { APP_URL?: string }): SmtpConfig | null {
+  if (!env.SMTP_HOST) return null
+  const ehloName = hostOf(env.APP_URL)
+  return {
+    ...(ehloName ? { ehloName } : {}),
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT!,
+    user: env.SMTP_USER!,
+    password: env.SMTP_PASSWORD!,
+    fromAddress: env.SMTP_FROM_ADDRESS!,
+    fromName: env.SMTP_FROM_NAME!,
+  }
+}
 
 export const envSchema = z
   .object({
@@ -50,8 +118,10 @@ export const envSchema = z
     AUTH_COOKIE_INSECURE: bool,
     MEDIA_DIR: z.string().startsWith('/').default('/data/media'),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+    ...smtpFields,
   })
   .superRefine((env, ctx) => {
+    refineSmtp(env, ctx)
     if (env.AUTH_COOKIE_INSECURE && env.APP_URL.startsWith('https://')) {
       ctx.addIssue({ code: 'custom', path: ['AUTH_COOKIE_INSECURE'], message: 'not allowed with https APP_URL' })
     }
@@ -71,6 +141,31 @@ export const envSchema = z
   })
 
 export type Env = z.infer<typeof envSchema>
+
+const smtpEnvSchema = z.object(smtpFields).superRefine(refineSmtp)
+
+function formatIssues(error: z.ZodError): string {
+  return error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ')
+}
+
+/**
+ * SMTP subset only — used at Payload config build time (payload.config.ts), where the full env
+ * is not available (`next build`, migrate/seed containers). Same rules as envSchema; throws
+ * `Invalid env: …` (names only, never values) when SMTP is half-configured.
+ */
+export function parseSmtpEnv(
+  source: Record<string, string | undefined>,
+  read?: FileReader,
+): SmtpConfig | null {
+  const subset: Record<string, string | undefined> = { SMTP_PASSWORD_FILE: source.SMTP_PASSWORD_FILE }
+  for (const k of SMTP_KEYS) subset[k] = source[k]
+  const resolved = resolveFileSecrets(subset, read)
+  // Empty strings (e.g. `SMTP_HOST=` from a compose default) count as unset.
+  for (const k of SMTP_KEYS) if (resolved[k] === '') delete resolved[k]
+  const result = smtpEnvSchema.safeParse(resolved)
+  if (!result.success) throw new Error(`Invalid env: ${formatIssues(result.error)}`)
+  return smtpConfigOf({ ...result.data, APP_URL: source.APP_URL })
+}
 
 const SECRET_LIKE = /(SECRET|PASSWORD|PASSWD|TOKEN|PRIVATE|DATABASE|_KEY$|^KEY)/i
 
@@ -120,11 +215,9 @@ export function readSecret(name: (typeof FILE_SECRETS)[number]): string {
 export function parseEnv(source: Record<string, string | undefined>): Env {
   assertNoPublicSecrets(source)
   const resolved = resolveFileSecrets(source)
+  for (const k of SMTP_KEYS) if (resolved[k] === '') delete resolved[k]
   const result = envSchema.safeParse(resolved)
-  if (!result.success) {
-    const msg = result.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`).join('; ')
-    throw new Error(`Invalid env: ${msg}`)
-  }
+  if (!result.success) throw new Error(`Invalid env: ${formatIssues(result.error)}`)
   return result.data
 }
 
