@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   // npm workspaces hoist node_modules to the repo root → trace from there.
   outputFileTracingRoot: repoRoot,
   turbopack: { root: repoRoot },
+  // F2b: pdfkit (@react-pdf/renderer, a default server-external package) loads its standard fonts
+  // with require('#standard-fonts/<Name>') → js/standard-fonts/*.cjs; the tracer only picks the .mjs
+  // variants, so the standalone image failed at the first render ("Cannot find module …/Helvetica.cjs",
+  // found by the F2b image smoke test). Globs are resolved from apps/web (Next docs: output.md).
+  outputFileTracingIncludes: { '/api/*': ['../../node_modules/pdfkit/js/standard-fonts/**/*'] },
   poweredByHeader: false,
   // F1 spike (g): Turbopack production builds were OOM-killed at 1536 and 1900 MiB caps; webpack
   // with memory optimisations keeps the build inside the RAM budget (report §g).

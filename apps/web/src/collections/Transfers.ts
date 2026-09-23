@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { RIWAYAT_TAB } from '@/admin/config'
+
 import { denyAll, hasRole } from '@/access/roles'
 import { reasonOnChange, withAudit } from '@/audit/hooks'
 import { byVisibleRequest, denyDeleteLogged } from '@/domain/expense/access'
@@ -18,7 +20,7 @@ export const Transfers: CollectionConfig = withAudit(
   {
     slug: 'transfers',
     labels: { singular: 'Transfer', plural: 'Transfer' },
-    admin: { group: 'Keuangan', useAsTitle: 'docNo', defaultColumns: ['docNo', 'request', 'kind', 'amount', 'transferDate', 'status'] },
+    admin: { group: 'Keuangan', useAsTitle: 'docNo', defaultColumns: ['docNo', 'request', 'kind', 'amount', 'transferDate', 'status'], components: { views: { edit: RIWAYAT_TAB } } },
     access: {
       // Finance/Owner/Admin all; requesters own; PM team (via the request scope).
       read: async (args) => (hasRole(args.req, 'pk-finance', 'pk-owner', 'pk-admin') ? true : byVisibleRequest('request')(args)),

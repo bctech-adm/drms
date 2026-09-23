@@ -270,6 +270,85 @@ export function buildOpenApiDocument(version: string) {
     responses: res(200, 'Re-opened', F.PeriodClosing, [400, 401, 403, 409, 422, 429]),
   })
 
+  // ---- F2b: LPJ & settlement (T5), PDF, approval inbox, notifications, file download ----
+  post('/expense-requests/{id}/receipts-complete', 'Uang Muka: receipts complete → "Nota Lengkap" (LPJ draft created)', F.EmptyBody, ['id'], detailOk())
+  post('/expense-requests/{id}/lpj/submit', 'Uang Muka: submit / resubmit the LPJ (usage description; LPJ number at first submit)', F.LpjSubmitBody, ['id'], detailOk())
+  post('/expense-requests/{id}/lpj/request-revision', 'Finance: LPJ revision with a required note → "LPJ Revisi"', F.RevisionBody, ['id'], detailOk())
+  post('/expense-requests/{id}/lpj/verify', 'Finance: verify the LPJ (all receipts decided; verified total = Σ valid); difference 0 → Selesai', F.EmptyBody, ['id'], detailOk())
+  post(
+    '/expense-requests/{id}/settle',
+    'Finance: settle the verified LPJ — surplus → KM "Pengembalian LPJ", shortfall → transfer + KK (bank ref + proof) → Selesai',
+    F.SettleBody,
+    ['id'],
+    res(200, 'Settled', F.SettleResult, [400, 401, 403, 404, 409, 422, 426, 429]),
+  )
+  registry.registerPath({
+    method: 'get',
+    path: '/expense-requests/{id}/pdf',
+    summary: 'PDF "Pengajuan Biaya" (client form replica + receipt photos); any status after submit; audited as export',
+    security,
+    request: { headers: deviceHeader, params: idParams('id'), query: F.PdfQuery },
+    responses: {
+      200: { description: 'PDF (attachment)', content: { 'application/pdf': { schema: z.string().meta({ format: 'binary' }) } } },
+      ...problemResponses(400, 401, 403, 404, 409, 426, 429, 503),
+    },
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/approvals/inbox',
+    summary: 'Requests waiting for the caller\'s "Diketahui"/approval, with budget impact % before → after and open flags (US-26, US-59)',
+    security,
+    request: { headers: deviceHeader },
+    responses: res(200, 'Inbox', F.ApprovalInbox, [401, 426]),
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/notifications',
+    summary: 'Own in-app notifications, newest first (cursor paging); unreadCount',
+    security,
+    request: { headers: deviceHeader, query: F.NotificationQuery },
+    responses: res(200, 'Page', F.NotificationList, [400, 401, 426]),
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/notifications/{id}',
+    summary: 'One own notification by id or uuid (FCM data message carries the uuid, ADR 0011)',
+    security,
+    request: { headers: deviceHeader, params: z.object({ id: z.string().meta({ description: 'Numeric id or uuid' }) }) },
+    responses: res(200, 'Notification', F.Notification, [401, 404, 426]),
+  })
+  registry.registerPath({
+    method: 'post',
+    path: '/notifications/{id}/read',
+    summary: 'Mark one own notification read (idempotent)',
+    security,
+    request: { headers: deviceHeader, params: z.object({ id: z.string().meta({ description: 'Numeric id or uuid' }) }) },
+    responses: res(200, 'Notification', F.Notification, [401, 404, 426, 429]),
+  })
+  registry.registerPath({
+    method: 'post',
+    path: '/notifications/read-all',
+    summary: 'Mark all own notifications read',
+    security,
+    request: { headers: deviceHeader },
+    responses: res(200, 'Updated', F.ReadAllResult, [401, 426, 429]),
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/media/{collection}/{id}/file',
+    summary: 'Download a stored file the caller may read (owner-document scope; else 404); private, no-store',
+    security,
+    request: {
+      headers: deviceHeader,
+      params: z.object({ collection: F.FileCollectionEnum, id: z.string().regex(/^\d+$/) }),
+      query: z.object({ variant: z.enum(['thumb']).optional() }),
+    },
+    responses: {
+      200: { description: 'File bytes (image/jpeg, image/png, image/webp thumb, application/pdf)', content: { 'application/octet-stream': { schema: z.string().meta({ format: 'binary' }) } } },
+      ...problemResponses(400, 401, 404, 426, 429),
+    },
+  })
+
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: '3.1.0',
     info: {

@@ -211,6 +211,9 @@ export async function voidEntry(req: PayloadRequest, id: number, reason: string,
   if (e.status === 'void') fail(409, 'Transaksi sudah di-void.')
   if (e.sourceType === 'reversal') fail(409, 'Jurnal balik tidak dapat di-void.')
   if (e.sourceType === 'transfer' && !opts.viaTransfer) fail(409, 'Kas keluar dari transfer di-void lewat pembatalan transfer.')
+  // F2b: the LPJ refund belongs to a settled request ("Selesai"); voiding it alone would leave the
+  // settlement inconsistent → not allowed (settlement reversal is a follow-up, see F2b report).
+  if (e.sourceType === 'settlement_refund') fail(409, 'Kas masuk pengembalian LPJ tidak dapat di-void terpisah dari LPJ.')
   const lock = await currentLockDate(req)
   const reversalDate = lock && e.entryDate <= lock ? await today(req) : e.entryDate
   const reversal = await postEntry(req, {

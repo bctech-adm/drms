@@ -1,0 +1,48 @@
+import type { CollectionConfig } from 'payload'
+
+import { denyAll } from '@/access/roles'
+import { byRole, ownUser } from '@/access/policies'
+import { uuidField } from '@/fields/common'
+
+import { ro } from './fields-f2'
+
+/**
+ * In-app notifications (requirements v1.1 M12/US-05, architecture §4.4 `notifications`, ADR 0011 §5:
+ * "in-app is the source of truth; push only wakes the app"). One row per recipient and event,
+ * written by the domain service in the SAME transaction as the status change. Each user reads only
+ * their own rows (GET /api/v1/notifications); only `readAt` / push delivery columns change later
+ * (DB: identity columns immutable once set, no DELETE for the app role).
+ * `pushStatus`: `skipped` while push is disabled (F2), `pending` for the F4 FCM dispatcher.
+ */
+export const Notifications: CollectionConfig = {
+  slug: 'notifications',
+  labels: { singular: 'Notifikasi', plural: 'Notifikasi' },
+  admin: { group: 'Sistem', useAsTitle: 'title', defaultColumns: ['user', 'event', 'title', 'docNo', 'readAt', 'createdAt'] },
+  access: {
+    read: byRole({ 'pk-staff': ownUser('user'), 'pk-pm': ownUser('user'), 'pk-finance': ownUser('user'), 'pk-owner': ownUser('user'), 'pk-admin': ownUser('user') }),
+    create: denyAll,
+    update: denyAll,
+    delete: denyAll,
+  },
+  lockDocuments: false,
+  fields: [
+    { name: 'user', type: 'relationship', relationTo: 'users', label: 'Penerima', required: true, index: true, admin: ro },
+    { name: 'event', type: 'text', label: 'Event', required: true, maxLength: 64, index: true, admin: ro },
+    { name: 'title', type: 'text', label: 'Judul', required: true, maxLength: 160, admin: ro },
+    { name: 'body', type: 'textarea', label: 'Isi', required: true, maxLength: 1000, admin: ro },
+    { name: 'docType', type: 'text', label: 'Jenis dokumen', maxLength: 64, admin: ro },
+    { name: 'docId', type: 'text', label: 'ID dokumen', maxLength: 64, index: true, admin: ro },
+    { name: 'docNo', type: 'text', label: 'No. dokumen', maxLength: 64, admin: ro },
+    { name: 'readAt', type: 'date', label: 'Dibaca', index: true, admin: { ...ro, date: { pickerAppearance: 'dayAndTime' } } },
+    {
+      name: 'pushStatus',
+      type: 'select',
+      label: 'Status push',
+      required: true,
+      defaultValue: 'skipped',
+      options: ['skipped', 'pending', 'sent', 'failed'].map((v) => ({ label: v, value: v })),
+      admin: ro,
+    },
+    uuidField(),
+  ],
+}

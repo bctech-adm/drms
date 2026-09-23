@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { RIWAYAT_TAB } from '@/admin/config'
+
 import { denyAll } from '@/access/roles'
 import { reasonOnChange, withAudit } from '@/audit/hooks'
 import { byVisibleRequest, denyDeleteLogged } from '@/domain/expense/access'
@@ -18,7 +20,7 @@ export const Receipts: CollectionConfig = withAudit(
   {
     slug: 'receipts',
     labels: { singular: 'Nota', plural: 'Nota' },
-    admin: { group: 'Keuangan', useAsTitle: 'receiptNo', defaultColumns: ['request', 'lineNo', 'receiptNo', 'vendorName', 'receiptDate', 'amount', 'status'] },
+    admin: { group: 'Keuangan', useAsTitle: 'receiptNo', defaultColumns: ['request', 'lineNo', 'receiptNo', 'vendorName', 'receiptDate', 'amount', 'status'], components: { views: { edit: RIWAYAT_TAB } } },
     access: { read: byVisibleRequest('request'), create: denyAll, update: denyAll, delete: denyDeleteLogged('receipt') },
     fields: [
       { name: 'request', type: 'relationship', relationTo: 'expense-requests', required: true, index: true, admin: ro },

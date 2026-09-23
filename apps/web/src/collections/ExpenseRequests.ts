@@ -1,5 +1,7 @@
 import { APIError, ValidationError, type CollectionAfterChangeHook, type CollectionBeforeChangeHook, type CollectionConfig, type Field } from 'payload'
 
+import { RIWAYAT_TAB } from '@/admin/config'
+
 import { relId, userId } from '@/access/roles'
 import { fieldNever, rolesAllowed } from '@/access/policies'
 import { normalizeValue, reasonOnChange, withAudit } from '@/audit/hooks'
@@ -11,6 +13,7 @@ import { isBusinessDate, isContentEditable, REQUEST_STATUSES, STATUS_LABELS, typ
 import { rupiahField, uuidField } from '@/fields/common'
 import { requestMeta } from '@/lib/request-meta'
 import { forceDeferredChecks } from '@/lib/system-tx'
+import { notifyTransition } from '@/domain/notifications'
 
 /**
  * T1 Pengajuan biaya (requirements v1.1 §7 T1; architecture §4.3, §5.1/§5.2).
@@ -121,6 +124,13 @@ const auditLines: CollectionAfterChangeHook = async ({ doc, previousDoc, operati
   return doc
 }
 
+/** In-app notifications on every status transition (US-05, ADR 0011 §5) — same transaction. */
+const notify: CollectionAfterChangeHook = async ({ doc, previousDoc, operation, req, context }) => {
+  if (operation !== 'update' || context?.pkTransition !== true || !previousDoc) return doc
+  await notifyTransition(req, { status: previousDoc.status as RequestStatus, currentLevel: previousDoc.currentLevel as number | null }, doc as never)
+  return doc
+}
+
 export const ExpenseRequests: CollectionConfig = withAudit(
   {
     slug: 'expense-requests',
@@ -130,6 +140,7 @@ export const ExpenseRequests: CollectionConfig = withAudit(
       group: 'Keuangan',
       defaultColumns: ['docNo', 'type', 'title', 'status', 'grandTotal', 'createdBy', 'updatedAt'],
       listSearchableFields: ['docNo', 'title'],
+      components: { views: { edit: RIWAYAT_TAB } },
     },
     access: {
       read: requestReadAccess,
@@ -138,9 +149,11 @@ export const ExpenseRequests: CollectionConfig = withAudit(
       update: requestUpdateAccess,
       delete: denyDeleteLogged('expense_request'),
     },
-    hooks: { beforeChange: [beforeChange], afterChange: [auditLines] },
+    hooks: { beforeChange: [beforeChange], afterChange: [auditLines, notify] },
     fields: [
       { name: 'docNo', type: 'text', label: 'Nomor', unique: true, index: true, access: system, admin: { ...ro, position: 'sidebar' } },
+      // M16 / US-46: "Cetak PDF" (audited API download); UI only, no column.
+      { name: 'pdfLinks', type: 'ui', label: 'PDF', admin: { position: 'sidebar', components: { Field: '@/admin/components/PdfLinks#PdfLinks' } } },
       {
         name: 'type',
         type: 'select',
@@ -214,6 +227,7 @@ export const ExpenseRequests: CollectionConfig = withAudit(
       { ...rupiahField('grandTotal', 'Grand total (Rp)'), access: system, admin: { ...ro, position: 'sidebar' } },
       { ...rupiahField('approvedAmount', 'Nominal disetujui (Rp)'), access: system, admin: { ...ro, position: 'sidebar' } },
       { ...rupiahField('transferredTotal', 'Total ditransfer (Rp)'), access: system, admin: { ...ro, position: 'sidebar' } },
+      { ...rupiahField('verifiedReceiptsTotal', 'Total nota terverifikasi LPJ (Rp)'), access: system, admin: { ...ro, position: 'sidebar' } },
       { name: 'attachments', type: 'upload', relationTo: 'media-attachments', hasMany: true, label: 'Lampiran umum' },
       { name: 'approvalRule', type: 'relationship', relationTo: 'approval-rules', label: 'Aturan approval', access: system, admin: ro },
       { name: 'approvalSnapshot', type: 'json', label: 'Snapshot aturan approval', access: system, admin: jsonView },

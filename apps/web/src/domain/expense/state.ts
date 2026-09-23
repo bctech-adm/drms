@@ -26,6 +26,12 @@ export const ACTIONS = [
   'transfer_void',
   'complete',
   'resubmit',
+  // F2b — T5 LPJ & settlement (Uang Muka only, architecture §5.1/§5.3)
+  'receipts_complete',
+  'lpj_submit',
+  'lpj_request_revision',
+  'lpj_verify',
+  'settle',
 ] as const
 export type Action = (typeof ACTIONS)[number]
 
@@ -56,6 +62,13 @@ export const TRANSITIONS: readonly Row[] = [
   { types: ['reimburse'], from: ['receipts_verified'], action: 'transfer', to: ['transferred'] },
   { types: ['reimburse'], from: ['transferred'], action: 'transfer_void', to: ['receipts_verified'] },
   { types: ['reimburse'], from: ['transferred'], action: 'complete', to: ['completed'] },
+  // Uang Muka LPJ (T5): receipts complete → LPJ submitted ⇄ revision → verified → settled.
+  // lpj_verify → completed directly when the difference is 0 (nothing to settle).
+  { types: ['advance'], from: ['transferred'], action: 'receipts_complete', to: ['receipts_complete'] },
+  { types: ['advance'], from: ['receipts_complete', 'lpj_revision'], action: 'lpj_submit', to: ['lpj_submitted'] },
+  { types: ['advance'], from: ['lpj_submitted'], action: 'lpj_request_revision', to: ['lpj_revision'] },
+  { types: ['advance'], from: ['lpj_submitted'], action: 'lpj_verify', to: ['lpj_verified', 'completed'] },
+  { types: ['advance'], from: ['lpj_verified'], action: 'settle', to: ['completed'] },
 ]
 
 export class TransitionError extends Error {
@@ -138,7 +151,13 @@ export function allowedActions(ctx: ActorContext): Action[] {
     'reject',
     !selfInvolved && !ctx.alreadyDecided && (ctx.status === 'pending_ack' ? ctx.isAcknowledger : ctx.matchesCurrentStep),
   )
-  add('receipt_verify', has(ctx, 'pk-finance') && ctx.type === 'reimburse' && (ctx.status === 'approved' || ctx.status === 'receipts_verified'))
+  add(
+    'receipt_verify',
+    has(ctx, 'pk-finance') &&
+      ((ctx.type === 'reimburse' && (ctx.status === 'approved' || ctx.status === 'receipts_verified')) ||
+        // LPJ review (Uang Muka): valid/rejected per receipt, no status change; not on one's own LPJ.
+        (ctx.type === 'advance' && ctx.status === 'lpj_submitted' && !selfInvolved)),
+  )
   add('receipt_reject', has(ctx, 'pk-finance'))
   add('receipts_resubmit', own)
   add('verify_receipts', has(ctx, 'pk-finance'))
@@ -147,6 +166,13 @@ export function allowedActions(ctx: ActorContext): Action[] {
   add('transfer_void', has(ctx, 'pk-finance'))
   add('complete', own || has(ctx, 'pk-finance'))
   add('resubmit', ctx.status === 'rejected' && own)
+  // T5 (US-08, US-21, US-22): the requester side completes receipts and (re)submits the LPJ;
+  // Finance reviews, requests revision, verifies and settles — never on its own request (G1 spirit).
+  add('receipts_complete', own)
+  add('lpj_submit', own)
+  add('lpj_request_revision', has(ctx, 'pk-finance') && !selfInvolved)
+  add('lpj_verify', has(ctx, 'pk-finance') && !selfInvolved)
+  add('settle', has(ctx, 'pk-finance') && !selfInvolved)
   add('add_receipt', own && receiptsEditable(ctx.type, ctx.status))
   return out
 }

@@ -6,7 +6,8 @@ import { healthEndpoint, healthHeadEndpoint, readyEndpoint, readyHeadEndpoint } 
 import { CASH_ENDPOINTS } from './endpoints/cash'
 import { EXPENSE_ENDPOINTS } from './endpoints/expense-requests'
 import { mastersEndpoint } from './endpoints/masters'
-import { uploadMediaEndpoint } from './endpoints/media'
+import { mediaFileEndpoint, uploadMediaEndpoint } from './endpoints/media'
+import { NOTIFICATION_ENDPOINTS } from './endpoints/notifications'
 import { meEndpoint } from './endpoints/me'
 import { openapiEndpoint } from './endpoints/openapi'
 
@@ -26,4 +27,7 @@ export const v1Endpoints: Endpoint[] = [
   ...EXPENSE_ENDPOINTS,
   ...CASH_ENDPOINTS,
   uploadMediaEndpoint,
+  // F2b: scoped file download (APK), in-app notifications
+  mediaFileEndpoint,
+  ...NOTIFICATION_ENDPOINTS,
 ]

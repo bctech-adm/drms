@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { RIWAYAT_TAB } from '@/admin/config'
+
 import { denyAll } from '@/access/roles'
 import { byRole } from '@/access/policies'
 import { reasonOnChange, withAudit } from '@/audit/hooks'
@@ -21,7 +23,7 @@ export const CashEntries: CollectionConfig = withAudit(
   {
     slug: 'cash-entries',
     labels: { singular: 'Transaksi kas', plural: 'Transaksi kas' },
-    admin: { group: 'Keuangan', useAsTitle: 'entryNo', defaultColumns: ['entryNo', 'entryDate', 'direction', 'amount', 'cashAccount', 'sourceType', 'status'] },
+    admin: { group: 'Keuangan', useAsTitle: 'entryNo', defaultColumns: ['entryNo', 'entryDate', 'direction', 'amount', 'cashAccount', 'sourceType', 'status'], components: { views: { edit: RIWAYAT_TAB } } },
     access: {
       read: byRole({ 'pk-finance': true, 'pk-owner': true, 'pk-admin': true }),
       create: denyAll,
