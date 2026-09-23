@@ -151,3 +151,13 @@ export function pdfPageCount(pdf: Buffer): number {
 export function pdfFlatText(pdf: Buffer): string {
   return pdfTextRuns(pdf).join(' ').replace(/\s+/g, ' ')
 }
+
+/** JSON with Buffers as {__b64} (PdfData → child process). */
+export function serializePdfData(d: unknown): string {
+  return JSON.stringify(d, (_k, v: unknown) => {
+    if (v && typeof v === 'object' && (v as { type?: string }).type === 'Buffer' && Array.isArray((v as { data?: unknown }).data)) {
+      return { __b64: Buffer.from((v as { data: number[] }).data).toString('base64') }
+    }
+    return v
+  })
+}

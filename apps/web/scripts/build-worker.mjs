@@ -16,7 +16,9 @@ await build({
   format: 'esm',
   tsconfig: path.join(root, 'tsconfig.json'),
   // Native / optional modules stay external (present in the standalone node_modules).
-  external: ['sharp', 'pg-native', 'drizzle-kit', 'drizzle-kit/*', 'esbuild', 'tsx', '@next/env', 'next', 'next/*', 'react', 'react-dom'],
+  // @react-pdf/renderer: pdfkit loads its standard fonts via package subpath imports ('#standard-fonts/…')
+  // that do not survive bundling; it is traced into the standalone node_modules by next build.
+  external: ['sharp', 'pg-native', 'drizzle-kit', 'drizzle-kit/*', 'esbuild', 'tsx', '@next/env', 'next', 'next/*', 'react', 'react-dom', '@react-pdf/renderer'],
   banner: { js: "import{createRequire as __pkCreateRequire}from'node:module';const require=__pkCreateRequire(import.meta.url);" },
   logLevel: 'info',
   metafile: false,

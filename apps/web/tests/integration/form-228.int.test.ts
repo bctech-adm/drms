@@ -1,11 +1,23 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { build } from 'esbuild'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
+import { buildPdfData } from '@/pdf/data'
+import { formatAmount } from '@/pdf/format'
+
+import { pdfFlatText, pdfPageCount, pdfTextRuns, serializePdfData } from '../fixtures/pdf-text'
+import { receiptImage, signatureImage } from '../fixtures/receipt-image'
 
 import { submit } from '@/domain/expense/workflow'
 import { normalizePlate } from '@/domain/plates'
 import { FORM_228 } from '@/seed/form-fixture'
 
 import { getTestPayload, installFakeKeycloak, sqlAs } from './helpers'
-import { api, asUser, makeFlowUser, png, upload, type FlowUser } from './flow-world'
+import { api, asUser, makeFlowUser, png, upload, uploadMedia, type FlowUser } from './flow-world'
 import { DEFAULT_APPROVAL_RULES } from '@/seed/data'
 import { seed } from '@/seed/seed'
 
@@ -18,7 +30,7 @@ import { seed } from '@/seed/seed'
 type Ids = Record<string, number>
 const emp: Ids = {}
 const m: Ids = {}
-let citra: FlowUser, budiH: FlowUser, sari: FlowUser, finance: FlowUser
+let citra: FlowUser, budiH: FlowUser, sari: FlowUser, finance: FlowUser, budi: FlowUser
 let requestId: number
 let lineIds: string[] = []
 let counterBefore: number | null
@@ -38,9 +50,14 @@ beforeAll(async () => {
   installFakeKeycloak()
   await seed(p)
   for (const c of ['EMP-001', 'EMP-002', 'EMP-003', 'EMP-004', 'EMP-005']) emp[c] = await idOf('employees', 'code', c)
-  citra = await makeFlowUser(['pk-admin'], 'citra', emp['EMP-003']!)
-  budiH = await makeFlowUser(['pk-pm'], 'budi-hartono', emp['EMP-004']!)
-  sari = await makeFlowUser(['pk-owner'], 'sari', emp['EMP-005']!)
+  citra = await makeFlowUser(['pk-admin'], 'citra', emp['EMP-003']!, { signature: false })
+  budiH = await makeFlowUser(['pk-pm'], 'budi-hartono', emp['EMP-004']!, { signature: false })
+  sari = await makeFlowUser(['pk-owner'], 'sari', emp['EMP-005']!, { signature: false })
+  // Signature-like PNGs (fictional strokes) so the sample PDF shows the four signed positions.
+  for (const [i, u] of [citra, budiH, sari].entries()) {
+    const sig = await uploadMedia('media-signatures', u, await signatureImage(i + 3))
+    await p.update({ collection: 'users', id: u.id, data: { signature: sig }, overrideAccess: true /* SYSTEM-WRITE: fixture */, context: { skipKeycloakSync: true } })
+  }
   finance = await makeFlowUser(['pk-finance'], 'finance-228', null)
   m.cc = await idOf('cost-centers', 'code', FORM_228.costCenterCode)
   // Q-07 default: "Diketahui Oleh" = the cost center's manager (Budi Hartono on the form).
@@ -90,7 +107,9 @@ describe('form 228/PB-DRMS/20/IX/2026 (F2 acceptance fixture)', () => {
 
   it('receipts are attached per line (Reimburse: required before submit, US-38)', async () => {
     for (const [i, rc] of FORM_228.receipts.entries()) {
-      const img = await upload('/api/v1/media/receipts', citra, await png(9000 + i, 3000, 2000))
+      // Synthetic FICTIONAL receipt photo (bitmap text), 2400 px wide → resized to ≤ 2000 px.
+      const photo = await receiptImage([rc.vendorName.slice(0, 22), `NO ${rc.receiptNo}`, `TGL ${rc.receiptDate}${rc.receiptTime ? ` ${rc.receiptTime}` : ''}`, `TOTAL RP ${formatAmount(rc.amount)}`, 'TERIMA KASIH'], { width: 2400, px: 14 })
+      const img = await upload('/api/v1/media/receipts', citra, photo, 'image/jpeg')
       expect(img.status).toBe(201)
       expect(Math.max(img.body.width, img.body.height)).toBeLessThanOrEqual(2000) // resized, original discarded
       const r = await api('POST', `/api/v1/expense-requests/${requestId}/receipts`, citra, {
@@ -182,7 +201,7 @@ describe('form 228/PB-DRMS/20/IX/2026 (F2 acceptance fixture)', () => {
     const kk = await sqlAs('app', 'SELECT direction, amount::int, source_type, expense_request_id, cost_center_id FROM cash_entries WHERE id = $1', [t.body.cashEntryId])
     expect(kk.rows[0]).toEqual({ direction: 'out', amount: 1_447_500, source_type: 'transfer', expense_request_id: requestId, cost_center_id: m.cc })
 
-    const budi = await makeFlowUser(['pk-staff'], 'budi', emp['EMP-001']!)
+    budi = await makeFlowUser(['pk-staff'], 'budi', emp['EMP-001']!)
     const done = await api('POST', `/api/v1/expense-requests/${requestId}/complete`, budi, {})
     expect(done.status, JSON.stringify(done.body)).toBe(200)
     expect(done.body.status).toBe('completed')
@@ -213,3 +232,116 @@ describe('form 228/PB-DRMS/20/IX/2026 (F2 acceptance fixture)', () => {
     expect(dup.message).toContain('228/PB-DRMS/20/IX/2026')
   })
 })
+
+/**
+ * F2b golden test — PDF "Pengajuan Biaya" of the form 228 fixture through the real endpoint
+ * (ADR 0008 §7): text extraction finds the number, the grand total and the 4 signature positions
+ * with the fixture names; the internal variant is Finance/Owner/Admin only; every download is an
+ * `export` audit row; a Draft has no PDF. The rendered file is written to PK_PDF_SAMPLE_OUT (if
+ * set) for the user's visual review, and one render with the 3 receipt photos is measured in a
+ * separate Node process capped like staging web (heap 256 MiB).
+ */
+describe('PDF "Pengajuan Biaya" — form 228 golden test (US-46, ADR 0008)', () => {
+  let pdf: Buffer
+
+  it('GET …/pdf (Finance): application/pdf; number, TGL, subtitle, table, GRAND TOTAL Rp 1.447.500, 4 positions + names, transfer box, 3 receipts', async () => {
+    const r = await pdfGet(`/api/v1/expense-requests/${requestId}/pdf`, finance)
+    expect(r.status, r.text).toBe(200)
+    expect(r.headers.get('content-type')).toBe('application/pdf')
+    expect(r.headers.get('cache-control')).toBe('private, no-store')
+    expect(r.headers.get('content-disposition')).toBe('attachment; filename="Pengajuan-Biaya-228-PB-DRMS-20-IX-2026.pdf"')
+    pdf = r.bytes
+    if (process.env.PK_PDF_SAMPLE_OUT) writeFileSync(process.env.PK_PDF_SAMPLE_OUT, pdf)
+    const lines = pdfTextRuns(pdf)
+    expect(lines).toEqual(
+      expect.arrayContaining([
+        'PENGAJUAN BIAYA',
+        'PT DOUBLE REZKI MAKMUR SEJAHTERA',
+        '228-PB DRMS-Pengajuan Reimburse Ops Palangka Banjar keperluan Service Tronton',
+        'No Uraian Jumlah Satuan Harga Satuan Total Keterangan',
+        '2 Penginapan 2 kamar 339.000 677.000',
+        '3 Makan siang 170.500',
+        'GRAND TOTAL Rp 1.447.500',
+        'Diajukan Oleh Dibuat Oleh Diketahui Oleh Approval',
+        'Budi, Doni Pratama Citra Budi Hartono Sari',
+        'Transfer via : Bank Mandiri',
+        'Atas nama : Doni Pratama',
+        'No. rekening : 1234567890123',
+      ]),
+    )
+    const flat = pdfFlatText(pdf)
+    expect(flat).toMatch(/TGL\. ?: ?20 September 2026/)
+    expect(flat).toMatch(/NO\. ?: ?228\/PB-DRMS\/20\/IX\/2026/)
+    expect(lines.find((l) => l.startsWith('1 BBM Hilux Banjarmasin-Palangka'))).toMatch(/1 bulan 600\.000 600\.000$/)
+    // signature times (server, WITA) for all 4 positions
+    const signBlock = flat.slice(flat.indexOf('Diajukan Oleh'), flat.indexOf('Info Transfer'))
+    expect(signBlock.match(/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2} WITA/g)).toHaveLength(4)
+    expect(signBlock).toContain('ditandatangani Citra (diwakili)') // Q-10/Q-28: creator signs for "Budi, Doni"
+    expect(pdfPageCount(pdf)).toBe(3) // form + receipts 2 per page
+    expect(flat).not.toContain('Nota ganda') // flags only on the internal copy
+  })
+
+  it('internal variant: Finance sees the validation flags; Staff (requester) gets 403; standard copy allowed for the requester', async () => {
+    const internal = await pdfGet(`/api/v1/expense-requests/${requestId}/pdf?variant=internal`, finance)
+    expect(internal.status).toBe(200)
+    const flat = pdfFlatText(internal.bytes)
+    expect(flat).toContain('SALINAN INTERNAL')
+    expect(flat).toContain('Tanggal nota setelah tanggal pengajuan')
+    expect(flat).toContain('Selisih nominal nota vs baris')
+    expect((await pdfGet(`/api/v1/expense-requests/${requestId}/pdf?variant=internal`, budi)).status).toBe(403)
+    expect((await pdfGet(`/api/v1/expense-requests/${requestId}/pdf`, budi)).status).toBe(200)
+    const outsider = await makeFlowUser(['pk-staff'], 'outsider-pdf', null)
+    expect((await pdfGet(`/api/v1/expense-requests/${requestId}/pdf`, outsider)).status).toBe(404)
+    expect((await pdfGet(`/api/v1/expense-requests/${requestId}/pdf?variant=bogus`, finance)).status).toBe(400)
+    const exports = await sqlAs('app', "SELECT user_id::int, new_value FROM audit_logs WHERE doc_type = 'expense_request' AND doc_id = $1 AND action = 'export' ORDER BY id", [String(requestId)])
+    expect(exports.rows.map((x: { new_value: { v: { variant: string; status: string } } }) => x.new_value.v)).toEqual([
+      { variant: 'standard', status: 'completed' },
+      { variant: 'internal', status: 'completed' },
+      { variant: 'standard', status: 'completed' },
+    ])
+  })
+
+  it('Draft → 409 (no number yet)', async () => {
+    const r = await api('POST', '/api/v1/expense-requests', citra, { type: 'advance', title: 'draft pdf', costCenterId: m.cc, requesterIds: [emp['EMP-002']], bankAccountId: m.bank, lines: [{ description: 'x', total: 1000, categoryId: m['cat:KSM'] }] })
+    expect((await pdfGet(`/api/v1/expense-requests/${r.body.id}/pdf`, citra)).status).toBe(409)
+  })
+
+  it('peak RSS of one render with the 3 receipt photos (child process, --max-old-space-size=256)', async () => {
+    const data = await asUser(finance, (req) => buildPdfData(req, requestId, { internal: false, printedBy: 'Finance' }))
+    expect(data.receipts.filter((r) => r.image)).toHaveLength(3)
+    const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+    // Inside apps/web so the externals (react, @react-pdf/renderer → pdfkit '#standard-fonts'
+    // subpath imports, which do not survive bundling) resolve from node_modules like in production.
+    const dir = mkdtempSync(path.join(webDir, '.pdf-rss-'))
+    try {
+      await build({
+        entryPoints: [path.join(webDir, 'tests/fixtures/pdf-rss-child.ts')],
+        outfile: path.join(dir, 'child.mjs'),
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        target: 'node24',
+        tsconfig: path.join(webDir, 'tsconfig.json'),
+        external: ['react', '@react-pdf/renderer'],
+        logLevel: 'error',
+      })
+      writeFileSync(path.join(dir, 'data.json'), serializePdfData(data))
+      const out = execFileSync(process.execPath, ['--max-old-space-size=256', path.join(dir, 'child.mjs'), path.join(dir, 'data.json'), path.join(dir, 'out.pdf')], { encoding: 'utf8' })
+      const m = JSON.parse(out.trim().split('\n').pop()!) as { rssBeforeMiB: number; peakRssMiB: number; renderMs: number; pdfBytes: number }
+      console.log(`PDF render RSS (form 228, 3 receipts): ${JSON.stringify(m)}`)
+      if (process.env.PK_PDF_RSS_OUT) writeFileSync(process.env.PK_PDF_RSS_OUT, JSON.stringify(m))
+      expect(readFileSync(path.join(dir, 'out.pdf')).subarray(0, 5).toString()).toBe('%PDF-')
+      expect(m.peakRssMiB).toBeLessThan(384) // staging web mem_limit
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
+
+async function pdfGet(pathname: string, user: FlowUser) {
+  const { handleEndpoints } = await import('payload')
+  const config = (await import('@/payload.config')).default
+  const res = await handleEndpoints({ config, request: new Request(`http://localhost:3000${pathname}`, { method: 'GET', headers: { Cookie: user.cookie, Origin: 'http://localhost:3000' } }) })
+  const bytes = Buffer.from(await res.arrayBuffer())
+  return { status: res.status, headers: res.headers, bytes, text: res.status === 200 ? '' : bytes.toString('utf8') }
+}
