@@ -1,6 +1,6 @@
 # ADR 0001 — Build ProyekKas outside Odoo on Payload CMS 3 (Next.js)
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved, see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and F2a (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** `../f0-brief.md` §2–§3; `/opt/infra/CLAUDE.md` §0, §3, §3.6; `/opt/infra/docs/adr/0001-stack.md`
@@ -109,6 +109,9 @@ validates that proposal against evidence gathered in this session (all fetched 2
   idle 108 / light-load peak 205 MiB, worker idle 47 / peak 51 MiB).
 - (−) Payload admin needs `style-src 'unsafe-inline'` (styles only; scripts stay nonce-strict) — architecture §3.3.
 - (−) The production image must be built with `next build --webpack` (Turbopack OOM at 1.9 GiB; ADR 0002 §5).
+- (−) Since F2a the production build skips Next's own type check (`typescript.ignoreBuildErrors`; type checking
+  inside `next build` exceeded the 2 GiB cap). `npm run typecheck` is a required CI gate before the image build
+  (ADR 0002 §5).
 
 ## Security implications
 
@@ -146,3 +149,6 @@ and are kept; only admin screens are rebuilt. After F2, rollback cost grows shar
   remote-URL guard hook on every upload collection (`pasteURL:false` insufficient in 3.90.1). Consequences
   updated with measured RAM, admin CSP (`style-src 'unsafe-inline'`, user decision) and the webpack build.
   Rollback note: fallback not triggered.
+- **2026-09-23 (F2a):** Consequences: production build sets `typescript.ignoreBuildErrors` (OOM at the 2 GiB
+  build cap during `next build`'s type check); `npm run typecheck` remains a required CI gate (ADR 0002 §5).
+  Status stays accepted.
