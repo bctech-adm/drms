@@ -1,0 +1,20 @@
+{
+  "name": "proyekkas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "lint": "npm run lint -w apps/web",
+    "typecheck": "npm run typecheck -w apps/web",
+    "test": "npm test -w apps/web",
+    "test:int": "npm run test:int -w apps/web",
+    "build": "npm run build -w apps/web",
+    "check:openapi": "npm run check:openapi -w apps/web"
+  }
+}

@@ -1,0 +1,15 @@
+**/node_modules
+**/.next
+**/dist
+.git
+.github
+.claude
+docs
+deploy
+**/.env
+**/.env.*
+!**/.env.example
+apps/web/test-env
+apps/web/media
+**/*.tsbuildinfo
+**/coverage

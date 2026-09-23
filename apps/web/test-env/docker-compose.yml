@@ -1,0 +1,77 @@
+# THROWAWAY test environment (integration tests, migrate/seed dry runs, image smoke tests).
+# NOT the platform postgres/keycloak. Usage from the repo root:
+#   apps/web/test-env/up.sh            # generates apps/web/test-env/.env (random throwaway passwords, gitignored)
+#   docker compose -p pk-f1 -f apps/web/test-env/docker-compose.yml --env-file apps/web/test-env/.env up -d pk-f1-postgres pk-f1-dev
+#   docker compose -p pk-f1 -f apps/web/test-env/docker-compose.yml --env-file apps/web/test-env/.env down -v
+# Rules: every name prefixed pk-f1-, NO published ports, mem_limit on every container, own network.
+# RAM: postgres 256 + dev 1280 (+ keycloak 640 only with profile kc, dev lowered to 896) ≤ 2 GiB.
+name: pk-f1
+
+x-hardening: &hardening
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  pk-f1-postgres:
+    image: postgres:16.15-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67
+    container_name: pk-f1-postgres
+    # postgres entrypoint needs chown/su → default caps for this throwaway DB only
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      POSTGRES_PASSWORD: ${PK_F1_PG_SUPERUSER_PASSWORD:?}
+      PK_OWNER_PASSWORD: ${PK_F1_OWNER_PASSWORD:?}
+      PK_APP_PASSWORD: ${PK_F1_APP_PASSWORD:?}
+      PK_RO_PASSWORD: ${PK_F1_RO_PASSWORD:?}
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=60"]
+    volumes:
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    networks: [pk-f1-net]
+    mem_limit: 256m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Toolbox: npm ci / lint / typecheck / unit + integration tests / payload migrate + seed.
+  pk-f1-dev:
+    <<: *hardening
+    image: node:24.21.0-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+    container_name: pk-f1-dev
+    working_dir: /work
+    command: ["sleep", "infinity"]
+    environment:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NODE_OPTIONS: "--max-old-space-size=1024"
+      TZ: Asia/Makassar
+      PK_TEST_DATABASE_URL: postgres://pk_test_app:${PK_F1_APP_PASSWORD:?}@pk-f1-postgres:5432/pk_test
+      PK_TEST_DATABASE_URL_OWNER: postgres://pk_test_owner:${PK_F1_OWNER_PASSWORD:?}@pk-f1-postgres:5432/pk_test
+      PK_TEST_DATABASE_URL_RO: postgres://pk_test_ro:${PK_F1_RO_PASSWORD:?}@pk-f1-postgres:5432/pk_test
+    volumes:
+      - ../../..:/work
+    networks: [pk-f1-net]
+    mem_limit: 1280m
+    cpus: 2.0
+
+  # Optional: verifies the Keycloak Admin REST calls of src/auth/keycloak-admin.ts (profile kc).
+  pk-f1-keycloak:
+    <<: *hardening
+    image: quay.io/keycloak/keycloak:26.7.4
+    container_name: pk-f1-keycloak
+    command: ["start-dev", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: pk-f1-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${PK_F1_KC_ADMIN_PASSWORD:?}
+      JAVA_OPTS_KC_HEAP: "-XX:MaxRAMPercentage=50 -XX:InitialRAMPercentage=10"
+    networks: [pk-f1-net]
+    mem_limit: 640m
+    cpus: 1.5
+    profiles: ["kc"]
+
+networks:
+  pk-f1-net:
+    name: pk-f1-net

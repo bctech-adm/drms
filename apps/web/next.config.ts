@@ -1,0 +1,49 @@
+import { withPayload } from '@payloadcms/next/withPayload'
+import type { NextConfig } from 'next'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// Base: payload templates/blank/next.config.ts @v3.90.1 + control-plane hardening.
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+const repoRoot = path.resolve(dirname, '../..')
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  // npm workspaces hoist node_modules to the repo root → trace from there.
+  outputFileTracingRoot: repoRoot,
+  turbopack: { root: repoRoot },
+  poweredByHeader: false,
+  // F1 spike (g): Turbopack production builds were OOM-killed at 1536 and 1900 MiB caps; webpack
+  // with memory optimisations keeps the build inside the RAM budget (report §g).
+  experimental: { webpackMemoryOptimizations: true },
+  reactStrictMode: true,
+  webpack: (webpackConfig) => {
+    webpackConfig.resolve.extensionAlias = {
+      '.cjs': ['.cts', '.cjs'],
+      '.js': ['.ts', '.tsx', '.js', '.jsx'],
+      '.mjs': ['.mts', '.mjs'],
+    }
+    return webpackConfig
+  },
+  // Static security headers. The nonce-based CSP is set per request in src/proxy.ts.
+  // HSTS is handled by Traefik.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+          },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+        ],
+      },
+    ]
+  },
+}
+
+export default withPayload(nextConfig, { devBundleServerPackages: false })

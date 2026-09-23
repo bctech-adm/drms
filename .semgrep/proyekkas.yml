@@ -1,0 +1,22 @@
+rules:
+  # ADR 0001 §8 / architecture §7.3: the Payload Local API defaults to overrideAccess:true.
+  # Every call must state it explicitly: false + user/req in request paths, true only for a
+  # reviewed system read/write marked with a `SYSTEM-READ` / `SYSTEM-WRITE` comment.
+  - id: payload-local-api-implicit-override-access
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      Payload Local API call without an explicit `overrideAccess` (default is TRUE = access control
+      bypassed). Pass `overrideAccess: false` (+ user/req) or a reviewed `overrideAccess: true`
+      with a SYSTEM-READ/SYSTEM-WRITE comment.
+    paths:
+      include: ["/apps/web/src/**"]
+    patterns:
+      - pattern-either:
+          - pattern: $A.payload.$OP({...})
+          - pattern: payload.$OP({...})
+          - pattern: p.$OP({...})
+      - metavariable-regex:
+          metavariable: $OP
+          regex: ^(find|findByID|findGlobal|create|update|updateGlobal|delete|count|duplicate|findVersions|restoreVersion)$
+      - pattern-not: '$X.$OP({..., overrideAccess: $V, ...})'

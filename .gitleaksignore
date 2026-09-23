@@ -1,0 +1,3 @@
+# Fingerprints (commit:file:rule:line) of verified false positives.
+# docs/proyekkas/f0-brief.md:43 (version/image-tag list, no credential) is allowed inline with `gitleaks:allow`,
+# because commit-bound fingerprints do not survive history rewrites.

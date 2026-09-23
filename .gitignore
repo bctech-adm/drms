@@ -1,0 +1,16 @@
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+.env
+.env.*
+!.env.example
+# local media (dev)
+apps/web/media/
+# throwaway test env secrets (apps/web/test-env/up.sh) are covered by `.env` above
+# real seed data (SEED_DATA_FILE) — never commit
+*.seed-data.json
+seed-data.*.json

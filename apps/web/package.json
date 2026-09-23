@@ -1,0 +1,55 @@
+{
+  "name": "@proyekkas/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "gen:openapi": "node scripts/gen-openapi.mjs",
+    "check:openapi": "node scripts/gen-openapi.mjs --check",
+    "build": "npm run gen:openapi && next build --webpack && npm run build:worker",
+    "build:worker": "node scripts/build-worker.mjs",
+    "start": "next start",
+    "lint": "eslint --max-warnings=0 .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:int": "vitest run -c vitest.integration.config.ts",
+    "test:kc": "vitest run -c vitest.kc.config.ts",
+    "payload": "payload",
+    "migrate": "payload migrate",
+    "seed": "payload run src/seed/index.ts",
+    "generate:importmap": "payload generate:importmap",
+    "generate:types": "payload generate:types"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "9.1.0",
+    "@payloadcms/db-postgres": "3.90.1",
+    "@payloadcms/next": "3.90.1",
+    "@payloadcms/translations": "3.90.1",
+    "@payloadcms/ui": "3.90.1",
+    "graphql": "16.14.2",
+    "jose": "6.2.12",
+    "next": "16.3.6",
+    "openid-client": "6.8.8",
+    "payload": "3.90.1",
+    "pg": "8.20.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sharp": "0.35.4",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "@types/pg": "8.20.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.6",
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
+  }
+}
