@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
   // F1 spike (g): Turbopack production builds were OOM-killed at 1536 and 1900 MiB caps; webpack
   // with memory optimisations keeps the build inside the RAM budget (report §g).
   experimental: { webpackMemoryOptimizations: true },
+  // F2a: `next build` type-checks in a second Node process while the webpack process is still
+  // resident → the 2 GiB build cap was exceeded (OOM 137 at "Running TypeScript", measured with
+  // docker build --memory 2g). Type checking is a separate, required CI gate (`npm run typecheck`
+  // in the verify job, which the build job depends on), so the build skips it
+  // (TypeScriptConfig.ignoreBuildErrors: "Do not run TypeScript during production builds").
+  typescript: { ignoreBuildErrors: true },
   reactStrictMode: true,
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
