@@ -1,6 +1,6 @@
 # ADR 0003 — Authentication & identity: Keycloak realm `drms`, OIDC for web and APK
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved, see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** brief §2 #3; `/opt/infra/CLAUDE.md` §3.2 (login), §3.6; `/opt/infra/identity/keycloak/*`
@@ -54,14 +54,15 @@
   |---|---|---|---|
   | `proyekkas-web` | confidential | Authorization Code + **PKCE S256** + state + nonce | `https://<pk-host>/auth/callback`; post-logout `https://<pk-host>/admin/login` (exact) |
   | `proyekkas-mobile` | **public** | Authorization Code + **PKCE S256** via system browser (AppAuth-style; library in ADR 0010); scope `openid offline_access` | App Link `https://<pk-host>/app/callback` preferred over custom scheme (claimed HTTPS link prevents scheme hijacking; Android App Links verification = ADR 0010) |
-  | `proyekkas-admin-api` | confidential, **service account only** | client_credentials | — ; `fullScopeAllowed: false` + scope mapping `realm-management` + SA client role `realm-management` in realm `drms` only. **Verified F1** (spike §b): `manage-users` alone covers GET users, delete online/offline session, revoke consent and user logout; without the scope mapping every call returns 403. The imported realm export maps `view-users` + `manage-users` (both acceptable; `view-users` optional) |
+  | `proyekkas-admin-api` | confidential, **service account only** | client_credentials | — ; `fullScopeAllowed: false` + scope mapping `realm-management` + SA client role `realm-management` in realm `drms` only. **Verified F1** (spike §b): `manage-users` alone covers GET users, delete online/offline session, revoke consent and user logout; without the scope mapping every call returns 403. The imported realm export maps `view-users` + `manage-users`; **F1 foundation: these two are the complete set needed** (no `view-realm`, see §2 role lookup) |
 - Realm settings (as imported, `/opt/infra/identity/keycloak/realm-export/drms{,-staging}.json`): access token
   300 s; SSO idle 30 min / max 10 h (web); offline session idle **14 days** (user 2026-09-23) and offline
   session **max lifespan 30 days** (`offlineSessionMaxLifespanEnabled: true`, `offlineSessionMaxLifespan:
   2592000`; **confirmed by user 2026-09-23** for the `proyekkas-mobile` offline sessions — these are realm
   settings, and `proyekkas-mobile` is the only client using `offline_access`) → a field device must log in
   again at least every 30 days even when used daily; brute force protection on; password policy = platform
-  policy; `rememberMe` off; **Revoke Refresh Token = on** (a realm setting in Keycloak, not per client —
+  policy, as imported in `drms-staging.json`: `length(12) and maxLength(128) and upperCase(1) and lowerCase(1)
+  and digits(1) and specialChars(1) and notUsername and notEmail and passwordHistory(5)`; `rememberMe` off; **Revoke Refresh Token = on** (a realm setting in Keycloak, not per client —
   infra runbook; refresh rotation + reuse detection).
 - Web client: `frontchannelLogout` off; **back-channel logout disabled** (Lead decision, as imported: no
   `backchannel.logout.url`). The app checks `web-sessions`/`devices` itself on every request (§3–§5), so it
@@ -82,6 +83,22 @@
   `execute-actions-email` (`UPDATE_PASSWORD`) for onboarding/reset (requires realm SMTP — infra), logout.
   Writes are **Keycloak-first, then DB** inside one service call; on Keycloak failure nothing is saved;
   on DB failure a compensating Keycloak call runs and the event is audited.
+- **Realm role lookup (F1 foundation, `src/auth/keycloak-admin.ts`):** role representations for
+  `POST …/users/{id}/role-mappings/realm` are taken from **`GET …/users/{id}/role-mappings/realm/available`**,
+  not `GET …/roles/{name}` — the latter needs `view-realm` and returns 403 for the least-privilege service
+  account (verified against Keycloak 26.7.4, `tests/kc`). The service account therefore needs only
+  realm-management **`manage-users` + `view-users`** (as imported). Admin REST path segments are validated
+  against a safe charset and never percent-encoded (the infra router rejects encoded paths, §6); 429 is
+  retried with backoff.
+- **Onboarding e-mail pending:** `execute-actions-email` needs realm SMTP, which is still empty
+  (`smtpServer: {}` in the realm export). Infra will provide `no-reply@bimacreative.tech`; until then new
+  users get a temporary password out of band (below).
+- **First staging admin (bootstrap, F1):** created via the service account (Admin REST) with a temporary
+  password and required actions `UPDATE_PASSWORD` + `CONFIGURE_TOTP`, then linked to the app by the seed
+  (`SEED_ADMIN_EMAIL` + `SEED_ADMIN_KEYCLOAK_SUB` = Keycloak user id; creates the `users` row with role
+  `pk-admin` and `keycloakSub`, skipping Keycloak sync; idempotent). Observed read-only 2026-09-23: realm
+  `drms-staging` has users with pending `UPDATE_PASSWORD`/`CONFIGURE_TOTP`, and `pk_drms_stg.users` has
+  1 row with `keycloak_sub` set and role `pk-admin`.
 - On each login/token use, roles from the token are compared to `users.roles` cache; mismatch → cache
   updated + audit `role_sync`. Authorization decisions use **token roles ∩ `users.active`**.
 
@@ -149,23 +166,33 @@
 - Web sessions: ~~back-channel logout from Keycloak~~ — disabled (§1); web sessions are revoked by our own
   logout/deactivate paths and expire by `expiresAt`.
 
-### 6. Network path to Keycloak (revised 2026-09-23: public issuer, hairpin)
+### 6. Network path to Keycloak (revised 2026-09-23: public issuer; Admin API via internal network — F1 foundation)
 - Token/JWKS from the APK go through Traefik public routes. The `ratelimit-login` conflict (10/min/IP on
   `/token`, carrier NAT) is **resolved by infra (live)**: router `auth-drms-token` for
   `/realms/{drms,drms-staging}/protocol/openid-connect/token` with middleware `ratelimit-drms-kc-token`
   (average 60/min, burst 30) (`/opt/infra/traefik/dynamic/clients/drms-proyekkas-kc-token.yml`);
   login-actions stay on `ratelimit-login`.
-- Server-side calls (code exchange, JWKS, discovery, admin REST) go to the **public issuer
-  `https://auth.bimacreative.tech` (hairpin)**, **not** `keycloak:8080`: the web containers are on network
+- Server-side calls (code exchange, JWKS, discovery, admin REST) go to **`https://auth.bimacreative.tech`**
+  (through Traefik), **not** `keycloak:8080`. Since infra H5 this is no longer a hairpin over the public IP:
+  inside the app containers the name resolves to Traefik on `drms-kc-admin[-stg]` (alias, see below; infra
+  runbook §Langkah 0). Original F1-spike wording: the web containers are on network
   `drms-kas-edge` (only `traefik` besides them), not on `proxy` (infra runbook
   `/opt/infra/docs/runbooks/proyekkas-drms-onboarding.md`, Lead decision). The server-side token call
   therefore passes `auth-drms-token`. `iss` = the public issuer by construction. (The F1 spike showed that
   the internal URL also yields the public `iss` with hostname v2 — kept as a fact, no longer used.)
-- **Open item (UNVERIFIED, F1):** Keycloak Admin REST (`/admin/realms/...`) is behind `ipallowlist-admin`
-  (`127.0.0.1/32`, `10.100.0.1/32`) on router `auth-admin` (`/opt/infra/traefik/dynamic/platform/auth.yml`).
-  Whether hairpin requests from `drms-kas-edge` (10.100.7.0/24) pass that allow-list has not been tested; if
-  not, the `users`/`devices` hooks that call Admin REST (§2, §5) fail with 403. Resolution (infra + Lead)
-  needed before those hooks go to staging.
+- ~~Open item: Admin REST behind `ipallowlist-admin` over the hairpin~~ — **resolved (infra H5, F1
+  foundation).** Public-hairpin access to `/admin*` is now **403 platform-wide** (`auth-admin-deny`,
+  `/opt/infra/traefik/dynamic/platform/auth.yml`). The Keycloak Admin API is reached through dedicated
+  `--internal` networks **`drms-kc-admin`** (prod, 10.100.8.0/24) / **`drms-kc-admin-stg`** (staging,
+  10.100.9.0/24), which web **and** worker join. Traefik joins them with the alias
+  **`auth.bimacreative.tech`**, so the URL stays `https://auth.bimacreative.tech` (env `KC_ADMIN_BASE_URL`,
+  kept separate from `OIDC_ISSUER`). Router (`/opt/infra/traefik/dynamic/clients/drms-proyekkas-kc-admin.yml`)
+  = `ClientIP(<env subnet>) && PathPrefix(/admin/realms/<env realm>/)`; the realm token endpoint stays on
+  the public router `auth-drms-token`. Constraints the client code honours: **trailing slash after the realm
+  required** (`/admin/realms/<realm>` without `/` → 403), **percent-encoded paths rejected**, rate limit
+  **20 r/s burst 40** per container (429 → retry). Other realms / `/admin/master` from these subnets → 403.
+  Verified by infra (runbook §Network Admin API) and from the staging web container: SA token 200,
+  `GET /admin/realms/drms-staging/users?max=1` 200, realm `platform` 403.
 
 ### 7. Inactive users & login failures
 - Inactive = Keycloak `enabled=false` (cannot log in) **and** `users.active=false` (strategies reject even
@@ -193,7 +220,8 @@
   create users (login also impossible) — acceptable.
 - Infra changes: realms/clients and token-endpoint rate-limit rule — **done** (2026-09-23, infra `main`
   `c557c28` + Lead); still open: SMTP for the realm (`execute-actions-email` returns 500 until then — infra
-  runbook §Catatan) and Admin REST reachability over the hairpin (§6).
+  runbook §Catatan; infra will provide `no-reply@bimacreative.tech`). Admin REST reachability: resolved via
+  `drms-kc-admin[-stg]` (§6).
 - Client secrets of `proyekkas-web` / `proyekkas-admin-api` are generated by Keycloak at import and stored
   by infra at `/opt/infra/identity/keycloak/secrets/drms{,-staging}-<client>.secret` (never in git); the app
   compose copies them into its `.env` (600).
@@ -230,3 +258,10 @@ different auth design requires only `users` collection auth config + routes. No 
   realms `drms`/`drms-staging` imported, back-channel logout disabled, app reaches Keycloak via the public
   issuer (hairpin) on network `drms-kas-edge`, router `auth-drms-token`, client secrets under
   `/opt/infra/identity/keycloak/secrets/`. New open item: Admin REST behind `ipallowlist-admin` (§6).
+- **2026-09-23 (F1 foundation, staging deployed):** §2 role lookup via `users/{id}/role-mappings/realm/available`
+  (`GET /roles/{name}` needs `view-realm`) → service account = `manage-users` + `view-users` only; first staging
+  admin bootstrapped via the SA (temporary password + `UPDATE_PASSWORD` + `CONFIGURE_TOTP`) and linked by seed
+  `SEED_ADMIN_EMAIL` + `SEED_ADMIN_KEYCLOAK_SUB`; onboarding e-mail pending realm SMTP. §1 realm password policy
+  quoted from the export. §6 open item closed: Admin API via internal networks `drms-kc-admin[-stg]` (Traefik
+  alias `auth.bimacreative.tech`, `ClientIP && PathPrefix` router, trailing slash, no percent-encoding,
+  20 r/s burst 40); public-hairpin `/admin` = 403 platform-wide (infra H5). Status stays accepted.

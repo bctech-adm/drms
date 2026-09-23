@@ -563,7 +563,7 @@ Sama dengan v1.0: `id`, `waktu_server`, `doc_type`/`doc_id`/`doc_no`, `action`, 
 | Bukti transfer | `media-transfer-proofs` | 1600 px (gambar); PDF diterima apa adanya ≤ 2 MB | JPEG/WebP q≈80 | ≤ 400 KB | |
 | Foto progress | `media-progress-photos` | 1600 px | JPEG/WebP q≈80 | ≤ 400 KB | Maks. 5 per laporan |
 | Tanda tangan | `media-signatures` | 800 × 300 px maks. | PNG transparan | ≤ 50 KB | [Tambahan dari form klien] |
-| Logo/kop | `media-company-logo` | 1024 px | PNG | ≤ 300 KB | Untuk PDF (Q-32) |
+| Logo/kop | `media-company` (slug final, ADR 0004 §2) | 1024 px | PNG | ≤ 300 KB | Untuk PDF (Q-32) |
 | Semua | – | Upload mentah ditolak bila > 15 MB | – | – | Validasi MIME di server |
 
 Perkiraan kasar (estimasi, bukan pengukuran): 100 nota/bulan × 400 KB ≈ 40 MB/bulan; 30 karyawan × 2 selfie × 25 hari × 150 KB ≈ 225 MB/bulan. Angka volume transaksi belum dikonfirmasi klien (Q-34).

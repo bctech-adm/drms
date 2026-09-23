@@ -1,6 +1,6 @@
 # ADR 0006 — Append-only audit log, DB roles and immutability enforcement
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved, see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §8 (audit structure + events), §4 rules, US-35; lead prompt "Audit log
@@ -59,6 +59,13 @@ database `CONNECT` privilege would stop them. It is also confusable with a futur
   fails because `payload_migrations` does not exist yet, observed in the F1 spike):
   `ALTER DEFAULT PRIVILEGES FOR ROLE pk_drms_owner IN SCHEMA public GRANT SELECT, INSERT, UPDATE ON TABLES TO pk_drms_app;`
   `… GRANT USAGE, SELECT ON SEQUENCES TO pk_drms_app;` — **DELETE is never a default**.
+- **Role names are derived from `current_user`, not hard-coded (F1 foundation,
+  `apps/web/src/migrations/20260923_103218_initial.ts` + `…_103219_security.ts`):** the migration requires
+  `current_user ~ '_owner$'` (else it raises) and computes the app/ro roles with
+  `regexp_replace(current_user, '_owner$', '_app' | '_ro')` → `pk_drms_owner` → `pk_drms_app`/`pk_drms_ro`,
+  `pk_drms_stg_owner` → `pk_drms_stg_app`/`pk_drms_stg_ro`. The **same migrations serve prod and staging**
+  (and CI's throwaway roles). The app role must exist; the ro default grant is applied only if the ro role
+  exists.
 - DELETE is granted **explicitly per table** in migrations, only where Payload needs it: array/`_rels`
   child tables of *mutable* collections, Payload internals (`payload_preferences*`,
   `payload_locked_documents*` — needed even when nothing is locked: every update of a lockable collection
@@ -78,6 +85,13 @@ columns updatable — exact column list owned by ADR 0009).
 flat collection sets **every column** (`set "code"=$1, "name"=$2, …, "created_at"=$7`), so a
 `BEFORE UPDATE OF col` trigger would fire on every update. Guards use `OLD.col IS DISTINCT FROM NEW.col` per
 protected column.
+**Implemented (F1 foundation):** generic trigger function **`pk_protect_columns(col, …)`** (security
+migration) — columns named in `TG_ARGV` are **immutable once non-null** (compares `to_jsonb(OLD)->col` vs
+`to_jsonb(NEW)->col`, SQLSTATE 42501). Attached as `<table>_protect` to `users.keycloak_sub`, `devices`
+(`device_id`, `user_id`, `registered_at`), `web_sessions` (`id_hash`, `user_id`, `keycloak_sid`),
+`document_sequences.doc_type`, `project_stages.project_id`, `budget_lines` (`project_id`, `category_id`) and
+every media table (`filename`, `sha256_original`, `uploaded_by_id`, `received_at`), plus `<table>_uuid_immutable`
+on every table with a `uuid` column.
 
 Class A/B tables must be **flat** Payload collections (**confirmed mandatory** in F1: Payload deletes and
 re-inserts **all** array/`_rels` child rows on **every** parent update, even when the array is unchanged): no `array`, `hasMany`, polymorphic relationships,
@@ -104,14 +118,20 @@ restic history (ADR 0006 platform) and optional hash chain (§5).
 ### 3. Audit table design (requirements §8)
 `audit_logs` (flat): `id` bigserial · `server_time` timestamptz (trigger) · `event_id` uuid (groups the
 rows of one operation) · `tx_id` bigint (`txid_current()`) · `request_id` text · `doc_type` text ·
-`doc_id` text · `doc_no` text · `action` text CHECK in (`create`,`update`,`status_change`,`delete_attempt`,
-`void`,`view_sensitive`,`login`,`logout`,`login_failed`,`role_change`,`device_revoke`,`export`,
-`period_close`,`period_reopen`,`sync_offline`) · `field` text · `old_value` jsonb · `new_value` jsonb ·
-`status_from` text · `status_to` text · `reason` text · `user_id` bigint (no FK) · `user_roles` text[] ·
+`doc_id` text · `doc_no` text · `action` **Postgres enum** (see below) · `field` text · `old_value` jsonb · `new_value` jsonb ·
+`status_from` text · `status_to` text · `reason` text · `user_id` bigint (no FK) · `user_roles` **text** (comma-separated role names, not `text[]`) ·
 `source` text (`web|apk|system|job`) · `app_version` text · `ip` inet · `device_id` text · `lat`
 numeric(9,6) · `lng` numeric(9,6) · `device_time` timestamptz (offline only, comparison data) ·
 `prev_hash`/`row_hash` bytea (optional §5). Indexes: (`doc_type`,`doc_id`,`server_time`),
 (`user_id`,`server_time`), (`action`,`server_time`), BRIN on `server_time`.
+**As implemented (F1 foundation, initial migration):** `action` is the Postgres enum
+`enum_audit_logs_action` (Payload `select`) with the extended value set `create`, `update`, `status_change`,
+`deactivate`, `reactivate`, `delete_attempt`, `void`, `view_sensitive`, `login`, `logout`, `login_failed`,
+`session_revoked`, `role_change`, `role_sync`, `device_register`, `device_revoke`, `number_issued`, `export`,
+`print`, `sign`, `acknowledge`, `flag_raised`, `flag_reviewed`, `sync_odoo`, `sync_offline`, `period_close`,
+`period_reopen`, `schema_maintenance` (a new value = a migration). `user_roles` is a Payload `text` field
+(`varchar`), written as `roles.join(',')` (`src/audit/writer.ts`). Payload column types differ from the sketch:
+`id` serial, `tx_id`/`user_id` numeric, `ip` varchar, `source` enum; `server_time` NOT NULL (security migration).
 Payload collection `audit-logs` exposes it read-only: `access.create/update/delete = () => false` (writes
 only via system path), `read` = scope rule (own doc/team/all per requirements §4 matrix),
 `lockDocuments: false`, no versions.
@@ -155,7 +175,7 @@ at DRMS volume). Daily job exports the day's last hash to logs (Loki) as an exte
 - Migrations run as `pk_drms_owner` (one-shot container). Any future Payload-generated `ALTER` on Class A/B
   tables is reviewed; a migration that needs to rewrite rows of a Class A table must explicitly
   `ALTER TABLE … DISABLE TRIGGER …; …; ENABLE TRIGGER …` and is itself recorded as an `audit_logs` row
-  (`action='schema_maintenance'` — to be added to the CHECK) — requires Lead + user approval.
+  (`action='schema_maintenance'` — already a value of `enum_audit_logs_action`) — requires Lead + user approval.
 - `push` mode is never used against staging/prod (ADR 0001 §7).
 - Integration test in CI: run all migrations as owner, then run the app test suite as `pk_drms_app`
   (catches missing grants, e.g. a new child table needing DELETE).
@@ -202,3 +222,8 @@ the DB before first deploy is free; after deploy it needs dump/restore.
   §1: default privileges at the top of the first Payload migration; `payload_locked_documents(_rels)` need
   DELETE for the app role; DBs/roles now live (infra, verified by Lead). §4: audit JSON values wrapped
   `{v: …}`; verification evidence recorded.
+- **2026-09-23 (F1 foundation):** verified against `apps/web/src/migrations/`. §1 role names derived from
+  `current_user` (`*_owner` → `*_app`/`*_ro`) so the same migrations serve prod and staging. §2 generic
+  `pk_protect_columns` trigger for immutable-once-set columns (+ `uuid` on every table). §3 `action` is the
+  Postgres enum `enum_audit_logs_action` with the extended value set (incl. `number_issued`,
+  `schema_maintenance`); `user_roles` is text (comma-separated), not `text[]`. Status stays accepted.
