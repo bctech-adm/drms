@@ -171,6 +171,11 @@
   media), hash-chain decision (ADR 0006 §5), user guides per role (Bahasa Indonesia), deploy & ops
   runbooks, UAT checklist per user story, go-live data migration (opening balances, sequence start values),
   OCR receipts (nice-to-have, only if time allows).
+- **Backlog carried in (2026-09-24):** server-side 302 to `/admin/login` for unauthenticated admin routes
+  (today Payload renders a 200 shell that leaks only page titles, no data); settlement reversal (void of
+  refund KM / shortfall transfer currently 409); signed/time-limited media URLs (ADR 0004 §4); prod compose
+  + GHCR push/deploy jobs; container uid not mapped to a host user for prod secrets; `PUSH_FCM_ENABLED` in
+  the env schema (F4).
 - **Dependencies:** F2–F5.
 - **Agents / estimate:** qa-security 6–9 pd · nextjs-developer 4–6 pd · flutter-developer 2–3 pd ·
   docs-versioning 4–6 pd · infra-engineer 1–2 pd · analyst 1–2 pd → **18–28 pd**.
