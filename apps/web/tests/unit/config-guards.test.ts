@@ -103,7 +103,7 @@ describe('Payload config guards', () => {
 
   it('/api/v1 endpoints are registered as root endpoints', () => {
     const paths = config.endpoints.map((e) => `${e.method} ${e.path}`)
-    for (const p of ['get /v1/health', 'get /v1/health/ready', 'get /v1/me', 'get /v1/masters', 'post /v1/devices/register', 'post /v1/devices/:id/revoke', 'get /v1/openapi.json']) {
+    for (const p of ['get /v1/health', 'head /v1/health', 'get /v1/health/ready', 'head /v1/health/ready', 'get /v1/me', 'get /v1/masters', 'post /v1/devices/register', 'post /v1/devices/:id/revoke', 'get /v1/openapi.json']) {
       expect(paths).toContain(p)
     }
   })

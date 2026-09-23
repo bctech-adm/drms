@@ -209,6 +209,29 @@ describe('/api/v1 misc', () => {
     expect(ready.body).toEqual({ status: 'ok', checks: { db: true, media: true } })
   })
 
+  it('HEAD health/ready: same status as GET, empty body, public (uptime monitors)', async () => {
+    const h = await http('HEAD', '/api/v1/health')
+    expect(h.status).toBe(200)
+    expect(h.body).toBeNull()
+    const ready = await http('HEAD', '/api/v1/health/ready')
+    expect(ready.status).toBe(200)
+    expect(ready.body).toBeNull()
+    const media = process.env.MEDIA_DIR
+    process.env.MEDIA_DIR = '/nonexistent/pk-head-media'
+    try {
+      const g = await http('GET', '/api/v1/health/ready')
+      const hd = await http('HEAD', '/api/v1/health/ready')
+      expect(g.status).toBe(503)
+      expect(g.body).toEqual({ status: 'degraded', checks: { db: true, media: false } })
+      expect(hd.status).toBe(503)
+      expect(hd.body).toBeNull()
+    } finally {
+      process.env.MEDIA_DIR = media
+    }
+    // other v1 routes get no implicit HEAD
+    expect((await http('HEAD', '/api/v1/me', { headers: bearer(staffToken, staffDevice) })).status).toBe(404)
+  })
+
   it('openapi.json requires authentication outside development and is OpenAPI 3.1', async () => {
     expect((await http('GET', '/api/v1/openapi.json')).status).toBe(401)
     const r = await http('GET', '/api/v1/openapi.json', { headers: bearer(staffToken, staffDevice) })

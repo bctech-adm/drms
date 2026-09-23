@@ -3,7 +3,7 @@ import { access } from 'node:fs/promises'
 
 import { sql } from '@payloadcms/db-postgres'
 
-import { json, v1 } from '../http'
+import { headOf, json, v1 } from '../http'
 
 /** Liveness: process up, no dependencies (container healthcheck). */
 export const healthEndpoint = v1({
@@ -37,3 +37,7 @@ export const readyEndpoint = v1({
     return json({ status: ok ? 'ok' : 'degraded', checks: { db, media } }, ok ? 200 : 503)
   },
 })
+
+/** HEAD /api/v1/health and /api/v1/health/ready: same status as GET, no body (uptime monitors). */
+export const healthHeadEndpoint = headOf(healthEndpoint)
+export const readyHeadEndpoint = headOf(readyEndpoint)

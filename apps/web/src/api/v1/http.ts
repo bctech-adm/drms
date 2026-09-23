@@ -127,3 +127,23 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
     },
   }
 }
+
+/**
+ * HEAD twin of a GET endpoint built with v1() (uptime monitors send `HEAD /api/v1/health`).
+ * Next.js serves HEAD through the route's GET export but keeps `request.method === 'HEAD'`, and
+ * Payload matches root endpoints by method, so without a 'head' endpoint the request is a 404.
+ * The twin runs the SAME handler (same auth/role checks, same rate-limit bucket key — v1() keys on
+ * opts.method = 'get' — same status and headers) and drops the body (RFC 9110 §9.3.2).
+ */
+export function headOf(endpoint: Endpoint): Endpoint {
+  if (endpoint.method !== 'get') throw new Error(`headOf: ${endpoint.path} is not a GET endpoint`)
+  return {
+    path: endpoint.path,
+    method: 'head',
+    handler: async (req) => {
+      const res = await endpoint.handler(req)
+      await res.body?.cancel()
+      return new Response(null, { status: res.status, statusText: res.statusText, headers: res.headers })
+    },
+  }
+}
