@@ -89,6 +89,14 @@ export interface Config {
     vehicles: Vehicle;
     'cost-centers': CostCenter;
     'document-sequences': DocumentSequence;
+    'expense-requests': ExpenseRequest;
+    'expense-line-snapshots': ExpenseLineSnapshot;
+    approvals: Approval;
+    receipts: Receipt;
+    'receipt-flags': ReceiptFlag;
+    transfers: Transfer;
+    'cash-entries': CashEntry;
+    'period-closings': PeriodClosing;
     devices: Device;
     'web-sessions': WebSession;
     'audit-logs': AuditLog;
@@ -129,6 +137,14 @@ export interface Config {
     vehicles: VehiclesSelect<false> | VehiclesSelect<true>;
     'cost-centers': CostCentersSelect<false> | CostCentersSelect<true>;
     'document-sequences': DocumentSequencesSelect<false> | DocumentSequencesSelect<true>;
+    'expense-requests': ExpenseRequestsSelect<false> | ExpenseRequestsSelect<true>;
+    'expense-line-snapshots': ExpenseLineSnapshotsSelect<false> | ExpenseLineSnapshotsSelect<true>;
+    approvals: ApprovalsSelect<false> | ApprovalsSelect<true>;
+    receipts: ReceiptsSelect<false> | ReceiptsSelect<true>;
+    'receipt-flags': ReceiptFlagsSelect<false> | ReceiptFlagsSelect<true>;
+    transfers: TransfersSelect<false> | TransfersSelect<true>;
+    'cash-entries': CashEntriesSelect<false> | CashEntriesSelect<true>;
+    'period-closings': PeriodClosingsSelect<false> | PeriodClosingsSelect<true>;
     devices: DevicesSelect<false> | DevicesSelect<true>;
     'web-sessions': WebSessionsSelect<false> | WebSessionsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
@@ -660,7 +676,11 @@ export interface ApprovalRule {
    */
   priority?: number | null;
   acknowledge: 'required' | 'optional' | 'none';
+  acknowledgeBy: 'scope_manager' | 'role' | 'user';
   acknowledgeRole?: ('pk-staff' | 'pk-pm' | 'pk-finance' | 'pk-owner' | 'pk-admin') | null;
+  acknowledgeUser?: (number | null) | User;
+  signDiajukan: 'required' | 'optional' | 'none';
+  signDibuat: 'required' | 'optional' | 'none';
   steps?:
     | {
         level: number;
@@ -760,6 +780,429 @@ export interface DocumentSequence {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expense-requests".
+ */
+export interface ExpenseRequest {
+  id: number;
+  docNo?: string | null;
+  type: 'advance' | 'reimburse';
+  status:
+    | 'draft'
+    | 'pending_ack'
+    | 'pending_approval'
+    | 'approved'
+    | 'receipt_revision'
+    | 'receipts_verified'
+    | 'transferred'
+    | 'receipts_complete'
+    | 'lpj_submitted'
+    | 'lpj_revision'
+    | 'lpj_verified'
+    | 'completed'
+    | 'rejected'
+    | 'cancelled';
+  title: string;
+  project?: (number | null) | Project;
+  costCenter?: (number | null) | CostCenter;
+  requestDate?: string | null;
+  /**
+   * Format YYYY-MM-DD (zona waktu perusahaan).
+   */
+  neededDate?: string | null;
+  /**
+   * Format YYYY-MM-DD (zona waktu perusahaan).
+   */
+  periodFrom?: string | null;
+  /**
+   * Format YYYY-MM-DD (zona waktu perusahaan).
+   */
+  periodTo?: string | null;
+  notes?: string | null;
+  requesters?: (number | Employee)[] | null;
+  createdBy?: (number | null) | User;
+  bankAccount?: (number | null) | EmployeeBankAccount;
+  bankSnapshot?: {
+    bankName?: string | null;
+    accountNo?: string | null;
+    accountHolder?: string | null;
+  };
+  lines?:
+    | {
+        description?: string | null;
+        qty?: number | null;
+        uom?: (number | null) | Uom;
+        unitPrice?: number | null;
+        total?: number | null;
+        category?: (number | null) | ExpenseCategory;
+        vehicle?: (number | null) | Vehicle;
+        notes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  grandTotal?: number | null;
+  approvedAmount?: number | null;
+  transferredTotal?: number | null;
+  attachments?: (number | MediaAttachment)[] | null;
+  approvalRule?: (number | null) | ApprovalRule;
+  approvalSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  approvalCycle?: number | null;
+  currentLevel?: number | null;
+  submittedAt?: string | null;
+  contentHash?: string | null;
+  resubmitOf?: (number | null) | ExpenseRequest;
+  cancelReason?: string | null;
+  rejectReason?: string | null;
+  clientUuid?: string | null;
+  source?: ('web' | 'apk' | 'system' | 'job') | null;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media-attachments".
+ */
+export interface MediaAttachment {
+  id: number;
+  uploadedBy?: (number | null) | User;
+  receivedAt?: string | null;
+  ownerDocType?: string | null;
+  ownerDocId?: string | null;
+  sha256Original?: string | null;
+  originalWidth?: number | null;
+  originalHeight?: number | null;
+  originalSize?: number | null;
+  capturedAt?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumb?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expense-line-snapshots".
+ */
+export interface ExpenseLineSnapshot {
+  id: number;
+  request: number | ExpenseRequest;
+  cycle: number;
+  reason: 'submit' | 'approve' | 'receipts_resubmit';
+  grandTotal: number;
+  contentHash?: string | null;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  takenAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals".
+ */
+export interface Approval {
+  id: number;
+  docType: 'expense_request' | 'budget_addendum';
+  request: number | ExpenseRequest;
+  cycle: number;
+  position: 'diajukan' | 'dibuat' | 'diketahui' | 'approval';
+  level: number;
+  actor?: (number | null) | User;
+  employee?: (number | null) | Employee;
+  actorName?: string | null;
+  onBehalf?: boolean | null;
+  decision: 'signed' | 'acknowledged' | 'approved' | 'rejected';
+  reason?: string | null;
+  decidedAt?: string | null;
+  budgetPctBefore?: number | null;
+  budgetPctAfter?: number | null;
+  openFlags?: number | null;
+  signature?: (number | null) | MediaSignature;
+  signatureSha256?: string | null;
+  signatureSource?: ('profile' | 'captured' | 'none') | null;
+  deviceId?: string | null;
+  source?: ('web' | 'apk' | 'system' | 'job') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "receipts".
+ */
+export interface Receipt {
+  id: number;
+  request: number | ExpenseRequest;
+  lineId: string;
+  lineNo?: number | null;
+  receiptNo?: string | null;
+  receiptNoNorm?: string | null;
+  vendor?: (number | null) | Vendor;
+  vendorName: string;
+  vendorNorm?: string | null;
+  receiptDate: string;
+  receiptTime?: string | null;
+  amount: number;
+  taxAmount?: number | null;
+  image: number | MediaReceipt;
+  imageSha256?: string | null;
+  status: 'pending' | 'valid' | 'rejected' | 'removed';
+  rejectReason?: string | null;
+  removeReason?: string | null;
+  verifiedBy?: (number | null) | User;
+  verifiedAt?: string | null;
+  entrySource?: ('manual' | 'ocr') | null;
+  createdBy?: (number | null) | User;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media-receipts".
+ */
+export interface MediaReceipt {
+  id: number;
+  uploadedBy?: (number | null) | User;
+  receivedAt?: string | null;
+  ownerDocType?: string | null;
+  ownerDocId?: string | null;
+  sha256Original?: string | null;
+  originalWidth?: number | null;
+  originalHeight?: number | null;
+  originalSize?: number | null;
+  capturedAt?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumb?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "receipt-flags".
+ */
+export interface ReceiptFlag {
+  id: number;
+  request: number | ExpenseRequest;
+  key: string;
+  kind: 'amount_diff' | 'date_after_request' | 'date_too_old' | 'date_out_of_period' | 'uom_suspicious' | 'duplicate';
+  level: 'info' | 'warning';
+  lineId?: string | null;
+  lineNo?: number | null;
+  receipt?: (number | null) | Receipt;
+  relatedRequest?: (number | null) | ExpenseRequest;
+  message: string;
+  detail?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status: 'open' | 'reviewed' | 'resolved';
+  reviewedBy?: (number | null) | User;
+  reviewedAt?: string | null;
+  reviewNote?: string | null;
+  resolvedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transfers".
+ */
+export interface Transfer {
+  id: number;
+  docNo?: string | null;
+  request: number | ExpenseRequest;
+  kind: 'advance' | 'reimburse' | 'lpj_shortfall';
+  cashAccount: number | CashAccount;
+  amount: number;
+  destination?: {
+    bankName?: string | null;
+    accountNo?: string | null;
+    accountHolder?: string | null;
+  };
+  bankRef: string;
+  proof: number | MediaTransferProof;
+  transferDate: string;
+  postedBy?: (number | null) | User;
+  status: 'posted' | 'void';
+  cashEntry?: (number | null) | CashEntry;
+  voidReason?: string | null;
+  voidedBy?: (number | null) | User;
+  voidedAt?: string | null;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media-transfer-proofs".
+ */
+export interface MediaTransferProof {
+  id: number;
+  uploadedBy?: (number | null) | User;
+  receivedAt?: string | null;
+  ownerDocType?: string | null;
+  ownerDocId?: string | null;
+  sha256Original?: string | null;
+  originalWidth?: number | null;
+  originalHeight?: number | null;
+  originalSize?: number | null;
+  capturedAt?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumb?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cash-entries".
+ */
+export interface CashEntry {
+  id: number;
+  entryNo?: string | null;
+  entryDate: string;
+  period?: string | null;
+  direction: 'in' | 'out';
+  amount: number;
+  cashAccount: number | CashAccount;
+  category?: (number | null) | ExpenseCategory;
+  cashInSource?: (number | null) | CashInSource;
+  project?: (number | null) | Project;
+  costCenter?: (number | null) | CostCenter;
+  vehicle?: (number | null) | Vehicle;
+  description?: string | null;
+  proof?: (number | null) | MediaAttachment;
+  sourceType: 'transfer' | 'settlement_refund' | 'manual' | 'reversal' | 'opening';
+  expenseRequest?: (number | null) | ExpenseRequest;
+  transfer?: (number | null) | Transfer;
+  status: 'posted' | 'void';
+  reversalOf?: (number | null) | CashEntry;
+  reversedBy?: (number | null) | CashEntry;
+  voidReason?: string | null;
+  voidedBy?: (number | null) | User;
+  voidedAt?: string | null;
+  postedBy?: (number | null) | User;
+  postedAt?: string | null;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "period-closings".
+ */
+export interface PeriodClosing {
+  id: number;
+  period: string;
+  status: 'closed' | 'reopened';
+  note?: string | null;
+  closedBy?: (number | null) | User;
+  closedAt?: string | null;
+  reopenedBy?: (number | null) | User;
+  reopenedAt?: string | null;
+  reopenReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "devices".
  */
 export interface Device {
@@ -844,7 +1287,10 @@ export interface AuditLog {
     | 'period_close'
     | 'period_reopen'
     | 'schema_maintenance'
-    | 'email_test';
+    | 'email_test'
+    | 'approve'
+    | 'reject'
+    | 'verify';
   field?: string | null;
   lineNo?: number | null;
   oldValue?:
@@ -877,88 +1323,6 @@ export interface AuditLog {
   lat?: number | null;
   lng?: number | null;
   deviceTime?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media-receipts".
- */
-export interface MediaReceipt {
-  id: number;
-  uploadedBy?: (number | null) | User;
-  receivedAt?: string | null;
-  ownerDocType?: string | null;
-  ownerDocId?: string | null;
-  sha256Original?: string | null;
-  originalWidth?: number | null;
-  originalHeight?: number | null;
-  originalSize?: number | null;
-  capturedAt?: string | null;
-  /**
-   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
-   */
-  changeReason?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumb?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media-transfer-proofs".
- */
-export interface MediaTransferProof {
-  id: number;
-  uploadedBy?: (number | null) | User;
-  receivedAt?: string | null;
-  ownerDocType?: string | null;
-  ownerDocId?: string | null;
-  sha256Original?: string | null;
-  originalWidth?: number | null;
-  originalHeight?: number | null;
-  originalSize?: number | null;
-  capturedAt?: string | null;
-  /**
-   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
-   */
-  changeReason?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumb?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1031,47 +1395,6 @@ export interface MediaCompany {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media-attachments".
- */
-export interface MediaAttachment {
-  id: number;
-  uploadedBy?: (number | null) | User;
-  receivedAt?: string | null;
-  ownerDocType?: string | null;
-  ownerDocId?: string | null;
-  sha256Original?: string | null;
-  originalWidth?: number | null;
-  originalHeight?: number | null;
-  originalSize?: number | null;
-  capturedAt?: string | null;
-  /**
-   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
-   */
-  changeReason?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumb?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1285,6 +1608,30 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'document-sequences';
         value: number | DocumentSequence;
+      } | null)
+    | ({
+        relationTo: 'expense-requests';
+        value: number | ExpenseRequest;
+      } | null)
+    | ({
+        relationTo: 'receipts';
+        value: number | Receipt;
+      } | null)
+    | ({
+        relationTo: 'receipt-flags';
+        value: number | ReceiptFlag;
+      } | null)
+    | ({
+        relationTo: 'transfers';
+        value: number | Transfer;
+      } | null)
+    | ({
+        relationTo: 'cash-entries';
+        value: number | CashEntry;
+      } | null)
+    | ({
+        relationTo: 'period-closings';
+        value: number | PeriodClosing;
       } | null)
     | ({
         relationTo: 'devices';
@@ -1631,7 +1978,11 @@ export interface ApprovalRulesSelect<T extends boolean = true> {
   costCenter?: T;
   priority?: T;
   acknowledge?: T;
+  acknowledgeBy?: T;
   acknowledgeRole?: T;
+  acknowledgeUser?: T;
+  signDiajukan?: T;
+  signDibuat?: T;
   steps?:
     | T
     | {
@@ -1722,6 +2073,243 @@ export interface DocumentSequencesSelect<T extends boolean = true> {
   timezone?: T;
   active?: T;
   changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expense-requests_select".
+ */
+export interface ExpenseRequestsSelect<T extends boolean = true> {
+  docNo?: T;
+  type?: T;
+  status?: T;
+  title?: T;
+  project?: T;
+  costCenter?: T;
+  requestDate?: T;
+  neededDate?: T;
+  periodFrom?: T;
+  periodTo?: T;
+  notes?: T;
+  requesters?: T;
+  createdBy?: T;
+  bankAccount?: T;
+  bankSnapshot?:
+    | T
+    | {
+        bankName?: T;
+        accountNo?: T;
+        accountHolder?: T;
+      };
+  lines?:
+    | T
+    | {
+        description?: T;
+        qty?: T;
+        uom?: T;
+        unitPrice?: T;
+        total?: T;
+        category?: T;
+        vehicle?: T;
+        notes?: T;
+        id?: T;
+      };
+  grandTotal?: T;
+  approvedAmount?: T;
+  transferredTotal?: T;
+  attachments?: T;
+  approvalRule?: T;
+  approvalSnapshot?: T;
+  approvalCycle?: T;
+  currentLevel?: T;
+  submittedAt?: T;
+  contentHash?: T;
+  resubmitOf?: T;
+  cancelReason?: T;
+  rejectReason?: T;
+  clientUuid?: T;
+  source?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expense-line-snapshots_select".
+ */
+export interface ExpenseLineSnapshotsSelect<T extends boolean = true> {
+  request?: T;
+  cycle?: T;
+  reason?: T;
+  grandTotal?: T;
+  contentHash?: T;
+  data?: T;
+  takenAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "approvals_select".
+ */
+export interface ApprovalsSelect<T extends boolean = true> {
+  docType?: T;
+  request?: T;
+  cycle?: T;
+  position?: T;
+  level?: T;
+  actor?: T;
+  employee?: T;
+  actorName?: T;
+  onBehalf?: T;
+  decision?: T;
+  reason?: T;
+  decidedAt?: T;
+  budgetPctBefore?: T;
+  budgetPctAfter?: T;
+  openFlags?: T;
+  signature?: T;
+  signatureSha256?: T;
+  signatureSource?: T;
+  deviceId?: T;
+  source?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "receipts_select".
+ */
+export interface ReceiptsSelect<T extends boolean = true> {
+  request?: T;
+  lineId?: T;
+  lineNo?: T;
+  receiptNo?: T;
+  receiptNoNorm?: T;
+  vendor?: T;
+  vendorName?: T;
+  vendorNorm?: T;
+  receiptDate?: T;
+  receiptTime?: T;
+  amount?: T;
+  taxAmount?: T;
+  image?: T;
+  imageSha256?: T;
+  status?: T;
+  rejectReason?: T;
+  removeReason?: T;
+  verifiedBy?: T;
+  verifiedAt?: T;
+  entrySource?: T;
+  createdBy?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "receipt-flags_select".
+ */
+export interface ReceiptFlagsSelect<T extends boolean = true> {
+  request?: T;
+  key?: T;
+  kind?: T;
+  level?: T;
+  lineId?: T;
+  lineNo?: T;
+  receipt?: T;
+  relatedRequest?: T;
+  message?: T;
+  detail?: T;
+  status?: T;
+  reviewedBy?: T;
+  reviewedAt?: T;
+  reviewNote?: T;
+  resolvedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transfers_select".
+ */
+export interface TransfersSelect<T extends boolean = true> {
+  docNo?: T;
+  request?: T;
+  kind?: T;
+  cashAccount?: T;
+  amount?: T;
+  destination?:
+    | T
+    | {
+        bankName?: T;
+        accountNo?: T;
+        accountHolder?: T;
+      };
+  bankRef?: T;
+  proof?: T;
+  transferDate?: T;
+  postedBy?: T;
+  status?: T;
+  cashEntry?: T;
+  voidReason?: T;
+  voidedBy?: T;
+  voidedAt?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cash-entries_select".
+ */
+export interface CashEntriesSelect<T extends boolean = true> {
+  entryNo?: T;
+  entryDate?: T;
+  period?: T;
+  direction?: T;
+  amount?: T;
+  cashAccount?: T;
+  category?: T;
+  cashInSource?: T;
+  project?: T;
+  costCenter?: T;
+  vehicle?: T;
+  description?: T;
+  proof?: T;
+  sourceType?: T;
+  expenseRequest?: T;
+  transfer?: T;
+  status?: T;
+  reversalOf?: T;
+  reversedBy?: T;
+  voidReason?: T;
+  voidedBy?: T;
+  voidedAt?: T;
+  postedBy?: T;
+  postedAt?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "period-closings_select".
+ */
+export interface PeriodClosingsSelect<T extends boolean = true> {
+  period?: T;
+  status?: T;
+  note?: T;
+  closedBy?: T;
+  closedAt?: T;
+  reopenedBy?: T;
+  reopenedAt?: T;
+  reopenReason?: T;
   updatedAt?: T;
   createdAt?: T;
 }

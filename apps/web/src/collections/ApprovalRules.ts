@@ -3,14 +3,16 @@ import { APIError, type CollectionConfig } from 'payload'
 import { ROLES, ROLE_LABELS, denyAll } from '@/access/roles'
 import { byRole, rolesAllowed } from '@/access/policies'
 import { reasonOnAnyUpdate, withAudit } from '@/audit/hooks'
+import { stepsError } from '@/domain/expense/rules'
 import { activeField, rupiahField } from '@/fields/common'
 
 const roleOptions = ROLES.map((r) => ({ label: ROLE_LABELS[r], value: r }))
 
 /**
- * Aturan approval (US-34): amount range, request type, signature positions ("Diketahui Oleh"
- * required/optional + who; approval levels 1..n), optional category/project/cost center.
- * Master only in F1; the engine (rule resolution + snapshot at submit) is F2.
+ * Aturan approval (US-34): amount range, request type, signature positions ("Diajukan Oleh" /
+ * "Dibuat Oleh" signatures, "Diketahui Oleh" required/optional/none + who; approval levels 1..n),
+ * optional category/project/cost center. Engine: src/domain/expense/rules.ts (rule resolved and
+ * SNAPSHOTTED on the request at submit — later rule changes never affect submitted requests).
  * Every change requires a reason (requirements §8). Admin C/R/U, Owner R/U, Finance R.
  */
 export const ApprovalRules: CollectionConfig = withAudit(
@@ -30,6 +32,12 @@ export const ApprovalRules: CollectionConfig = withAudit(
           const min = (data.minAmount ?? originalDoc?.minAmount ?? 0) as number
           const max = (data.maxAmount ?? originalDoc?.maxAmount ?? null) as number | null
           if (max !== null && max < min) throw new APIError('Nominal maksimum harus ≥ minimum.', 400, null, true)
+          const steps = (data.steps ?? originalDoc?.steps ?? []) as Array<{ level: number; approverRole?: never; approverUser?: never }>
+          const err = stepsError(steps)
+          if (err) throw new APIError(err, 400, null, true)
+          const ackBy = data.acknowledgeBy ?? originalDoc?.acknowledgeBy ?? 'scope_manager'
+          if (ackBy === 'role' && !(data.acknowledgeRole ?? originalDoc?.acknowledgeRole)) throw new APIError('Pilih peran "Diketahui Oleh".', 400, null, true)
+          if (ackBy === 'user' && !(data.acknowledgeUser ?? originalDoc?.acknowledgeUser)) throw new APIError('Pilih user "Diketahui Oleh".', 400, null, true)
           return data
         },
       ],
@@ -77,7 +85,44 @@ export const ApprovalRules: CollectionConfig = withAudit(
           { label: 'Tidak dipakai', value: 'none' },
         ],
       },
+      {
+        name: 'acknowledgeBy',
+        type: 'select',
+        label: 'Pengisi "Diketahui Oleh"',
+        required: true,
+        defaultValue: 'scope_manager',
+        options: [
+          { label: 'PM project / penanggung jawab pusat biaya (Q-07)', value: 'scope_manager' },
+          { label: 'Peran tertentu', value: 'role' },
+          { label: 'User tertentu', value: 'user' },
+        ],
+      },
       { name: 'acknowledgeRole', type: 'select', label: 'Peran "Diketahui Oleh"', options: roleOptions },
+      { name: 'acknowledgeUser', type: 'relationship', relationTo: 'users', label: 'User "Diketahui Oleh"' },
+      {
+        name: 'signDiajukan',
+        type: 'select',
+        label: 'Tanda tangan "Diajukan Oleh"',
+        required: true,
+        defaultValue: 'required',
+        options: [
+          { label: 'Wajib', value: 'required' },
+          { label: 'Opsional', value: 'optional' },
+          { label: 'Tidak dipakai', value: 'none' },
+        ],
+      },
+      {
+        name: 'signDibuat',
+        type: 'select',
+        label: 'Tanda tangan "Dibuat Oleh"',
+        required: true,
+        defaultValue: 'required',
+        options: [
+          { label: 'Wajib', value: 'required' },
+          { label: 'Opsional', value: 'optional' },
+          { label: 'Tidak dipakai', value: 'none' },
+        ],
+      },
       {
         name: 'steps',
         type: 'array',

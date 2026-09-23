@@ -92,6 +92,41 @@ export const EMPLOYEE_BANK_ACCOUNTS = [
   { employee: 'EMP-002', bank: 'MANDIRI', accountNo: '1234567890123', accountHolder: 'Doni Pratama', isDefault: true },
 ]
 
+/** US-34 defaults (see seed.ts): Owner-only for every amount + an inactive two-level example. */
+export const DEFAULT_APPROVAL_RULES = [
+  {
+    name: 'Default — Owner (semua nominal)',
+    docType: 'expense_request',
+    requestType: 'any',
+    minAmount: 0,
+    maxAmount: null,
+    priority: 100,
+    acknowledge: 'required',
+    acknowledgeBy: 'scope_manager',
+    signDiajukan: 'required',
+    signDibuat: 'required',
+    steps: [{ level: 1, approverRole: 'pk-owner' }],
+    active: true,
+  },
+  {
+    name: 'Contoh — di atas Rp 10 juta: 2 approver (Q-31, nonaktif)',
+    docType: 'expense_request',
+    requestType: 'any',
+    minAmount: 10_000_001,
+    maxAmount: null,
+    priority: 50,
+    acknowledge: 'required',
+    acknowledgeBy: 'scope_manager',
+    signDiajukan: 'required',
+    signDibuat: 'required',
+    steps: [
+      { level: 1, approverRole: 'pk-owner' },
+      { level: 2, approverRole: 'pk-owner' },
+    ],
+    active: false,
+  },
+] as const
+
 export const DEFAULT_SEED_DATA = {
   company: COMPANY,
   uoms: UOMS,

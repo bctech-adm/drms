@@ -5,7 +5,7 @@ import { DEFAULT_SEQUENCES } from '@/domain/numbering'
 import { normalizePlate } from '@/domain/plates'
 import { withSystemTransaction } from '@/lib/system-tx'
 
-import { DEFAULT_SEED_DATA, type SeedData } from './data'
+import { DEFAULT_APPROVAL_RULES, DEFAULT_SEED_DATA, type SeedData } from './data'
 
 export type SeedReport = Record<string, { created: number; existing: number }>
 
@@ -141,6 +141,14 @@ export async function seed(payload: Payload, data: SeedData = DEFAULT_SEED_DATA)
   }
   for (const s of DEFAULT_SEQUENCES) {
     await ensure('document-sequences', { docType: { equals: s.docType } }, { ...s, timezone: COMPANY.timezone, active: true }, `seq:${s.docType}`)
+  }
+
+  // Approval rules (US-34). Q-31 default: ONE approver (Owner) for every amount; Q-07 default:
+  // "Diketahui Oleh" required, filled by the project PM / cost-center manager; Q-08: never a
+  // requester or the creator. The "> Rp 10 juta → 2 approvers" rule is seeded INACTIVE as the
+  // configurable example (activate it once the client names the threshold/second approver).
+  for (const r of DEFAULT_APPROVAL_RULES) {
+    await ensure('approval-rules', { name: { equals: r.name } }, { ...r }, `rule:${r.name}`)
   }
 
   // Optional first admin (staging bootstrap): links an EXISTING Keycloak user by its `sub`.

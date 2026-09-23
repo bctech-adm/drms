@@ -24,12 +24,25 @@ beforeAll(async () => {
   }
 })
 
+/**
+ * Test files share one DB (reset once per run) and the F2a flow tests also submit requests, so the
+ * PB counter may already be in use when this file runs: expectations are relative to `base` —
+ * which MUST be the configured startAt 229 when the counter row does not exist yet.
+ */
+let base = 229
+beforeAll(async () => {
+  const c = await sqlAs('app', "SELECT next_value FROM document_sequence_counters WHERE doc_type = 'expense_request' AND period_key = 'ALL'")
+  base = c.rows[0]?.next_value ?? 229
+})
+
 afterAll(async () => {
   await (await getTestPayload()).destroy()
 })
 
 describe('document numbering (ADR 0007)', () => {
   it('first PB number continues the paper series: 229/PB-DRMS/23/IX/2026 (number_issued audited in the same tx)', async () => {
+    const counter = await sqlAs('app', "SELECT count(*)::int AS n FROM document_sequence_counters WHERE doc_type = 'expense_request'")
+    if (counter.rows[0].n === 0) expect(base).toBe(229)
     const p = await getTestPayload()
     const res = await withSystemTransaction(p, null, async (req: PayloadRequest) => {
       const a = await allocateDocNo(req, 'expense_request', { date: parseBusinessDate('2026-09-23'), docId: 'test-1' })
@@ -37,9 +50,9 @@ describe('document numbering (ADR 0007)', () => {
       const tx = (await r.execute((await import('@payloadcms/db-postgres')).sql`SELECT txid_current()::text AS tx`)) as unknown as { rows: Array<{ tx: string }> }
       return { a, tx: tx.rows[0]!.tx }
     })
-    expect(res.a.docNo).toBe('229/PB-DRMS/23/IX/2026')
+    expect(res.a.docNo).toBe(`${base}/PB-DRMS/23/IX/2026`)
     const row = await sqlAs('app', "SELECT tx_id::text AS tx, doc_no FROM audit_logs WHERE action = 'number_issued' AND doc_id = 'test-1'")
-    expect(row.rows[0]).toEqual({ tx: res.tx, doc_no: '229/PB-DRMS/23/IX/2026' })
+    expect(row.rows[0]).toEqual({ tx: res.tx, doc_no: `${base}/PB-DRMS/23/IX/2026` })
   })
 
   it('a rolled-back allocation returns its number (no gap)', async () => {
@@ -51,7 +64,7 @@ describe('document numbering (ADR 0007)', () => {
       }),
     ).rejects.toThrow('simulated failure')
     const next = await withSystemTransaction(p, null, (req) => allocateDocNo(req, 'expense_request', { date: parseBusinessDate('2026-09-24') }))
-    expect(next.docNo).toBe('230/PB-DRMS/24/IX/2026')
+    expect(next.docNo).toBe(`${base + 1}/PB-DRMS/24/IX/2026`)
   })
 
   it('50 parallel allocations (10 failing after allocation) → committed numbers unique and gapless', async () => {
@@ -73,10 +86,10 @@ describe('document numbering (ADR 0007)', () => {
     expect(ok.length).toBe(40)
     expect(new Set(ok).size).toBe(40)
     const sorted = [...ok].sort((a, b) => a - b)
-    expect(sorted[0]).toBe(231)
-    expect(sorted[39]).toBe(270) // gapless: 231..270
+    expect(sorted[0]).toBe(base + 2)
+    expect(sorted[39]).toBe(base + 41) // gapless
     const c = await sqlAs('app', "SELECT next_value FROM document_sequence_counters WHERE doc_type = 'expense_request' AND period_key = 'ALL'")
-    expect(c.rows[0].next_value).toBe(271)
+    expect(c.rows[0].next_value).toBe(base + 42)
   })
 
   it('50 purely parallel allocations all succeed, unique and gapless', async () => {
@@ -85,14 +98,15 @@ describe('document numbering (ADR 0007)', () => {
     const sorted = [...seqs].sort((a, b) => a - b)
     expect(new Set(seqs).size).toBe(50)
     expect(sorted[49]! - sorted[0]!).toBe(49)
-    expect(sorted[0]).toBe(271)
+    expect(sorted[0]).toBe(base + 42)
   })
 
   it('monthly reset per period for TRF/KK', async () => {
     const p = await getTestPayload()
-    const a = await withSystemTransaction(p, null, (req) => allocateDocNo(req, 'transfer', { date: parseBusinessDate('2026-09-30') }))
-    const b = await withSystemTransaction(p, null, (req) => allocateDocNo(req, 'transfer', { date: parseBusinessDate('2026-10-01') }))
-    expect([a.docNo, b.docNo]).toEqual(['TRF/2609/0001', 'TRF/2610/0001'])
+    // periods no other test file uses (the F2a flow tests post transfers in 2026)
+    const a = await withSystemTransaction(p, null, (req) => allocateDocNo(req, 'transfer', { date: parseBusinessDate('2031-09-30') }))
+    const b = await withSystemTransaction(p, null, (req) => allocateDocNo(req, 'transfer', { date: parseBusinessDate('2031-10-01') }))
+    expect([a.docNo, b.docNo]).toEqual(['TRF/3109/0001', 'TRF/3110/0001'])
   })
 
   it('refuses to allocate outside a transaction', async () => {

@@ -38,6 +38,10 @@ export const AUDIT_ACTIONS = [
   'period_reopen',
   'schema_maintenance',
   'email_test',
+  // F2a (requirements v1.1 §8 T2/T4): approval decisions and receipt verification
+  'approve',
+  'reject',
+  'verify',
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
