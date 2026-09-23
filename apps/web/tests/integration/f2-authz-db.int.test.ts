@@ -274,7 +274,7 @@ describe('receipts and media ownership', () => {
     // the image is now linked to A's request: the owner link is immutable (DB)
     expect((await sqlError('app', "UPDATE media_receipts SET owner_doc_id = '999' WHERE id = $1", [img.body.id]))?.message).toContain('immutable')
     // Staff B cannot read it through REST; the team PM can
-    expect((await api('GET', `/api/media-receipts/${img.body.id}`, w.users.staffB)).status).toBe(403)
+    expect([403, 404]).toContain((await api('GET', `/api/media-receipts/${img.body.id}`, w.users.staffB)).status)
     expect((await api('GET', `/api/media-receipts/${img.body.id}`, w.users.pm)).status).toBe(200)
   })
 

@@ -6,6 +6,7 @@ import { FORM_228 } from '@/seed/form-fixture'
 
 import { getTestPayload, installFakeKeycloak, sqlAs } from './helpers'
 import { api, asUser, makeFlowUser, png, upload, type FlowUser } from './flow-world'
+import { DEFAULT_APPROVAL_RULES } from '@/seed/data'
 import { seed } from '@/seed/seed'
 
 /**
@@ -44,6 +45,15 @@ beforeAll(async () => {
   m.cc = await idOf('cost-centers', 'code', FORM_228.costCenterCode)
   // Q-07 default: "Diketahui Oleh" = the cost center's manager (Budi Hartono on the form).
   await p.update({ collection: 'cost-centers', id: m.cc, data: { manager: budiH.id }, overrideAccess: true /* SYSTEM-WRITE: fixture */ })
+  // The seeded default rule (Q-31 Owner-only, Q-07 Diketahui required) scoped to OPS-PB so that
+  // generic rules created by other test files sharing the DB cannot win the tie.
+  const def = (await p.find({ collection: 'approval-rules', where: { name: { equals: DEFAULT_APPROVAL_RULES[0].name } }, limit: 1, depth: 0, overrideAccess: true /* SYSTEM-READ: fixture */ })).docs[0]!
+  await p.create({
+    collection: 'approval-rules',
+    data: { ...DEFAULT_APPROVAL_RULES[0], steps: [...DEFAULT_APPROVAL_RULES[0].steps], name: 'Form 228 — default untuk OPS-PB', costCenter: m.cc, priority: 1 } as never,
+    overrideAccess: true, // SYSTEM-WRITE: fixture
+  })
+  expect(def.acknowledge).toBe('required')
   m.bank = await idOf('employee-bank-accounts', 'accountNo', FORM_228.bankAccountNo)
   m.vehicle = await idOf('vehicles', 'plateNo', normalizePlate('DA 1234 XY'))
   for (const c of ['BLN', 'KMR']) m[`uom:${c}`] = await idOf('uoms', 'code', c)
