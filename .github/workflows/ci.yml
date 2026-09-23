@@ -1,4 +1,4 @@
-# ProyekKas CI (CLAUDE.md §3.6/§3.7, ADR 0002 §5). The repo has no GitHub remote yet → not run;
+# ProyekKas CI (CLAUDE.md §3.6/§3.7, ADR 0002 §5). Runs on GitHub (bctech-adm/drms);
 # syntax checked with actionlint. Actions pinned by commit SHA (resolved with `git ls-remote`),
 # tool images pinned by digest (the same images used locally for the F1 evidence).
 name: ci
@@ -7,6 +7,7 @@ on:
   push:
     branches: [main, develop, "feat/**", "fix/**"]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
