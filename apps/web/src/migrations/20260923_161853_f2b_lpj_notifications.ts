@@ -81,25 +81,17 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 }
 
 export async function down({ db }: MigrateDownArgs): Promise<void> {
+  // Hand-fixed (the generated down dropped the FK after `DROP TABLE … CASCADE` had removed it, and
+  // re-created the job enums with a cast that fails once a reimburseAutoClose job row exists).
+  // The extra job enum value stays (Postgres cannot drop enum values; harmless without the task).
   await db.execute(sql`
-   ALTER TABLE "settlements" DISABLE ROW LEVEL SECURITY;
-  ALTER TABLE "notifications" DISABLE ROW LEVEL SECURITY;
-  DROP TABLE "settlements" CASCADE;
-  DROP TABLE "notifications" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_settlements_fk";
-  
-  ALTER TABLE "payload_jobs_log" ALTER COLUMN "task_slug" SET DATA TYPE text;
-  DROP TYPE "public"."enum_payload_jobs_log_task_slug";
-  CREATE TYPE "public"."enum_payload_jobs_log_task_slug" AS ENUM('inline', 'auditDailyAnchor', 'sendEmail');
-  ALTER TABLE "payload_jobs_log" ALTER COLUMN "task_slug" SET DATA TYPE "public"."enum_payload_jobs_log_task_slug" USING "task_slug"::"public"."enum_payload_jobs_log_task_slug";
-  ALTER TABLE "payload_jobs" ALTER COLUMN "task_slug" SET DATA TYPE text;
-  DROP TYPE "public"."enum_payload_jobs_task_slug";
-  CREATE TYPE "public"."enum_payload_jobs_task_slug" AS ENUM('inline', 'auditDailyAnchor', 'sendEmail');
-  ALTER TABLE "payload_jobs" ALTER COLUMN "task_slug" SET DATA TYPE "public"."enum_payload_jobs_task_slug" USING "task_slug"::"public"."enum_payload_jobs_task_slug";
-  DROP INDEX "payload_locked_documents_rels_settlements_id_idx";
-  ALTER TABLE "expense_requests" DROP COLUMN "verified_receipts_total";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "settlements_id";
-  DROP TYPE "public"."enum_settlements_status";
-  DROP TYPE "public"."enum_settlements_settlement_type";
-  DROP TYPE "public"."enum_notifications_push_status";`)
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_settlements_id_idx";
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_settlements_fk";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "settlements_id";
+  DROP TABLE IF EXISTS "settlements" CASCADE;
+  DROP TABLE IF EXISTS "notifications" CASCADE;
+  ALTER TABLE "expense_requests" DROP COLUMN IF EXISTS "verified_receipts_total";
+  DROP TYPE IF EXISTS "public"."enum_settlements_status";
+  DROP TYPE IF EXISTS "public"."enum_settlements_settlement_type";
+  DROP TYPE IF EXISTS "public"."enum_notifications_push_status";`)
 }
