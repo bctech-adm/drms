@@ -2,10 +2,14 @@
 
 All notable changes to ProyekKas are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). No version has been released or tagged yet;
-`package.json` / `apps/web/package.json` are at `0.1.0` (scaffold).
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-09-23
+
+F0 design + F1 foundation (GATE F1 approved by the user 2026-09-23). Staging runs image `0.1.0-stg-f8529e6`
+at `https://drms-kas.staging.bimacreative.tech`; first admin login (password + TOTP) and real SMTP delivery verified.
 
 ### Added
 - **F0 discovery & design** (GATE F0 approved by user 2026-09-23): requirements v1.1, open client questions,
