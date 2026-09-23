@@ -20,6 +20,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   Next (`dist/worker.mjs`), nonce CSP proxy, receipt resize (≤ 2000 px JPEG q82, `sha256Original`),
   production Dockerfile (webpack build). Spike-only code (`apps/web/spike/**`, `spike-*` collections/tasks)
   is to be removed in F1.
+- **F1 foundation** (`develop` `e2bf46b`): masters, users/role sync via the Keycloak Admin API, devices,
+  web-sessions, append-only audit + `pk_protect_columns` migrations, numbering with `number_issued` audit,
+  media collections, `/api/v1` skeleton + `packages/api-contract/openapi.json`, idempotent seed (fictional
+  default data; real data only via `SEED_DATA_FILE` at deploy time, existing rows never overwritten),
+  `deploy/staging/` compose, CI workflow. Spike-only code removed.
+- **Staging deployed** at `https://drms-kas.staging.bimacreative.tech` (infra Lead,
+  `/opt/infra/staging/drms-proyekkas/`): separate web (640m) + worker (320m) + one-shot migrate; images built
+  locally on the VPS until GHCR (temporary). Measured idle RAM web 82 MiB, worker 47 MiB.
+- Public GitHub repository `bctech-adm/drms`; CI green on the first run (run 35857158248, commit `e2bf46b`).
 
 ### Changed
 - ADR 0001, 0002, 0003, 0006, 0007 and `architecture.md` revised with the F1 spike results and the user
@@ -30,6 +39,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `drms-kas-edge`; back-channel logout disabled; cron evaluated in process `TZ=Asia/Makassar`; measured
   RAM (web idle 108 / peak 205 MiB, worker idle 47 / peak 51 MiB), limits kept until F6.
 - `phase-plan.md`: F1 spike gate passed; F1 item 7 (infra) done — infra `main` commit `c557c28`.
+- ADR 0002, 0003, 0004, 0006, 0007, `architecture.md` and `phase-plan.md` updated with the F1 foundation
+  outcomes (Revision history in each): staging topology as deployed (ADR 0002 §7; pools 5 + 3 + 2 ≤
+  CONNECTION LIMIT 10); Keycloak role lookup via `role-mappings/realm/available`, service account
+  `manage-users` + `view-users` only, Admin API via internal networks `drms-kc-admin[-stg]`, first staging
+  admin bootstrap; `action` enum + `user_roles` text; role names derived from `current_user`; counter
+  monotonic trigger. Remaining F1: `HEAD` health (in progress), SMTP adapter (pending infra), F1 gate review.
+
+### Fixed
+- Docs: company-logo media slug is `media-company` (was `media-company-logo` in `requirements-v1.1.md` and
+  `traceability-matrix.md`).
 
 ### Security
 - **Public-repo sanitization**: client reference inputs (form image, requirements v1.0, lead prompt) removed

@@ -1,6 +1,6 @@
 # ProyekKas — Phase plan F0–F7
 
-- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Basis:** `architecture.md`, ADR 0001–0008 (this folder), ADR 0009–0011 (other agent), requirements v1.0
   (+ v1.1 in parallel), `/opt/infra/CLAUDE.md` §1 (workflow: stop and report at the end of every phase, wait
   for user approval), §5 (Definition of Done).
@@ -53,6 +53,24 @@
 >   `spikeHeartbeat`/`spikeMidnight`, `apps/web/spike/**`); read-only custom field components replacing
 >   `json` editors. Open questions to close in F1: Admin REST reachability through `ipallowlist-admin` from
 >   `drms-kas-edge` (ADR 0003 §6); worker egress network; `__Host-` cookie + inactivity logout on staging HTTPS.
+>
+> **Status 2026-09-23 — F1 foundation (develop `e2bf46b`)**
+> - **Items 2–6 implemented** in `apps/web/` (masters, users/role sync via Keycloak Admin API, devices,
+>   web-sessions, migrations/grants/triggers, audit hooks, numbering, media collections, `/api/v1` health/me/
+>   masters/devices, `packages/api-contract/openapi.json`, idempotent seed with fictional default data);
+>   spike-only code removed. ADR 0002/0003/0004/0006/0007 + architecture updated (Revision history).
+> - **Staging live:** `https://drms-kas.staging.bimacreative.tech` — separate web + worker + one-shot migrate
+>   (ADR 0002 §7), deployed by the infra Lead at `/opt/infra/staging/drms-proyekkas/` (runbook Langkah 5);
+>   images built locally on the VPS until GHCR (`TEMPORARY`).
+> - **GitHub:** repo `bctech-adm/drms` (public); CI (`.github/workflows/ci.yml`: verify, integration,
+>   security, build) **green on the first run** — run 35857158248, commit `e2bf46b`, branch `develop`.
+> - Open questions of the previous block closed: Admin REST reachability (internal networks
+>   `drms-kc-admin[-stg]`, ADR 0003 §6); worker egress (`drms-kas-edge`).
+> - **Remaining for F1:** (1) `HEAD` on `/api/v1/health` (currently 404, GET only) — in progress on another
+>   branch; (2) SMTP adapter / onboarding e-mail — pending infra (realm + app SMTP, `no-reply@bimacreative.tech`);
+>   (3) **F1 gate review**. Not yet in the repo (for the gate review — whether they block F1 is a Lead decision): prod compose
+>   under `deploy/`, GHCR push + deploy jobs in CI, prod A record/routers; `__Host-` cookie + inactivity logout
+>   check on staging HTTPS.
 - **Scope:**
   1. **Spike week (first 3–4 pd, go/no-go for Payload):** (a) OIDC web login with `disableLocalStrategy` +
      `oidcSession` strategy + SSO button + logout in Payload admin; (b) `mobileBearer` strategy on a

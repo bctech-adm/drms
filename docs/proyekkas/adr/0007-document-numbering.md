@@ -1,6 +1,6 @@
 # ADR 0007 — Document numbering (configurable per document type, client format by default)
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved, see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §1 finding #8, §6 (company settings "format penomoran"), §7 (T1 `PG/YYMM/####`,
@@ -75,6 +75,14 @@
    **keep the integration test** (Payload pinned; re-run on every upgrade). Fallback (not needed) = the domain service opens its own transaction with
    `payload.db.beginTransaction()` and passes `req` with that `transactionID` to all Local API calls of the
    transition, and runs the raw SQL on the same session.
+   **Implemented (F1 foundation):** `allocateDocNo()` in `apps/web/src/domain/numbering-db.ts` (the SQL above,
+   on the request transaction via `getRequestTx`). DB guards in the security migration: trigger
+   `pk_counter_monotonic` on `document_sequence_counters` — `next_value` may **only increase** and
+   `doc_type`/`period_key` cannot change (SQLSTATE 42501); `DELETE`/`TRUNCATE` rejected by trigger and revoked
+   from the app role; `CHECK (next_value > 0)`. **Every allocation writes an audit row** `action =
+   'number_issued'` (`field = docNo`, `new_value` = the number) in the same transaction (integration test
+   `numbering.int.test.ts` checks the same `tx_id`); the `audit: false` option exists only for the 50-way
+   concurrency load test.
    Postgres `SEQUENCE` objects rejected: not transactional (values consumed on rollback → gaps) and one
    sequence per doc type × period would need DDL at runtime.
 6. **Gap policy**: numbers are gapless for committed documents under normal operation. Cancelled
@@ -121,3 +129,6 @@ None.
   allocation inside the request transaction via `payload.db.sessions[await req.transactionID].db`
   (`src/lib/tx.ts`); 50 parallel → unique and gapless; rollback burns no number. Keep the integration test
   (pinned Payload; re-run on upgrade). Gap policy (§6) unchanged.
+- **2026-09-23 (F1 foundation):** §5 implementation recorded (`src/domain/numbering-db.ts`): counter trigger
+  lets `next_value` only increase (no DELETE/TRUNCATE, key columns immutable); every allocation writes a
+  `number_issued` audit row in the same transaction. Status stays accepted.

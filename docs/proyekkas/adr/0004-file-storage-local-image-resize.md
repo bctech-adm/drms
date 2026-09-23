@@ -1,6 +1,6 @@
 # ADR 0004 — File storage: local volume now, S3-compatible later; server-side image resize
 
-- **Status:** accepted (user, GATE F0 2026-09-23) 
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 in F1 foundation (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** brief §2 #4; requirements v1.0 §9 ("File"); `/opt/infra/docs/adr/0006-backup.md`;
@@ -151,3 +151,11 @@ plugin. Backup change is additive.
 ## Proposed CLAUDE.md changes (need user approval; author does not edit)
 
 None (backup script change goes to platform ADR 0006 revision by infra-engineer).
+
+## Revision history
+
+- **2026-09-23 (F0 gate):** accepted by user.
+- **2026-09-23 (F1 foundation):** §2 slug confirmed as implemented: the company-logo collection is
+  **`media-company`** (`apps/web/src/collections/media/index.ts`; referenced by `company-settings.logo` and
+  the seed), **not** `media-company-logo`; the old slug was also corrected in `requirements-v1.1.md` §9 and
+  `traceability-matrix.md` (US-57). Status stays accepted.
