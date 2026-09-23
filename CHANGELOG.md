@@ -10,6 +10,10 @@ F2a (expense request core) merged to `develop` (`c8c1af6`); F2b (LPJ/settlement,
 notifications, file endpoint) in progress.
 
 ### Added
+- **UAT seed** (`apps/web/src/seed/uat.ts`, staging only): idempotent one-off that links app users to
+  EXISTING Keycloak users from `UAT_USERS` (no Keycloak call), creates employees `UJI-*`, sets the OPS-PB
+  manager to the PM only when empty, a fictional bank account, project `UJI-PRJ` + team assignments;
+  run command in `deploy/staging/.env.example`.
 - **F2a expense request flow** (`apps/web`): collections `expense-requests` (+ lines), `approval-rules`,
   `approvals`, `expense-line-snapshots`, `receipts`, `receipt-flags`, `transfers`, `cash-entries`,
   `period-closings`; T1 state machines (advance, reimburse incl. "Nota Terverifikasi (Antri Transfer)",
