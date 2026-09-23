@@ -2,7 +2,9 @@ import type { PayloadRequest, Where } from 'payload'
 
 import { hasRole, userId } from '@/access/roles'
 import { resolveScope } from '@/access/scope'
-import { actorContext, loadVisible, type RequestDoc } from '@/domain/expense/common'
+import { writeAudit } from '@/audit/writer'
+import { actorContext, displayName, loadVisible, type RequestDoc } from '@/domain/expense/common'
+import { withReqTransaction } from '@/lib/system-tx'
 import { createDraft, resubmitAsDraft, updateDraft } from '@/domain/expense/drafts'
 import { detail, listItem } from '@/domain/expense/dto'
 import { addReceipt, editReceipt, rejectReceipt, removeReceipt, resubmitReceipts, reviewFlag, verifyAllReceipts, verifyReceipt } from '@/domain/expense/receipts'
@@ -12,7 +14,7 @@ import { acknowledge, approve, cancel, complete, reject, submit, withdraw } from
 import { receiptsComplete, requestLpjRevision, settle, submitLpj, verifyLpj } from '@/domain/expense/lpj'
 import { requestHistory } from '@/domain/history'
 
-import { HttpError, json, v1 } from '../http'
+import { HttpError, json, problem, v1 } from '../http'
 import {
   EmptyBody,
   ExpenseRequestCreate,
@@ -20,6 +22,7 @@ import {
   FlagReviewBody,
   ListQuery,
   LpjSubmitBody,
+  PdfQuery,
   RevisionBody,
   SettleBody,
   ReasonBody,
@@ -383,6 +386,62 @@ export const settleEndpoint = v1({
   },
 })
 
+// ---------------------------------------------------------------- PDF "Pengajuan Biaya" (M16, US-46)
+
+/**
+ * GET /expense-requests/{id}/pdf[?variant=internal] — ADR 0008: same read access as the request
+ * (US-46 "P" own/team/all → everyone who may read it; else 404), any status after submit (Draft →
+ * 409), internal variant (receipt flags) for Finance/Owner/Admin only. Data + `export` audit row
+ * (bank number is printed; requirements §8 "Cetak PDF": number, user, status) in one transaction,
+ * then the render OUTSIDE it (no DB connection held while rendering; semaphore 2, 10 s → 503).
+ * Rate limit 10/min per user (architecture §6.5). The render modules load lazily (web RAM).
+ */
+export const pdfEndpoint = v1({
+  path: '/expense-requests/:id/pdf',
+  method: 'get',
+  rateLimit: [10, 60_000],
+  handler: async ({ req, params }) => {
+    const id = idParam(params)
+    const q = PdfQuery.safeParse(Object.fromEntries(req.searchParams.entries()))
+    if (!q.success) throw new HttpError(400, 'Bad Request', { detail: 'variant harus standard atau internal.' })
+    const internal = q.data.variant === 'internal'
+    if (internal && !hasRole(req, 'pk-finance', 'pk-owner', 'pk-admin')) throw new HttpError(403, 'Forbidden', { detail: 'Salinan internal hanya untuk Finance/Owner/Admin.' })
+    const { buildPdfData } = await import('@/pdf/data')
+    const data = await withReqTransaction(req, async () => {
+      const doc = await loadVisible(req, id)
+      if (doc.status === 'draft' || !doc.docNo) throw new HttpError(409, 'Conflict', { detail: 'PDF tersedia setelah pengajuan diajukan (bernomor).' })
+      const built = await buildPdfData(req, id, { internal, printedBy: await displayName(req, userId(req)!) })
+      await writeAudit(req, [
+        { action: 'export', docType: 'expense_request', docId: String(id), docNo: doc.docNo ?? undefined, field: 'pdf', newValue: { variant: internal ? 'internal' : 'standard', status: doc.status } },
+      ])
+      return built
+    })
+    const { renderPengajuanBiaya, PdfBusyError } = await import('@/pdf/render')
+    let pdf: Buffer
+    try {
+      pdf = await renderPengajuanBiaya(data)
+    } catch (err) {
+      if (err instanceof PdfBusyError) {
+        const res = problem(503, 'Service Unavailable', { detail: 'Pembuat PDF sedang sibuk, coba lagi.' })
+        res.headers.set('Retry-After', '10')
+        return res
+      }
+      throw err
+    }
+    const safeNo = data.docNo.replace(/[^A-Za-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
+    return new Response(new Uint8Array(pdf), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Length': String(pdf.length),
+        'Content-Disposition': `attachment; filename="Pengajuan-Biaya-${safeNo}${internal ? '-internal' : ''}.pdf"`,
+        'Cache-Control': 'private, no-store',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
+  },
+})
+
 export const EXPENSE_ENDPOINTS = [
   listRequestsEndpoint,
   createRequestEndpoint,
@@ -413,5 +472,6 @@ export const EXPENSE_ENDPOINTS = [
   lpjRevisionEndpoint,
   lpjVerifyEndpoint,
   settleEndpoint,
+  pdfEndpoint,
 ]
 
