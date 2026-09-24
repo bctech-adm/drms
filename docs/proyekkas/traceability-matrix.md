@@ -1,6 +1,6 @@
 # ProyekKas — Traceability Matrix (US → module → collections → API → screen → phase → test)
 
-Date: 2026-09-23 · Source: `requirements-v1.1.md` (US-01..US-59), collection slugs from `f0-brief.md` §3.
+Date: 2026-09-23 (F2 implementation status added 2026-09-24) · Source: `requirements-v1.1.md` (US-01..US-59), collection slugs from `f0-brief.md` §3.
 
 Conventions:
 - **Collections**: Payload collection slugs as proposed in `f0-brief.md` §3 (ADR may refine). `media-*` = upload collections split by resize policy.
@@ -73,3 +73,50 @@ Conventions:
 | US-59 | M04 | Owner, approvers | `approvals`, `receipts`, `expense-requests` | `GET /api/v1/expense-requests/{id}` (proposed) | APK, web dashboard | F2 / F4 | API (flag count stored on decision), e2e |
 
 Coverage check: US-01..US-35 (v1.0) and US-36..US-59 (v1.1) each appear exactly once above.
+
+## F2 implementation status (2026-09-24, `develop` `59ba0a4`, deployed to staging)
+
+The table above is the F0 plan and is kept unchanged; this section records what F2a/F2b/F2c actually built.
+"Web" = Payload admin panel incl. the F2b custom views (`/admin/persetujuan`, `/admin/antrian-transfer`,
+`/admin/verifikasi-lpj`, "Riwayat" tab) and the F2c requester actions/timeline. APK screens remain **F4** for
+every row. Test files are under `apps/web/tests/` (`int` = `integration/*.int.test.ts`, `unit` = `unit/*.test.ts`).
+Implemented paths replace the "proposed"/**TBD-architecture** entries above where they differ (e.g. drafts are
+created via `POST /api/v1/expense-requests` or the admin form, not the APK on generic REST).
+Manual UAT by the user is in progress for all rows (F2 gate pending).
+
+| US | Status | Implemented as | Test type (files) |
+|---|---|---|---|
+| US-03 | implemented (API + web) | `POST/PATCH /api/v1/expense-requests`; admin form runs the same `validateContent` (F2c) | unit + API (`expense-flow`, `f2c-requester-web`) |
+| US-04 | implemented (API + web) | `…/{id}/withdraw`, `/cancel` (reason); draft edit via PATCH / admin form | unit + API (`expense-flow`, `f2c-requester-web`) |
+| US-05 | implemented (API + web); push F4 | `GET …/{id}` + `/history`, in-app `GET /api/v1/notifications`; web timeline (F2c) | API (`lpj`, `expense-flow`), unit (`f2c-panel`) |
+| US-06 | implemented (API + web) | `…/{id}/resubmit` → new Draft with `resubmitOf`, new number | API (`expense-flow`, `f2c-requester-web`) |
+| US-07 | implemented (API + web) | `POST /api/v1/media/receipts` + `POST …/{id}/receipts`; receipts `PATCH`/`remove` | API (`expense-flow`, `f2c-requester-web`, `media`) |
+| US-08 | implemented (API + web) | `…/{id}/receipts-complete`, `…/lpj/submit` (Uang Muka only) | API (`lpj`, `f2c-requester-web`) |
+| US-17 | implemented (API) | `GET /api/v1/expense-requests?scope=team`; PM cannot approve (rule step) | API (`expense-flow`, `f2-authz-db`) |
+| US-19 | implemented (API + web) | `GET /api/v1/transfer-queue`, `/admin/antrian-transfer` | API (`expense-flow`) |
+| US-20 | implemented (API + web) | `POST …/{id}/transfer` (amount = approved, one KK), `…/transfers/{tid}/void` | unit + API + DB (`expense-flow`, `f2-authz-db`) |
+| US-21 | implemented (API + web) | `…/lpj/request-revision`, `…/lpj/verify`, `/admin/verifikasi-lpj` | API + DB (`lpj`) |
+| US-22 | implemented (API + web) | `POST …/{id}/settle` (refund KM / shortfall transfer + KK; exact amount settles at verify) | unit + API + DB (`lpj`) |
+| US-23 | implemented (API) | `POST/PATCH /api/v1/cash-entries`, `GET /api/v1/cash-accounts/balances` | API + DB (`f2-authz-db`) |
+| US-24 | implemented (API) | `POST /api/v1/cash-entries/{id}/void` (reversal row in the KM/KK series; no `cash-reversals` collection) | API + DB (`f2-authz-db`, `lpj`) |
+| US-26 | implemented (API + web) | `…/{id}/approve`, `/reject`, `GET /api/v1/approvals/inbox`, `/admin/persetujuan` (budget impact) | unit + API + DB (`expense-flow`, `f2-authz-db`) |
+| US-34 | implemented (engine) | approval rules by amount/priority, snapshot at submit | unit + API (`expense-flow`) |
+| US-36 | implemented (API) | type-specific state machines (`domain/expense/state.ts`) | unit + API (`expense-flow`) |
+| US-37 | implemented (API + web) | line `total` primary, unit price informational, server grand total | unit (`expense-flow`), API (`form-228`) |
+| US-38 | implemented (API) | Reimburse submit without a receipt per line → 409 | API (`expense-flow`, `form-228`) |
+| US-39 | implemented (API + web) | `…/receipts/{rid}/verify`, `/reject`, `…/verify-receipts`, `…/flags/{fid}/review` | unit + API (`expense-flow`, `form-228`) |
+| US-40 | implemented (API) | several requesters; no requester/creator may decide (G1, DB) | unit + API + DB (`expense-flow`, `f2-authz-db`) |
+| US-41 | implemented (API + web) | on-behalf create by Admin/Finance (Q-09), also in the admin form (F2c) | API (`expense-flow`, `f2c-requester-web`, `form-228`) |
+| US-42 | implemented (API) | `…/{id}/acknowledge` (PM / cost-center manager, Q-07) | unit + API (`expense-flow`, `form-228`) |
+| US-43 | implemented (API + web) | signature on submit/acknowledge/approve; self-service profile signature (F2c) | unit + API (`expense-flow`, `f2c-requester-web`, `files`) |
+| US-44 | implemented (API) | bank account must belong to a requester (G9), snapshot | API (`expense-flow`, `f2c-requester-web`) |
+| US-46 | implemented (web) | `GET …/{id}/pdf[?variant=internal]` (ADR 0008); layout approved by the user 2026-09-24, logo pending (Q-32) | unit (`pdf`), API golden + RSS (`form-228`), manual (layout approved) |
+| US-47 | implemented | `amount_diff` flag (tolerance, Q-14) | unit (`expense-flow`), API (`form-228`) |
+| US-48 | implemented | `date_after_request` flag | unit (`expense-flow`), API (`form-228`) |
+| US-49 | implemented | `uom_suspicious` flag | unit (`expense-flow`), API (`form-228`) |
+| US-50 | implemented | `duplicate` flag | unit (`expense-flow`), API (`form-228`) |
+| US-53 | implemented (API + web) | project XOR cost center (400 when both/neither), scope G10 | API (`expense-flow`, `f2c-requester-web`) |
+| US-59 | implemented (API) | open-flag count stored on the decision row | API (`form-228`) |
+
+Not in F2 scope and not implemented: batch/period PDF (worker), signed media URLs (ADR 0004 §4, F6), FCM push (F4),
+settlement reversal (F6 backlog).

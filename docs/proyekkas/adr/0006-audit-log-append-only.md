@@ -1,6 +1,6 @@
 # ADR 0006 — Append-only audit log, DB roles and immutability enforcement
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) the F1 foundation and F2a (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved), the F1 foundation and F2a, and 2026-09-24 after F2b (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §8 (audit structure + events), §4 rules, US-35; lead prompt "Audit log
@@ -126,6 +126,21 @@ the domain service snapshots them into `expense_line_snapshots` (Class A) for th
   before committing: `forceDeferredChecks()` (`SET CONSTRAINTS ALL IMMEDIATE; SET CONSTRAINTS ALL DEFERRED`)
   in `withReqTransaction()` (`src/lib/system-tx.ts`) and in the `expense-requests` `afterChange` hook, so a
   violation surfaces as a real error. Re-verify on every Payload upgrade.
+
+**Implemented (F2b, `migrations/20260923_161854_f2b_security.ts`, `develop` `59ba0a4`):**
+- **`settlements` (LPJ) — Class B**, flat, no DELETE. Trigger `pk_settlements_guard`: status graph
+  `draft → submitted ⇄ revision`, `submitted → verified → settled` only; identity immutable; each column group
+  changes only on its own transition; a `settled` row is frozen; on `verified` the DB checks
+  `difference = transferred_total − verified_receipts_total` and `settlement_type` (`refund` > 0, `shortfall`
+  < 0, `none` = 0); on `settled` the row must reference a **posted** refund KM / `lpj_shortfall` transfer of
+  exactly the difference (or none when 0).
+- **`notifications` — Class B**, no DELETE (default grants), trigger `notifications_protect`: identity
+  columns immutable once set, `read_at` once set stays set, `uuid` immutable; only `read_at` and the push
+  delivery columns (`push_status`, ADR 0011) change later.
+- `transfers` guard extended: kind `lpj_shortfall` only for an Uang Muka in "LPJ Terverifikasi" whose LPJ is
+  verified as shortfall, amount = −difference, one posted per request. `cash_entries`: `settlement_refund`
+  rows are cash-IN linked to the request, amount = verified LPJ surplus. `expense_requests` whitelist gains
+  `verified_receipts_total`.
 
 Enforcement per class (in migrations, owner role):
 ```sql
@@ -262,3 +277,8 @@ the DB before first deploy is free; after deploy it needs dump/restore.
   `idempotency_keys` table; Payload `commitTransaction` swallows COMMIT errors (read in `@payloadcms/drizzle`
   3.90.1) → deferred checks are forced inside the transaction. §3: new audit enum values `approve`,
   `reject`, `verify` (and `email_test` from F1). Status stays accepted.
+- **2026-09-24 (F2b):** verified against `develop` `59ba0a4`. §2: `settlements` and `notifications` are
+  Class B with DB guards (settlement status graph, frozen when settled, difference and refund/shortfall
+  cross-checks; notifications identity immutable, `read_at` sticky, no DELETE); `transfers`/`cash_entries`
+  guards extended for `lpj_shortfall` / `settlement_refund`. Downloads of the PDF are audited `export`,
+  transfer-proof file reads `view_sensitive` (ADR 0008, architecture §6.3). Status stays accepted.
