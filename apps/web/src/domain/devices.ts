@@ -11,7 +11,7 @@ export type RegisterInput = {
   platform: 'android'
   model?: string
   appVersion?: string
-  fcmToken?: string
+  fcmToken?: string | null
 }
 
 type DeviceDoc = {

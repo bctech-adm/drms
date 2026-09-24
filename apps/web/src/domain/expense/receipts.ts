@@ -104,7 +104,7 @@ function validateReceipt(input: Partial<ReceiptInput>, forCreate: boolean) {
 }
 
 /** POST /expense-requests/{id}/receipts (US-07, US-38). */
-export async function addReceipt(req: PayloadRequest, requestId: number, input: ReceiptInput) {
+export async function addReceipt(req: PayloadRequest, requestId: number, input: ReceiptInput, opts: { clientUuid?: string } = {}) {
   const doc = await loadVisible(req, requestId, { lock: true })
   requireAction(await actorContext(req, doc), 'add_receipt')
   validateReceipt(input, true)
@@ -130,6 +130,7 @@ export async function addReceipt(req: PayloadRequest, requestId: number, input: 
       status: 'pending',
       entrySource: 'manual',
       createdBy: userId(req),
+      clientUuid: opts.clientUuid ?? null, // F4: APK offline id (sync batch)
     } as never,
     depth: 0,
     overrideAccess: true, // SYSTEM-WRITE: receipt after add_receipt guard (DB: editable window)

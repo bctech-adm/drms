@@ -402,8 +402,13 @@
             "pattern": "^[0-9A-Za-z.+-]{1,32}$"
           },
           "fcmToken": {
-            "type": "string",
-            "maxLength": 4096
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "FCM token (ADR 0011); null clears it, omitted keeps it. Push is not enabled yet (GET /app/config features.pushEnabled)."
           }
         },
         "required": [
@@ -1443,6 +1448,57 @@
               "string",
               "null"
             ]
+          },
+          "rev": {
+            "type": "integer",
+            "description": "Content revision (sync `base_rev` for offline edits of a draft, ADR 0010)."
+          },
+          "timeline": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "$ref": "#/components/schemas/RequestStatus"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "done",
+                    "current",
+                    "todo"
+                  ]
+                }
+              },
+              "required": [
+                "status",
+                "label",
+                "state"
+              ]
+            },
+            "description": "Status path of the request type with done / current / todo marks (US-05)."
+          },
+          "nextActor": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "who": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "who",
+              "what"
+            ],
+            "description": "\"Giliran\": who is expected to act next and what (display text, Bahasa Indonesia); null when finished."
           }
         },
         "required": [
@@ -1491,7 +1547,10 @@
           "cancelReason",
           "rejectReason",
           "clientUuid",
-          "createdAt"
+          "createdAt",
+          "rev",
+          "timeline",
+          "nextActor"
         ]
       },
       "Ref": {
@@ -3247,6 +3306,972 @@
           "attachments",
           "company"
         ]
+      },
+      "AppConfig": {
+        "type": "object",
+        "properties": {
+          "minSupportedVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Below this every authenticated call answers 426."
+          },
+          "latestVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "downloadUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "APK download page (side-load); null = not published yet (\"hubungi admin\")."
+          },
+          "updateRequired": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Only with ?version=."
+          },
+          "updateAvailable": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Only with ?version=."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Company display timezone (IANA)."
+          },
+          "serverTime": {
+            "type": "string"
+          },
+          "android": {
+            "type": "object",
+            "properties": {
+              "packageName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "packageName"
+            ]
+          },
+          "features": {
+            "type": "object",
+            "properties": {
+              "pushEnabled": {
+                "type": "boolean",
+                "description": "false until FCM is configured (ADR 0011) — poll GET /notifications instead."
+              },
+              "syncExpenseDrafts": {
+                "type": "boolean"
+              },
+              "syncAttendance": {
+                "type": "boolean"
+              },
+              "syncProgressReports": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "pushEnabled",
+              "syncExpenseDrafts",
+              "syncAttendance",
+              "syncProgressReports"
+            ]
+          },
+          "sync": {
+            "type": "object",
+            "properties": {
+              "maxItemsPerBatch": {
+                "type": "integer"
+              },
+              "maxBatchBytes": {
+                "type": "integer"
+              },
+              "rateLimitPerMinute": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "maxItemsPerBatch",
+              "maxBatchBytes",
+              "rateLimitPerMinute"
+            ]
+          }
+        },
+        "required": [
+          "minSupportedVersion",
+          "latestVersion",
+          "downloadUrl",
+          "updateRequired",
+          "updateAvailable",
+          "timezone",
+          "serverTime",
+          "android",
+          "features",
+          "sync"
+        ]
+      },
+      "SyncBatchResponse": {
+        "type": "object",
+        "properties": {
+          "batch_id": {
+            "type": "string"
+          },
+          "server_time": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncResult"
+            }
+          }
+        },
+        "required": [
+          "batch_id",
+          "server_time",
+          "results"
+        ]
+      },
+      "SyncResult": {
+        "type": "object",
+        "properties": {
+          "client_uuid": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "duplicate",
+              "rejected",
+              "conflict",
+              "deferred",
+              "unsupported"
+            ],
+            "description": "applied | duplicate (replay; original result below) | rejected (business rule, never retry) | conflict (stale base_rev, server wins, see server_copy) | deferred (retry later) | unsupported (item type not enabled on this server yet — keep it queued, do not count as an attempt; see GET /app/config features)."
+          },
+          "original_status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "applied",
+              "rejected",
+              "conflict",
+              null
+            ],
+            "description": "For duplicate: the status of the first processing."
+          },
+          "server_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Server id (numeric, as string) of the expense request."
+          },
+          "rev": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "received_at": {
+            "type": "string",
+            "description": "Authoritative server time of (first) processing, UTC."
+          },
+          "time_trust": {
+            "type": "string",
+            "enum": [
+              "server",
+              "estimated",
+              "device_only"
+            ]
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL."
+                },
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "message"
+              ]
+            }
+          },
+          "server_copy": {
+            "$ref": "#/components/schemas/SyncDraftCopy"
+          }
+        },
+        "required": [
+          "client_uuid",
+          "status",
+          "original_status",
+          "server_id",
+          "rev",
+          "received_at",
+          "time_trust",
+          "flags",
+          "errors",
+          "server_copy"
+        ]
+      },
+      "SyncDraftCopy": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "uuid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "client_uuid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rev": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "doc_no": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "advance",
+              "reimburse"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "project_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "cost_center_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "needed_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "period_from": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "period_to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requester_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          },
+          "bank_account_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "grand_total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000000000000
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "no": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "qty": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "uom_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "exclusiveMinimum": 0
+                },
+                "unit_price": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 10000000000000
+                },
+                "total": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 10000000000000
+                },
+                "notes": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "category_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "exclusiveMinimum": 0
+                },
+                "vehicle_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "id",
+                "no",
+                "description",
+                "qty",
+                "uom_id",
+                "unit_price",
+                "total",
+                "notes",
+                "category_id",
+                "vehicle_id"
+              ]
+            }
+          },
+          "receipts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "client_uuid": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "line_id": {
+                  "type": "string"
+                },
+                "receipt_no": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "vendor_name": {
+                  "type": "string"
+                },
+                "receipt_date": {
+                  "type": "string"
+                },
+                "receipt_time": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000000000000
+                },
+                "tax_amount": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 10000000000000
+                },
+                "media_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "exclusiveMinimum": 0
+                },
+                "status": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "client_uuid",
+                "line_id",
+                "receipt_no",
+                "vendor_name",
+                "receipt_date",
+                "receipt_time",
+                "amount",
+                "tax_amount",
+                "media_id",
+                "status"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "uuid",
+          "client_uuid",
+          "rev",
+          "status",
+          "doc_no",
+          "kind",
+          "title",
+          "project_id",
+          "cost_center_id",
+          "needed_date",
+          "period_from",
+          "period_to",
+          "notes",
+          "requester_ids",
+          "bank_account_id",
+          "grand_total",
+          "updated_at",
+          "lines",
+          "receipts"
+        ],
+        "description": "Server version of the draft (server wins on conflict)."
+      },
+      "SyncBatch": {
+        "type": "object",
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Must equal the X-Device-Id of the registered device."
+          },
+          "clock": {
+            "$ref": "#/components/schemas/SyncClock"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncItem"
+            },
+            "minItems": 1,
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "batch_id",
+          "device_id",
+          "clock",
+          "items"
+        ],
+        "additionalProperties": false,
+        "description": "≤ 50 items and ≤ 262144 bytes JSON per batch (ADR 0010 decision 14)."
+      },
+      "SyncClock": {
+        "type": "object",
+        "properties": {
+          "device_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Device wall clock at send time (with offset). Comparison only."
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Android monotonic time since boot at send time."
+          },
+          "boot_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "last_server_time": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "server_time of the last successful online call on this boot."
+          },
+          "last_server_elapsed_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "elapsed_ms recorded together with last_server_time."
+          }
+        },
+        "required": [
+          "device_time",
+          "elapsed_ms",
+          "boot_id"
+        ],
+        "additionalProperties": false
+      },
+      "SyncItem": {
+        "type": "object",
+        "properties": {
+          "client_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Idempotency key of this queue item (UUIDv7). Replays return `duplicate` with the stored result."
+          },
+          "type": {
+            "$ref": "#/components/schemas/SyncItemType"
+          },
+          "schema_version": {
+            "type": "number",
+            "enum": [
+              1
+            ]
+          },
+          "offline": {
+            "type": "boolean",
+            "description": "true = created while offline (stored as a comparison flag)."
+          },
+          "device_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Device wall clock when the user acted. Comparison only; the server time is authoritative."
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Monotonic time since boot when the user acted."
+          },
+          "boot_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Boot of elapsed_ms (default: clock.boot_id). A different boot → time_trust device_only."
+          },
+          "base_rev": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Server `rev` the edit is based on (null/absent = new draft; on an existing draft → conflict). A new draft starts at rev 1 and every applied edit adds exactly 1, so queued edits of a draft created offline use 1, 2, … in queue order."
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 50,
+            "description": "client_uuid of earlier items that must be applied first."
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncDraftUpsertPayload"
+              },
+              {
+                "$ref": "#/components/schemas/SyncDraftDeletePayload"
+              },
+              {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            ],
+            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload; other types: free-form until supported."
+          }
+        },
+        "required": [
+          "client_uuid",
+          "type",
+          "schema_version",
+          "offline",
+          "device_time",
+          "elapsed_ms",
+          "payload"
+        ],
+        "additionalProperties": false
+      },
+      "SyncItemType": {
+        "type": "string",
+        "enum": [
+          "attendance.check_in",
+          "attendance.check_out",
+          "attendance.on_behalf",
+          "expense_request.draft_upsert",
+          "expense_request.draft_delete",
+          "progress_report.draft_upsert"
+        ],
+        "description": "Attendance and progress reports are accepted by the schema but answered `unsupported` until their phase ships (F5)."
+      },
+      "SyncDraftUpsertPayload": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Server id of a draft created online."
+          },
+          "draft_client_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "APK id of the draft (default: the item client_uuid, i.e. the item that created it)."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "advance",
+              "reimburse"
+            ],
+            "description": "Required for a new draft. advance = Uang Muka."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Required for a new draft."
+          },
+          "project_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "cost_center_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "needed_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "period_from": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "period_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "requester_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "maxItems": 20
+          },
+          "bank_account_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "client_grand_total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000000000,
+            "description": "Advisory; mismatch with the server total → flag CLIENT_TOTAL_MISMATCH."
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncLineInput"
+            },
+            "maxItems": 200,
+            "description": "Replaces ALL lines when present."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Omitted fields stay unchanged on an existing draft."
+      },
+      "SyncLineInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Server line id (lines that came from the server)."
+          },
+          "client_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "APK id of a new line; becomes the server line id."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "qty": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000000000
+          },
+          "uom_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "unit_price": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000000000
+          },
+          "total": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 10000000000000
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "category_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "vehicle_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "receipts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncReceiptInput"
+            },
+            "maxItems": 20,
+            "description": "Reimburse drafts only. Upserted by client_uuid; receipts missing here are NOT removed."
+          }
+        },
+        "additionalProperties": false
+      },
+      "SyncReceiptInput": {
+        "type": "object",
+        "properties": {
+          "client_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "APK id of the receipt (stable across edits)."
+          },
+          "receipt_no": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          },
+          "vendor_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "vendor_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "receipt_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "receipt_time": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$"
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000000000000,
+            "description": "Total PRINTED on the receipt."
+          },
+          "tax_amount": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000000000
+          },
+          "media_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "media-receipts id uploaded by the caller (POST /api/v1/media/receipts). Cannot change once synced."
+          }
+        },
+        "required": [
+          "client_uuid",
+          "vendor_name",
+          "receipt_date",
+          "amount",
+          "media_id"
+        ],
+        "additionalProperties": false
+      },
+      "SyncDraftDeletePayload": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "draft_client_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000,
+            "description": "Default \"Draft dihapus dari aplikasi\"."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Soft delete = the draft is cancelled (no hard delete)."
       }
     },
     "parameters": {}
@@ -9512,6 +10537,172 @@
             }
           },
           "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/config": {
+      "get": {
+        "summary": "PUBLIC app gate: min/latest APK version, download URL, company timezone, feature flags, sync limits (call before login and on start)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+\\.\\d+\\.\\d+$",
+              "description": "Installed APK version → updateRequired / updateAvailable."
+            },
+            "required": false,
+            "description": "Installed APK version → updateRequired / updateAvailable.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Config (Cache-Control: public, max-age=60)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppConfig"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/batch": {
+      "post": {
+        "summary": "APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.",
+        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload); attendance.* and progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id; must equal body.device_id."
+            },
+            "required": true,
+            "description": "Registered install id; must equal body.device_id.",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Optional (= batch_id); items are idempotent by client_uuid."
+            },
+            "required": false,
+            "description": "Optional (= batch_id); items are idempotent by client_uuid.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SyncBatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-item results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncBatchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
             "description": "Problem",
             "content": {
               "application/problem+json": {
