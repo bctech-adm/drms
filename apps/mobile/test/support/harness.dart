@@ -8,13 +8,13 @@ import 'package:proyekkas/core/storage/secure_store.dart';
 AppDatabase memoryDb() => AppDatabase(NativeDatabase.memory());
 
 AppEnv testEnv(String base) => AppEnv(
-      flavor: 'staging',
-      apiBaseUrl: base,
-      oidcIssuer: '$base/realms/drms-staging',
-      oidcClientId: 'proyekkas-mobile',
-      oidcRedirectUri: 'https://example.test/app/callback',
-      pushEnabled: false,
-    );
+  flavor: 'staging',
+  apiBaseUrl: base,
+  oidcIssuer: '$base/realms/drms-staging',
+  oidcClientId: 'proyekkas-mobile',
+  oidcRedirectUri: 'https://example.test/app/callback',
+  pushEnabled: false,
+);
 
 class StaticTokens implements TokenSource {
   StaticTokens([this.token = 'access-1']);
@@ -36,7 +36,14 @@ class StaticTokens implements TokenSource {
   Future<void> onUnauthorized() async => unauthorized++;
 }
 
-DeviceIdentity testDevice() => DeviceIdentity.fixed(MemorySecureStore(), deviceId: '5b0c2f7e-2d1a-4e0b-8f5e-7a9d3c1b2e44');
+DeviceIdentity testDevice() =>
+    DeviceIdentity.fixed(MemorySecureStore(), deviceId: '5b0c2f7e-2d1a-4e0b-8f5e-7a9d3c1b2e44');
 
 ApiClient testClient(String base, TokenSource tokens, {void Function(bool)? reach, void Function(String?)? upgrade}) =>
-    ApiClient(baseUrl: '$base/api/v1', tokens: tokens, headers: testDevice(), onReachability: reach, onUpgradeRequired: upgrade);
+    ApiClient(
+      baseUrl: '$base/api/v1',
+      tokens: tokens,
+      headers: testDevice(),
+      onReachability: reach,
+      onUpgradeRequired: upgrade,
+    );

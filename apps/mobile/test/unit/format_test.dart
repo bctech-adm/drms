@@ -27,7 +27,10 @@ void main() {
   group('dates', () {
     test('device_time carries the numeric offset', () {
       expect(formatWallClock(DateTime(2026, 9, 21, 7, 58, 31), const Duration(hours: 8)), '2026-09-21T07:58:31+08:00');
-      expect(formatWallClock(DateTime(2026, 1, 2, 3, 4, 5), const Duration(hours: -3, minutes: -30)), '2026-01-02T03:04:05-03:30');
+      expect(
+        formatWallClock(DateTime(2026, 1, 2, 3, 4, 5), const Duration(hours: -3, minutes: -30)),
+        '2026-01-02T03:04:05-03:30',
+      );
     });
 
     test('server UTC shown in company zone (WITA default)', () {

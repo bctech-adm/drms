@@ -15,9 +15,14 @@ void main() {
   });
 
   test('pending acknowledge: Diketahui is current, approval pending', () {
-    final d = detailFromJson(detailJson(status: 'pending_ack', approvals: [
-      {'id': 1, 'cycle': 1, 'position': 'diajukan', 'level': 0, 'actorName': 'Budi', 'decision': 'signed'},
-    ]));
+    final d = detailFromJson(
+      detailJson(
+        status: 'pending_ack',
+        approvals: [
+          {'id': 1, 'cycle': 1, 'position': 'diajukan', 'level': 0, 'actorName': 'Budi', 'decision': 'signed'},
+        ],
+      ),
+    );
     final steps = buildTimeline(d);
     expect(steps[2].state, TurnState.current);
     expect(steps[3].state, TurnState.pending);
@@ -25,9 +30,22 @@ void main() {
   });
 
   test('rejected at approval shows the reason', () {
-    final d = detailFromJson(detailJson(status: 'rejected', approvals: [
-      {'id': 1, 'cycle': 1, 'position': 'approval', 'level': 1, 'actorName': 'Owner', 'decision': 'rejected', 'reason': 'Nota kurang'},
-    ]));
+    final d = detailFromJson(
+      detailJson(
+        status: 'rejected',
+        approvals: [
+          {
+            'id': 1,
+            'cycle': 1,
+            'position': 'approval',
+            'level': 1,
+            'actorName': 'Owner',
+            'decision': 'rejected',
+            'reason': 'Nota kurang',
+          },
+        ],
+      ),
+    );
     final last = buildTimeline(d).last;
     expect(last.state, TurnState.rejected);
     expect(last.note, 'Nota kurang');
@@ -41,9 +59,13 @@ void main() {
   });
 
   test('older approval cycles are ignored', () {
-    final d = detailFromJson(detailJson(approvals: [
-      {'id': 9, 'cycle': 0, 'position': 'approval', 'level': 1, 'actorName': 'X', 'decision': 'rejected'},
-    ]));
+    final d = detailFromJson(
+      detailJson(
+        approvals: [
+          {'id': 9, 'cycle': 0, 'position': 'approval', 'level': 1, 'actorName': 'X', 'decision': 'rejected'},
+        ],
+      ),
+    );
     expect(buildTimeline(d).last.state, TurnState.current);
   });
 }

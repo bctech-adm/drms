@@ -37,8 +37,13 @@ void main() {
     final client = testClient(server.base, StaticTokens());
     final lock = AsyncLock();
     engine = SyncEngine(
-      outbox: outbox, drafts: drafts, api: SyncApi(client), db: db, clock: clock,
-      deviceId: () => '5b0c2f7e-2d1a-4e0b-8f5e-7a9d3c1b2e44', lock: lock,
+      outbox: outbox,
+      drafts: drafts,
+      api: SyncApi(client),
+      db: db,
+      clock: clock,
+      deviceId: () => '5b0c2f7e-2d1a-4e0b-8f5e-7a9d3c1b2e44',
+      lock: lock,
     );
     service = DraftService(drafts: drafts, outbox: outbox, api: ExpenseApi(client), clock: clock, lock: lock);
   });
@@ -91,7 +96,11 @@ void main() {
   test('media first, then batch; applied → synced with server id/rev; clock pair sent', () async {
     await saveSeed();
     server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {'status': 'stored'}));
-    server.on('POST', '/api/v1/sync/batch', (req, body) => (200, resultFor(body, 'applied', extra: {'server_id': '77', 'rev': 1})));
+    server.on(
+      'POST',
+      '/api/v1/sync/batch',
+      (req, body) => (200, resultFor(body, 'applied', extra: {'server_id': '77', 'rev': 1})),
+    );
     final r = await engine.run(sub);
     expect(r.outcome, SyncRunOutcome.done);
     final paths = server.pathsCalled().toList();
@@ -126,7 +135,11 @@ void main() {
   test('duplicate counts as delivered (replayed client_uuid)', () async {
     await saveSeed();
     server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
-    server.on('POST', '/api/v1/sync/batch', (req, body) => (200, resultFor(body, 'duplicate', extra: {'server_id': '77', 'rev': 1})));
+    server.on(
+      'POST',
+      '/api/v1/sync/batch',
+      (req, body) => (200, resultFor(body, 'duplicate', extra: {'server_id': '77', 'rev': 1})),
+    );
     expect((await engine.run(sub)).applied, 1);
     expect((await drafts.load(sub, seedDraft().clientUuid))!.syncState, DraftSyncState.synced);
   });
@@ -134,9 +147,22 @@ void main() {
   test('rejected is never retried and the message is shown', () async {
     await saveSeed();
     server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
-    server.on('POST', '/api/v1/sync/batch', (req, body) => (200, resultFor(body, 'rejected', extra: {
-          'errors': [{'code': 'NOT_EDITABLE', 'message': 'x'}],
-        })));
+    server.on(
+      'POST',
+      '/api/v1/sync/batch',
+      (req, body) => (
+        200,
+        resultFor(
+          body,
+          'rejected',
+          extra: {
+            'errors': [
+              {'code': 'NOT_EDITABLE', 'message': 'x'},
+            ],
+          },
+        ),
+      ),
+    );
     final r = await engine.run(sub);
     expect(r.rejected, 1);
     final d = await drafts.load(sub, seedDraft().clientUuid);
@@ -160,9 +186,22 @@ void main() {
   test('conflict: server wins, local copy kept as "Salinan konflik"', () async {
     await saveSeed();
     server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
-    server.on('POST', '/api/v1/sync/batch', (req, body) => (200, resultFor(body, 'conflict', extra: {
-          'server_id': '77', 'rev': 3, 'server_copy': {'status': 'draft', 'grand_total': 1000},
-        })));
+    server.on(
+      'POST',
+      '/api/v1/sync/batch',
+      (req, body) => (
+        200,
+        resultFor(
+          body,
+          'conflict',
+          extra: {
+            'server_id': '77',
+            'rev': 3,
+            'server_copy': {'status': 'draft', 'grand_total': 1000},
+          },
+        ),
+      ),
+    );
     expect((await engine.run(sub)).conflicts, 1);
     final row = await (db.select(db.localDrafts)).getSingle();
     expect(row.syncState, 'conflict');
@@ -190,7 +229,11 @@ void main() {
 
   test('media 409 (same uuid, other bytes) rejects the item', () async {
     await saveSeed();
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) => (409, {'type': 'about:blank', 'title': 'Conflict', 'status': 409}));
+    server.on(
+      'PUT',
+      '/api/v1/sync/media/*',
+      (req, body) => (409, {'type': 'about:blank', 'title': 'Conflict', 'status': 409}),
+    );
     await engine.run(sub);
     final row = await (db.select(db.outbox)).getSingle();
     expect(row.status, 'rejected');
@@ -209,6 +252,9 @@ void main() {
   test('queue budget 100 MB is enforced', () async {
     final big = Uint8List(60 * 1024 * 1024);
     await drafts.addMedia(sub, uuid: 'm1', kind: 'receipt', bytes: big, sha256: 'a');
-    expect(() => drafts.addMedia(sub, uuid: 'm2', kind: 'receipt', bytes: big, sha256: 'b'), throwsA(isA<QueueFullException>()));
+    expect(
+      () => drafts.addMedia(sub, uuid: 'm2', kind: 'receipt', bytes: big, sha256: 'b'),
+      throwsA(isA<QueueFullException>()),
+    );
   });
 }

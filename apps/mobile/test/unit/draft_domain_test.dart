@@ -61,6 +61,9 @@ void main() {
   });
 
   test('issue text mentions the line', () {
-    expect(const DraftIssue('total', 'Total harus lebih dari 0.', lineNo: 2).toString(), 'Baris 2: Total harus lebih dari 0.');
+    expect(
+      const DraftIssue('total', 'Total harus lebih dari 0.', lineNo: 2).toString(),
+      'Baris 2: Total harus lebih dari 0.',
+    );
   });
 }

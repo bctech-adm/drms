@@ -43,8 +43,10 @@ void main() {
     test('gate', () {
       expect(evaluateVersion('0.1.0', null), VersionGate.ok);
       expect(evaluateVersion('0.1.0', const AppConfig(minAppVersion: '0.2.0')), VersionGate.updateRequired);
-      expect(evaluateVersion('0.2.0', const AppConfig(minAppVersion: '0.2.0', latestAppVersion: '0.3.0')),
-          VersionGate.updateAvailable);
+      expect(
+        evaluateVersion('0.2.0', const AppConfig(minAppVersion: '0.2.0', latestAppVersion: '0.3.0')),
+        VersionGate.updateAvailable,
+      );
       expect(AppConfig.fromJson({'minAppVersion': '', 'latestAppVersion': 3}).minAppVersion, isNull);
     });
   });
@@ -64,7 +66,10 @@ void main() {
 
   group('router redirect', () {
     const signedOut = AuthSignedOut();
-    final signedIn = AuthSignedIn(profile: UserProfile(id: 1, email: 'a@b', roles: {Role.staff}), sub: 's');
+    final signedIn = AuthSignedIn(
+      profile: UserProfile(id: 1, email: 'a@b', roles: {Role.staff}),
+      sub: 's',
+    );
     String? r(String loc, AuthState a, {VersionGate g = VersionGate.ok, bool loading = false}) =>
         redirectFor(location: loc, auth: a, gate: g, configLoading: loading);
 

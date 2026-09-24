@@ -4,12 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:proyekkas/features/sync/domain/sync_models.dart';
 
 QueuedItem item(int i, {int payloadBytes = 10}) => QueuedItem(
-      clientUuid: 'op-$i',
-      type: SyncItemType.expenseDraftUpsert,
-      payload: {'pad': 'x' * payloadBytes},
-      deviceTime: '2026-09-21T12:00:00+08:00',
-      elapsedMs: i,
-    );
+  clientUuid: 'op-$i',
+  type: SyncItemType.expenseDraftUpsert,
+  payload: {'pad': 'x' * payloadBytes},
+  deviceTime: '2026-09-21T12:00:00+08:00',
+  elapsedMs: i,
+);
 
 void main() {
   test('batches hold ≤ 50 items and keep order', () {
@@ -35,7 +35,10 @@ void main() {
     final j = item(3).toJson();
     expect(j['schema_version'], 1);
     expect(j['offline'], isTrue);
-    expect(j.keys, containsAll(['client_uuid', 'type', 'device_time', 'elapsed_ms', 'base_rev', 'depends_on', 'payload']));
+    expect(
+      j.keys,
+      containsAll(['client_uuid', 'type', 'device_time', 'elapsed_ms', 'base_rev', 'depends_on', 'payload']),
+    );
   });
 
   test('back-off grows 5 s → capped at 10 min with ±20 % jitter', () {
@@ -54,8 +57,20 @@ void main() {
       'batch_id': 'b',
       'server_time': '2026-09-21T04:05:11Z',
       'results': [
-        {'client_uuid': 'a', 'status': 'applied', 'server_id': 'er-1', 'rev': 1, 'flags': ['OFFLINE']},
-        {'client_uuid': 'b', 'status': 'rejected', 'errors': [{'code': 'NOT_EDITABLE'}]},
+        {
+          'client_uuid': 'a',
+          'status': 'applied',
+          'server_id': 'er-1',
+          'rev': 1,
+          'flags': ['OFFLINE'],
+        },
+        {
+          'client_uuid': 'b',
+          'status': 'rejected',
+          'errors': [
+            {'code': 'NOT_EDITABLE'},
+          ],
+        },
         {'client_uuid': 'c', 'status': 'weird'},
       ],
     });

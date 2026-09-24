@@ -22,7 +22,8 @@ class MockServer {
   void on(String method, String path, Handler h) => routes['$method $path'] = h;
 
   Future<void> _handle(HttpRequest req) async {
-    final body = await utf8.decodeStream(req);
+    final bytes = await req.fold<List<int>>(<int>[], (a, b) => a..addAll(b));
+    final body = utf8.decode(bytes, allowMalformed: true);
     final headers = <String, String>{};
     req.headers.forEach((k, v) => headers[k.toLowerCase()] = v.join(','));
     calls.add((req.method, req.uri.path, headers, body));
@@ -35,7 +36,9 @@ class MockServer {
         }
       }
     }
-    final (status, payload) = h == null ? (404, {'type': 'about:blank', 'title': 'Not Found', 'status': 404}) : await h(req, body);
+    final (status, payload) = h == null
+        ? (404, {'type': 'about:blank', 'title': 'Not Found', 'status': 404})
+        : await h(req, body);
     req.response.statusCode = status;
     if (payload != null) {
       req.response.headers.contentType = status >= 400 ? ContentType('application', 'problem+json') : ContentType.json;
