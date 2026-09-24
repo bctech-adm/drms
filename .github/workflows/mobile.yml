@@ -104,11 +104,13 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: apk-${{ runner.os }}-${{ env.FLUTTER_VERSION }}-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/android/**/*.kts') }}
+          restore-keys: |
+            apk-${{ runner.os }}-${{ env.FLUTTER_VERSION }}-
       - run: flutter config --no-analytics && flutter pub get --enforce-lockfile
 
       - name: Debug APK (staging flavor, custom-scheme redirect)
         run: |
-          flutter build apk --debug --flavor staging \
+          tool/build_with_retry.sh flutter build apk --debug --flavor staging \
             --dart-define-from-file=config/staging.json \
             --dart-define=PK_OIDC_REDIRECT_URI=id.co.drms.proyekkas:/oauth2redirect \
             --build-number="${GITHUB_RUN_NUMBER}"
@@ -143,7 +145,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_STAGING_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_STAGING_KEY_PASSWORD }}
         run: |
-          flutter build apk --release --flavor staging \
+          tool/build_with_retry.sh flutter build apk --release --flavor staging \
             --dart-define-from-file=config/staging.json \
             --build-number="${GITHUB_RUN_NUMBER}" \
             --obfuscate --split-debug-info=build/symbols
