@@ -117,6 +117,16 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
             </li>
           ))}
         </ol>
+        {d.resubmitOf ? (
+          // F2e: the previous request by NUMBER + title (UAT: "Pengajuan ulang dari" showed only a title).
+          <div data-pk-resubmit-of={d.resubmitOf.id} style={{ marginBottom: 6 }}>
+            Pengajuan ulang dari{' '}
+            <a href={`/admin/collections/expense-requests/${d.resubmitOf.id}`}>
+              <strong>{d.resubmitOf.docNo ?? `#${d.resubmitOf.id}`}</strong>
+            </a>{' '}
+            — {d.resubmitOf.title}
+          </div>
+        ) : null}
         {next ? (
           <div data-pk-next-actor>
             Giliran: <strong>{next.who}</strong> — {next.what}.
@@ -141,6 +151,7 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
                 siklus {a.cycle} · {POSITION_LABELS[a.position] ?? a.position}
                 {a.position === 'approval' ? ` L${a.level}` : ''}: {a.actorName ?? '—'} — {DECISION_LABELS[a.decision] ?? a.decision}
                 {a.onBehalf ? ' (diwakili)' : ''}
+                {a.position === 'diketahui' && a.cycle === d.approvalCycle && snap?.acknowledgeDelegatedTo ? ' (dilimpahkan)' : ''}
                 {a.reason ? ` — ${a.reason}` : ''}
               </li>
             ))}
