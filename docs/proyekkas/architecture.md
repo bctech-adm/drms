@@ -1069,7 +1069,8 @@ POST /api/v1/attendance/check-in | /check-out | /on-behalf (PM) | POST /api/v1/a
 GET  /api/v1/attendance/today?project= | GET /api/v1/attendance/me?month=
 POST /api/v1/progress-reports (multipart ≤5 photos) | PATCH /api/v1/progress-reports/{id}
 POST /api/v1/budget-addenda | /{id}/submit | /approve | /reject
-POST /api/v1/sync/batch                               (offline queue replay — contract in ADR 0010)
+POST /api/v1/sync/batch                               (offline queue replay — contract in ADR 0010; implemented F4: drafts + receipts)
+GET  /api/v1/app/config                               (PUBLIC app gate: versions, download URL, TZ, feature flags — F4)
 GET  /api/v1/notifications | GET /api/v1/notifications/{id|uuid} | POST /api/v1/notifications/{id}/read | POST /api/v1/notifications/read-all
 GET  /api/v1/media/{collection}/{id}/file[?variant=thumb]   (as implemented F2b; signed exp/sig NOT implemented — F6)
 GET  /api/v1/dashboard/{owner|finance|pm|staff}

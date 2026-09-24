@@ -11,6 +11,15 @@ F2a (expense request core, `c8c1af6`), F2b (LPJ/settlement, PDF, admin views, no
 `0.1.0-stg-59ba0a4`. UAT seed run on staging 2026-09-24; UAT by the user in progress; F2 gate pending.
 
 ### Added
+- **F4 APK backend** (`apps/web`, ADR 0010): `POST /api/v1/sync/batch` (bearer + registered device; drafts
+  create/edit/delete + receipts per line, per-item transactions, idempotent by `client_uuid` via `sync_receipts`,
+  `rev`/`base_rev` conflicts — server wins, offline device time stored as comparison only, attendance/progress →
+  `unsupported` until F5); public `GET /api/v1/app/config` (min/latest APK version, download URL, company TZ,
+  feature flags incl. `pushEnabled:false`); `/.well-known/assetlinks.json` (env `ANDROID_APP_PACKAGE`,
+  `ANDROID_APP_CERT_SHA256`); request detail gains `rev`, `timeline` and `nextActor` ("Giliran"); device
+  registration accepts `fcmToken: null`. Migrations `20260924_025114_f4_mobile_sync` (columns
+  `expense_requests.sync_rev`, `receipts.client_uuid`, company-settings gate fields) and
+  `20260924_025115_f4_security` (table `sync_receipts`, immutable `receipts.client_uuid`) — additive.
 - **F2c requester web panel** (`apps/web`): `pk-staff` may use the admin panel with a restricted nav (own
   requests, receipts, notifications, own profile); self-service profile signature; workflow panel with status
   timeline + next actor and the requester actions (Kirim pengajuan, Tarik kembali/Batalkan, Ajukan ulang, upload
