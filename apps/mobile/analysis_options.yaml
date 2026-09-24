@@ -19,3 +19,6 @@ linter:
     unawaited_futures: true
     prefer_final_locals: true
     require_trailing_commas: false
+
+formatter:
+  page_width: 120
