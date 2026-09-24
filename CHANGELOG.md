@@ -40,6 +40,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
+### Fixed
+- **Report "Anggaran Project" with a project filter** (F3 UAT): the per-category table used
+  `FULL JOIN … ON category_id IS NOT DISTINCT FROM …`, which PostgreSQL 16 rejects ("FULL JOIN is only supported with
+  merge-joinable or hash-joinable join conditions"), so the page ("Data tidak dapat dimuat…"), JSON and CSV/XLSX/PDF
+  exports failed. RAB and Komitmen per category are now merged with `UNION ALL` + `GROUP BY` (same K-07 result,
+  uncategorised lines in one "Tanpa kategori" bucket). New `tests/integration/f3-report-filters.int.test.ts`: the
+  per-category detail in all formats against the K-07 SQL rule, plus a smoke matrix of every report × every filter.
+
 ## [0.2.1] - 2026-09-24
 
 ### Fixed

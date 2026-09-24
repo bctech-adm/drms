@@ -279,7 +279,12 @@ export async function projectBudgets(req: PayloadRequest, scope: ReportScope, op
   })
 }
 
-/** K-07 per category for one project (RAB per category vs committed line totals). */
+/**
+ * K-07 per category for one project (RAB per category vs committed line totals). Lines without a
+ * category form one "Tanpa kategori" bucket (committed only: budget_lines.category_id is NOT NULL).
+ * RAB and committed are merged with UNION ALL + GROUP BY (NULL category = one group), not a
+ * FULL JOIN: PostgreSQL rejects FULL JOIN … ON a IS NOT DISTINCT FROM b (not merge/hash-joinable).
+ */
 export async function projectBudgetByCategory(req: PayloadRequest, scope: ReportScope, projectId: number) {
   const r = await rows(
     req,
@@ -287,12 +292,13 @@ export async function projectBudgetByCategory(req: PayloadRequest, scope: Report
         rab AS (SELECT bl.category_id, sum(bl.amount) AS amount FROM budget_lines bl JOIN p ON p.id = bl.project_id GROUP BY bl.category_id),
         com AS (SELECT l.category_id, sum(l.total) AS amount FROM expense_requests er JOIN p ON p.id = er.project_id
                   JOIN expense_requests_lines l ON l._parent_id = er.id
-                WHERE er.status::text IN (${COMMITTED}) GROUP BY l.category_id)
-        SELECT coalesce(rab.category_id, com.category_id) AS category_id, c.code, c.name,
-               rab.amount::text AS rab, coalesce(com.amount, 0)::text AS committed
-        FROM rab FULL JOIN com ON com.category_id IS NOT DISTINCT FROM rab.category_id
-        LEFT JOIN expense_categories c ON c.id = coalesce(rab.category_id, com.category_id)
-        ORDER BY c.code NULLS LAST`,
+                WHERE er.status::text IN (${COMMITTED}) GROUP BY l.category_id),
+        u AS (SELECT category_id, amount AS rab, NULL::numeric AS com FROM rab
+              UNION ALL SELECT category_id, NULL::numeric, amount FROM com),
+        g AS (SELECT category_id, sum(rab) AS rab, sum(com) AS com FROM u GROUP BY category_id)
+        SELECT g.category_id, c.code, c.name, g.rab::text AS rab, coalesce(g.com, 0)::text AS committed
+        FROM g LEFT JOIN expense_categories c ON c.id = g.category_id
+        ORDER BY c.code NULLS LAST, g.category_id NULLS LAST`,
   )
   return r.map((x) => {
     const rab = numOrNull(x.rab)
