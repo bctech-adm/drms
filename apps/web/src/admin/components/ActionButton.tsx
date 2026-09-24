@@ -16,11 +16,14 @@ export type ActionButtonProps = {
   variant?: 'primary' | 'secondary'
 }
 
-export async function postJson(url: string, body: unknown): Promise<{ ok: boolean; status: number; data: unknown }> {
+export async function postJson(url: string, body: unknown, opts: { idempotencyKey?: string } = {}): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' }
+  // G15: one key per click → a double submit / network retry of the same click is replayed, not repeated.
+  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey
   const res = await fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers,
     body: JSON.stringify(body ?? {}),
   })
   const data = await res.json().catch(() => null)

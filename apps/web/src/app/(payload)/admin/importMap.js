@@ -1,3 +1,4 @@
+import { WorkflowPanel as WorkflowPanel_6fcc9de32a179d40aa1576187df45f1e } from '@/admin/components/WorkflowPanel'
 import { PdfLinks as PdfLinks_baf3bc4fa5b0188cc15c74a19f03943f } from '@/admin/components/PdfLinks'
 import { ReadOnlyJson as ReadOnlyJson_08329374a86bb7164f48836797d5c216 } from '@/components/ReadOnlyJson'
 import { RiwayatView as RiwayatView_5fd51ea07b7ad6c5f81167eb6f8e8f96 } from '@/admin/views/RiwayatView'
@@ -11,6 +12,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "@/admin/components/WorkflowPanel#WorkflowPanel": WorkflowPanel_6fcc9de32a179d40aa1576187df45f1e,
   "@/admin/components/PdfLinks#PdfLinks": PdfLinks_baf3bc4fa5b0188cc15c74a19f03943f,
   "@/components/ReadOnlyJson#ReadOnlyJson": ReadOnlyJson_08329374a86bb7164f48836797d5c216,
   "@/admin/views/RiwayatView#RiwayatView": RiwayatView_5fd51ea07b7ad6c5f81167eb6f8e8f96,

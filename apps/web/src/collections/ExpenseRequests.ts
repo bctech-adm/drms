@@ -7,9 +7,11 @@ import { fieldNever, rolesAllowed } from '@/access/policies'
 import { normalizeValue, reasonOnChange, withAudit } from '@/audit/hooks'
 import { writeAudit, type AuditRow } from '@/audit/writer'
 import { denyDeleteLogged, requestReadAccess, requestUpdateAccess } from '@/domain/expense/access'
+import { ids, type RequestDoc } from '@/domain/expense/common'
+import { CONTENT_VALIDATED, fromDocLines, validateContent } from '@/domain/expense/drafts'
 import { grandTotal, validateLines, type LineInput } from '@/domain/expense/lines'
 import { diffLines, type AuditLine } from '@/domain/expense/line-audit'
-import { isBusinessDate, isContentEditable, REQUEST_STATUSES, STATUS_LABELS, type RequestStatus } from '@/domain/expense/types'
+import { isBusinessDate, isContentEditable, REQUEST_STATUSES, STATUS_LABELS, type RequestStatus, type RequestType } from '@/domain/expense/types'
 import { rupiahField, uuidField } from '@/fields/common'
 import { requestMeta } from '@/lib/request-meta'
 import { forceDeferredChecks } from '@/lib/system-tx'
@@ -97,6 +99,39 @@ const beforeChange: CollectionBeforeChangeHook = async ({ data, originalDoc, ope
   const errors = validateLines(lines, { forSubmit: false })
   if (errors.length > 0) throw new ValidationError({ collection: 'expense-requests', errors, req })
   d.grandTotal = grandTotal(lines) // server-computed; any client value is ignored (US-03)
+
+  // F2c: the admin create/edit form (generic REST) gets the SAME draft rules as POST/PATCH
+  // /api/v1/expense-requests (G9 bank account of a requester, G10 scope, Q-09 on-behalf only by
+  // Admin/Finance, active masters). The domain service validates itself and flags the context.
+  if (!transition && req.user && context?.[CONTENT_VALIDATED] !== true) {
+    const pick = <T,>(k: string): T => (d[k] !== undefined ? d[k] : prev[k]) as T
+    try {
+      await validateContent(
+        req,
+        {
+          type: pick<RequestType>('type'),
+          title: pick<string | null>('title'),
+          projectId: project ?? null,
+          costCenterId: costCenter ?? null,
+          requesterIds: ids(pick<unknown[] | null>('requesters')),
+          bankAccountId: relId(pick('bankAccount')) ?? null,
+          lines: fromDocLines({ lines } as unknown as RequestDoc),
+          neededDate: pick<string | null>('neededDate'),
+          periodFrom: pick<string | null>('periodFrom'),
+          periodTo: pick<string | null>('periodTo'),
+        },
+        { forSubmit: false, creatorId: operation === 'create' ? (userId(req) ?? -1) : (relId(prev.createdBy) ?? -1) },
+      )
+    } catch (err) {
+      const e = err as APIError & { data?: { errors?: Array<{ path: string; message: string }> } }
+      const list = e instanceof APIError && e.status === 400 ? e.data?.errors : undefined
+      if (!list?.length) throw err
+      // API field names → form field paths so the admin form marks the right inputs.
+      const path = (p: string) =>
+        p.replace(/^projectId$/, 'project').replace(/^costCenterId$/, 'costCenter').replace(/^requesterIds$/, 'requesters').replace(/^bankAccountId$/, 'bankAccount').replace(/\.(uom|category|vehicle)Id$/, '.$1')
+      throw new ValidationError({ collection: 'expense-requests', errors: list.map((x) => ({ path: path(x.path), message: x.message })), req })
+    }
+  }
   return data
 }
 
@@ -152,6 +187,8 @@ export const ExpenseRequests: CollectionConfig = withAudit(
     hooks: { beforeChange: [beforeChange], afterChange: [auditLines, notify] },
     fields: [
       { name: 'docNo', type: 'text', label: 'Nomor', unique: true, index: true, access: system, admin: { ...ro, position: 'sidebar' } },
+      // F2c: status timeline + next actor for everyone, requester actions for creator/requesters.
+      { name: 'workflowPanel', type: 'ui', label: 'Status & aksi', admin: { components: { Field: '@/admin/components/WorkflowPanel#WorkflowPanel' } } },
       // M16 / US-46: "Cetak PDF" (audited API download); UI only, no column.
       { name: 'pdfLinks', type: 'ui', label: 'PDF', admin: { position: 'sidebar', components: { Field: '@/admin/components/PdfLinks#PdfLinks' } } },
       {
