@@ -45,6 +45,8 @@ x-app-env: &app-env
   # fingerprint(s) of its signing certificate, comma separated `AA:BB:…`. Empty → `[]` (no App Link).
   ANDROID_APP_PACKAGE: ${ANDROID_APP_PACKAGE:-id.co.drms.proyekkas}
   ANDROID_APP_CERT_SHA256: ${ANDROID_APP_CERT_SHA256:-}
+  # F3 rollback switch for Excel exports (write-excel-file): false → Excel buttons hidden, .xlsx → 404.
+  EXPORT_XLSX_ENABLED: ${EXPORT_XLSX_ENABLED:-true}
   DATABASE_URL_FILE: /run/secrets/database_url_app
   PAYLOAD_SECRET_FILE: /run/secrets/payload_secret
   OIDC_WEB_CLIENT_SECRET_FILE: /run/secrets/oidc_web_client_secret

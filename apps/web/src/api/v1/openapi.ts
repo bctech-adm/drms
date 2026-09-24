@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready, TestEmailQueued } from './schemas'
 import * as F from './schemas-flow'
+import * as R from './schemas-reports'
 import * as S from './schemas-sync'
 
 /**
@@ -375,6 +376,41 @@ export function buildOpenApiDocument(version: string) {
       body: jsonBody(S.SyncBatch),
     },
     responses: res(200, 'Per-item results', S.SyncBatchResponse, [400, 401, 403, 413, 426, 429]),
+  })
+
+  // ---- F3 dashboards & reports (docs/proyekkas/f3) ----------------------------------------------
+  const dash = (name: string, summary: string, schema: z.ZodType) =>
+    registry.registerPath({ method: 'get', path: `/dashboard/${name}`, summary, security, request: { headers: deviceHeader }, responses: res(200, 'Dashboard', schema, [401, 403, 426, 429]) })
+  dash('owner', 'Owner home: cash (K-01, K-02b), budgets (K-07/K-08), completeness (K-12), approvals (K-10), cost centers (K-15), transfer queue (K-11)', R.OwnerDashboard)
+  dash('finance', 'Finance home: work queues (K-11, K-12c/d/e), balances per account (K-01), advances without LPJ (K-12a/b), cash flow (K-02a)', R.FinanceDashboard)
+  dash('pm', 'PM home (team scope): waiting for my "Diketahui", team month (K-13), LPJ (K-12a/b), project budgets (K-08), cost centers (K-15); attendance/progress = F5', R.PmDashboard)
+  dash('admin', 'Admin home: master-data gaps and latest audit rows', R.AdminDashboard)
+  dash('me', 'Own requests: "Perlu tindakan saya" and latest (any role)', R.StaffDashboard)
+  registry.registerPath({
+    method: 'get',
+    path: '/reports/{code}',
+    summary: 'One report page as JSON (same filters/scope as /admin/laporan/{code}); audit-log: Owner/Admin/Finance',
+    security,
+    request: { headers: deviceHeader, params: z.object({ code: R.ReportCode }), query: R.ReportQuery },
+    responses: res(200, 'Report', R.ReportResponse, [400, 401, 403, 404, 426, 429]),
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/reports/{code}/{format}',
+    summary: 'Download (CSV streamed UTF-8 BOM ";"; XLSX ≤ 10 000 rows; PDF ≤ 500 rows for rekap-kas, pengeluaran-kategori, anggaran-project). Audited `export`; 10/min per user',
+    security,
+    request: { headers: deviceHeader, params: z.object({ code: R.ReportCode, format: R.ReportFormat }), query: R.ReportQuery },
+    responses: {
+      200: {
+        description: 'File (Content-Disposition: attachment)',
+        content: {
+          'text/csv': { schema: z.string() },
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { schema: z.string().meta({ format: 'binary' }) },
+          'application/pdf': { schema: z.string().meta({ format: 'binary' }) },
+        },
+      },
+      ...problemResponses(400, 401, 403, 404, 413, 426, 429, 503),
+    },
   })
 
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({

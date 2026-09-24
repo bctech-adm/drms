@@ -1109,8 +1109,10 @@ POST /api/v1/sync/batch                               (offline queue replay — 
 GET  /api/v1/app/config                               (PUBLIC app gate: versions, download URL, TZ, feature flags — F4)
 GET  /api/v1/notifications | GET /api/v1/notifications/{id|uuid} | POST /api/v1/notifications/{id}/read | POST /api/v1/notifications/read-all
 GET  /api/v1/media/{collection}/{id}/file[?variant=thumb]   (as implemented F2b; signed exp/sig NOT implemented — F6)
-GET  /api/v1/dashboard/{owner|finance|pm|staff}
-GET  /api/v1/reports/{cash-recap|budget-vs-actual|attendance|requests|vehicle-costs}?format=json|xlsx|pdf
+GET  /api/v1/dashboard/{owner|finance|pm|admin|me}      (as implemented F3; me = own requests / Staff home)
+GET  /api/v1/reports/{code}[/{csv|xlsx|pdf}]           (as implemented F3; code = rekap-kas | buku-kas | pengeluaran-kategori |
+                                                        anggaran-project | rekap-pengajuan | kelengkapan | biaya-kendaraan | audit-log;
+                                                        attendance report → F5)
 POST /api/v1/auth/backchannel-logout                  (NOT USED: back-channel logout disabled, ADR 0003 §1 rev. 2026-09-23)
 GET  /api/v1/openapi.json                             (auth required outside dev)
 ```
@@ -1238,12 +1240,21 @@ The worker bundle stubs the renderer out (no batch PDF yet). Built-in Helvetica;
 stored. Layout replicates the client form; receipts on separate pages, 2 per page; internal variant shows
 validation flags. Layout approved by the user 2026-09-24; logo pending (Q-32). ADR 0008 "As implemented".
 
-### 9.4 Excel export (M13)
-Library **not decided**: `exceljs@4.4.0` (MIT) last published 2023-10-19, repo pushed 2025-01-21 → fails
-CLAUDE.md §0.10 "< 6 months since last commit"; `xlsx@0.18.5` on npm last published 2022-03-24 (SheetJS
-moved distribution off npm — not verified this session). Options for F3: CSV (UTF-8 BOM, `;` separator
-for Indonesian Excel locale) as baseline + an XLSX writer selected by nextjs-developer with fresh
-evidence (open decision, needs Lead/user).
+### 9.4 Excel export (M13) — As decided (user 2026-09-24, Q-F3-3) and implemented (F3)
+Decision record: `f3/export-library-decision.md` (registry facts + RAM measurements of the analyst).
+- **CSV always** (no library): streamed, keyset pages of 1 000 rows each in its own short transaction, UTF-8 BOM,
+  separator `;`, CRLF, RFC 4180 quoting, formula-injection guard (`'` prefix), ≤ 100 000 rows (`lib/csv.ts`).
+- **XLSX = `write-excel-file@4.1.1`** (MIT, one dependency `fflate` 0.8.3; npm release 2026-06-08, i.e. past the
+  `.npmrc` `min-release-age=7`), server side only, imported lazily (0 idle RAM). In-memory workbook → **≤ 10 000 data
+  rows per file**, else 413 "Persempit filter atau pakai CSV". Amounts are numbers with `#,##0`, dates real Excel
+  dates (`Date.UTC`, no TZ shift), text always `type: String` (never formula cells). Rollback switch
+  `EXPORT_XLSX_ENABLED=false` (button hidden, endpoint 404) — `lib/xlsx.ts`.
+- **PDF** for Rekap Kas, Pengeluaran per Kategori, Anggaran Project only (≤ 500 rows, A4 landscape) with the existing
+  `@react-pdf/renderer` 4.9.0 (ADR 0008).
+- XLSX and PDF (incl. the F2 document PDF) share one in-process semaphore: **2 concurrent, 10 s wait → 503**
+  (`lib/heavy-gate.ts`). CSV takes no slot. Every download writes one audit row `export` (report, format, filters,
+  row count); exports are rate limited 10/min per user; PM exports are team-scoped exactly like the screen.
+- Measured RAM in the production image under `--memory 384m`: see ADR 0008 revision 2026-09-24 (F3).
 
 ---
 
@@ -1392,3 +1403,7 @@ measurement gate is F1 (idle) and F6 (load).
   acknowledge/reject with `access_denied` audit; new G17 Finance self-involvement (DB triggers
   `pk_request_involves`); guard order 409-before-403 noted; operational 4xx logged at warn; office-only fields
   hidden for Staff/PM. UAT evidence: `uat/f2-uat-report.md`.
+- **2026-09-24 (F3):** §6.3 dashboard/report endpoints as implemented; §9.4 Excel export "As decided" (user
+  2026-09-24: `write-excel-file` 4.1.1, 10 000-row XLSX cap, CSV always, shared render semaphore with PDF, report PDFs
+  for 3 reports). Admin: `admin.components.views.dashboard` replaced by the role home pages; custom views
+  `/laporan`, `/laporan/:kode`, `/audit-log`. Company setting `lpjDueDays` (Q-F3-1).

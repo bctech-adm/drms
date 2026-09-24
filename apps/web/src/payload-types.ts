@@ -2846,6 +2846,10 @@ export interface CompanySetting {
   receiptRoundingTolerance: number;
   receiptMaxAgeDays: number;
   reimburseAutoCloseDays: number;
+  /**
+   * Uang muka tanpa LPJ lebih lama dari ini tampil sebagai "LPJ terlambat" di dashboard/laporan.
+   */
+  lpjDueDays: number;
   minAppVersion?: string | null;
   latestAppVersion?: string | null;
   /**
@@ -2910,6 +2914,7 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   receiptRoundingTolerance?: T;
   receiptMaxAgeDays?: T;
   reimburseAutoCloseDays?: T;
+  lpjDueDays?: T;
   minAppVersion?: T;
   latestAppVersion?: T;
   appDownloadUrl?: T;

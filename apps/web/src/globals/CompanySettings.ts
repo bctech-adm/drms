@@ -71,6 +71,12 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
       { ...rupiahField('receiptRoundingTolerance', 'Toleransi pembulatan nota per baris (Rp)', { required: true }), defaultValue: 1000 },
       intField('receiptMaxAgeDays', 'Batas umur nota (hari)', 30, 1, 365),
       intField('reimburseAutoCloseDays', 'Tutup otomatis reimburse (hari)', 30, 1, 365),
+      // F3 (Q-F3-1, user 2026-09-24: default 7): an Uang Muka without LPJ is "LPJ terlambat" (K-12b)
+      // when the first posted advance transfer is older than this many calendar days.
+      {
+        ...intField('lpjDueDays', 'Batas LPJ uang muka (hari setelah transfer)', 7, 1, 365),
+        admin: { description: 'Uang muka tanpa LPJ lebih lama dari ini tampil sebagai "LPJ terlambat" di dashboard/laporan.' },
+      },
       {
         name: 'minAppVersion',
         type: 'text',
