@@ -106,3 +106,24 @@ tidak memerlukan migrasi data.
   tidak ada pergeseran hari.
 - `docker stats` web saat 2 export XLSX 10.000 baris + 1 PDF bersamaan tetap < 300 MiB. Bila terlewati, turunkan batas baris.
 - Baris audit `export` ada untuk setiap unduhan.
+
+## 9. As implemented (F3, `feat/nextjs-f3-dashboards`, 2026-09-24)
+- Registry re-checked at build time: `write-excel-file` 4.1.1 = `latest`, MIT, published 2026-06-08 (older than
+  `.npmrc` `min-release-age=7`), one dependency `fflate` → lockfile 0.8.3 (`npm ls`: `write-excel-file@4.1.1`,
+  `fflate@0.8.3` deduped with pdfkit). `fflate` 0.8.3 also pinned as devDependency (tests unzip the XLSX).
+- Code: `lib/xlsx.ts` (lazy import, cap `XLSX_MAX_ROWS = 10 000`, `EXPORT_XLSX_ENABLED`), `lib/csv.ts`,
+  `lib/heavy-gate.ts`, `domain/reports/export.ts`, endpoint `GET /api/v1/reports/{code}/{csv|xlsx|pdf}`.
+- Verified by tests: amounts stored as numbers (`<v>1447500</v>`), `#,##0` / `dd/mm/yyyy` formats, 2026-09-01 →
+  serial 46266, formula-looking text stored as shared string (no `<f>`), CSV BOM/`;`/CRLF and `'` prefix, 413 above
+  the caps (no audit row), 404 with the switch off, audit row per download, 429 after 10 exports/min.
+- RAM (production image `pk-f3-web:measure` (target `runner`, built with `docker build --memory 2g`: OK, 6 min 57 s),
+  `--memory 384m --memory-swap 384m --cpus 0.75`, `NODE_OPTIONS=--max-old-space-size=256` (= staging), app role on a
+  throwaway DB with 597 requests, 49 624 audit rows and 10 000 ledger rows in one month. cgroup v2 `memory.current` /
+  `memory.peak`: idle **70 MiB** (peak 108 MiB during start-up); Owner Beranda HTML ×3 (heaviest dashboard: 9 KPI
+  queries + approval inbox + SVG chart) **107 MiB**, peak 147 MiB, 1.3–3.3 s; dashboard APIs owner/finance ×3 106 MiB;
+  report pages 117 MiB; **XLSX 10 000 rows** (Buku Kas, 387 KB, 2.5 s) 137 MiB, second run peak **213 MiB**;
+  **2 × XLSX 10 000 rows + 1 report PDF concurrently**: cgroup peak **223 MiB** (58 % of 384 MiB; process VmHWM
+  271 MiB incl. shared file pages), third request waited on the shared gate (5.0 s / 7.8 s); CSV 10 000 rows
+  (streamed, 916 KB) 156 MiB; back to 105 MiB after 20 s. No OOM, no error log. `write-excel-file` is bundled into
+  the server chunks by webpack (not needed in the traced `node_modules`); verified by a real XLSX download.)
+- **Not verified (QA gate):** opening the files in Microsoft Excel with Indonesian regional settings and LibreOffice.
