@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-24
+
+### Fixed
+- OpenAPI documents regenerated for package version 0.2.0 (the 0.2.0 release bump missed `gen:openapi`,
+  which failed the CI drift check). No code change.
+
 ## [0.2.0] - 2026-09-24
 
 F2 expense-request flow (F2a–F2e) — GATE F2 approved by the user 2026-09-24 after browser UAT on staging (run 4: 56 PASS, 2 FAIL non-blocking, 1 not testable; `docs/proyekkas/uat/f2-uat-report.md`).
