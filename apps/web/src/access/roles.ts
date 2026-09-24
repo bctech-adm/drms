@@ -12,8 +12,19 @@ export const ROLE_LABELS: Record<Role, string> = {
   'pk-admin': 'Admin',
 }
 
-/** Roles allowed into the Payload admin panel (architecture §7.2); Staff uses the APK. */
-export const PANEL_ROLES: readonly Role[] = ['pk-admin', 'pk-finance', 'pk-owner', 'pk-pm']
+/**
+ * Roles allowed into the Payload admin panel (architecture §7.2). F2c (user decision 2026-09-24):
+ * Staff also gets a restricted web panel (own requests, receipts, notifications, own profile) —
+ * permanent fallback for field staff without the APK. What staff SEES is narrowed by
+ * `src/access/panel-visibility.ts`; what staff may READ/WRITE is still decided by access functions.
+ */
+export const PANEL_ROLES: readonly Role[] = ['pk-admin', 'pk-finance', 'pk-owner', 'pk-pm', 'pk-staff']
+
+/** Staff without any other panel role (the restricted "requester" panel). */
+export function isStaffOnly(user: unknown): boolean {
+  const roles = rolesOf(user)
+  return roles.includes('pk-staff') && !roles.some((r) => r !== 'pk-staff')
+}
 
 export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ROLES as readonly string[]).includes(value)
