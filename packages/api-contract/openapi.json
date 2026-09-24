@@ -10734,6 +10734,2357 @@
           }
         }
       }
+    },
+    "/dashboard/owner": {
+      "get": {
+        "summary": "Owner home: cash (K-01, K-02b), budgets (K-07/K-08), completeness (K-12), approvals (K-10), cost centers (K-15), transfer queue (K-11)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string"
+                    },
+                    "month": {
+                      "type": "string"
+                    },
+                    "cash": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "active": {
+                                "type": "boolean"
+                              },
+                              "balance": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "active",
+                              "balance"
+                            ]
+                          }
+                        },
+                        "monthIn": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "monthOut": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "accounts",
+                        "monthIn",
+                        "monthOut"
+                      ]
+                    },
+                    "budget": {
+                      "type": "object",
+                      "properties": {
+                        "running": {
+                          "type": "integer"
+                        },
+                        "over": {
+                          "type": "integer"
+                        },
+                        "warn": {
+                          "type": "integer"
+                        },
+                        "ok": {
+                          "type": "integer"
+                        },
+                        "none": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "running",
+                        "over",
+                        "warn",
+                        "ok",
+                        "none"
+                      ]
+                    },
+                    "completeness": {
+                      "type": "object",
+                      "properties": {
+                        "ratioDone": {
+                          "type": "integer"
+                        },
+                        "ratioTotal": {
+                          "type": "integer"
+                        },
+                        "withoutLpj": {
+                          "type": "integer"
+                        },
+                        "overdue": {
+                          "type": "integer"
+                        },
+                        "reimburseToVerify": {
+                          "type": "integer"
+                        },
+                        "openWarnings": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "ratioDone",
+                        "ratioTotal",
+                        "withoutLpj",
+                        "overdue",
+                        "reimburseToVerify",
+                        "openWarnings"
+                      ]
+                    },
+                    "approvals": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "sum": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "waitingForMe": {
+                          "type": "integer"
+                        },
+                        "oldestDays": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "sum",
+                        "waitingForMe",
+                        "oldestDays"
+                      ]
+                    },
+                    "cashFlow": {
+                      "type": "object",
+                      "properties": {
+                        "basis": {
+                          "type": "string",
+                          "enum": [
+                            "K-02b"
+                          ]
+                        },
+                        "months": {
+                          "type": "integer"
+                        },
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "masuk": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "keluar": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "koreksi": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "masuk",
+                              "keluar"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "basis",
+                        "months",
+                        "rows"
+                      ]
+                    },
+                    "projects": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "budget": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Rupiah (integer)"
+                          },
+                          "committed": {
+                            "type": "integer",
+                            "description": "K-07 Komitmen"
+                          },
+                          "committedCount": {
+                            "type": "integer"
+                          },
+                          "pct": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "K-08 % komitmen / RAB"
+                          },
+                          "tone": {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "ok",
+                              "warn",
+                              "over"
+                            ],
+                            "description": "K-08 colour: Tanpa RAB / Aman / Waspada / Lewat RAB (Komitmen basis)"
+                          },
+                          "disbursedNet": {
+                            "type": "integer",
+                            "description": "K-05 Dicairkan bersih"
+                          },
+                          "realized": {
+                            "type": "integer",
+                            "description": "K-06 Realisasi terverifikasi"
+                          },
+                          "pctDisbursed": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "Percent, 2 decimals; null = no budget"
+                          },
+                          "pctRealized": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "Percent, 2 decimals; null = no budget"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "code",
+                          "name",
+                          "status",
+                          "budget",
+                          "committed",
+                          "committedCount",
+                          "pct",
+                          "tone",
+                          "disbursedNet",
+                          "realized",
+                          "pctDisbursed",
+                          "pctRealized"
+                        ]
+                      }
+                    },
+                    "costCenters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "fromRequests": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "manualOut": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "manualIn": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "description": "K-15"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "code",
+                          "name",
+                          "fromRequests",
+                          "manualOut",
+                          "manualIn",
+                          "total"
+                        ]
+                      }
+                    },
+                    "transferQueue": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "sum": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "overdue": {
+                          "type": "integer"
+                        },
+                        "reimburseToVerify": {
+                          "type": "integer"
+                        },
+                        "reimburseToVerifyWarnings": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "sum",
+                        "overdue",
+                        "reimburseToVerify",
+                        "reimburseToVerifyWarnings"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "month",
+                    "cash",
+                    "budget",
+                    "completeness",
+                    "approvals",
+                    "cashFlow",
+                    "projects",
+                    "costCenters",
+                    "transferQueue"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/finance": {
+      "get": {
+        "summary": "Finance home: work queues (K-11, K-12c/d/e), balances per account (K-01), advances without LPJ (K-12a/b), cash flow (K-02a)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string"
+                    },
+                    "month": {
+                      "type": "string"
+                    },
+                    "transferQueue": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "sum": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "overdue": {
+                          "type": "integer"
+                        },
+                        "reimburseToVerify": {
+                          "type": "integer"
+                        },
+                        "reimburseToVerifyWarnings": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "sum",
+                        "overdue",
+                        "reimburseToVerify",
+                        "reimburseToVerifyWarnings"
+                      ]
+                    },
+                    "reimburseToVerify": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "warnings": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "warnings"
+                      ]
+                    },
+                    "lpjToVerify": {
+                      "type": "integer"
+                    },
+                    "lpjToSettle": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "refund": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "shortfall": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "refund",
+                        "shortfall"
+                      ]
+                    },
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "balance": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "monthIn": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "monthOut": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "active",
+                          "balance",
+                          "monthIn",
+                          "monthOut"
+                        ]
+                      }
+                    },
+                    "cashTotal": {
+                      "type": "integer",
+                      "description": "Rupiah (integer)"
+                    },
+                    "advancesWithoutLpj": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "docNo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "requesters": {
+                            "type": "string"
+                          },
+                          "scopeName": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "transferredTotal": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "firstTransfer": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "ageDays": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "overdue": {
+                            "type": "boolean",
+                            "description": "K-12b: age > company-settings.lpjDueDays"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "docNo",
+                          "title",
+                          "requesters",
+                          "scopeName",
+                          "status",
+                          "transferredTotal",
+                          "firstTransfer",
+                          "ageDays",
+                          "overdue"
+                        ]
+                      }
+                    },
+                    "lpjDueDays": {
+                      "type": "integer"
+                    },
+                    "cashFlow": {
+                      "type": "object",
+                      "properties": {
+                        "basis": {
+                          "type": "string",
+                          "enum": [
+                            "K-02a"
+                          ]
+                        },
+                        "months": {
+                          "type": "integer"
+                        },
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "masuk": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "keluar": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "koreksi": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "masuk",
+                              "keluar"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "basis",
+                        "months",
+                        "rows"
+                      ]
+                    },
+                    "lastClosedPeriod": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "nextClosable": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "month",
+                    "transferQueue",
+                    "reimburseToVerify",
+                    "lpjToVerify",
+                    "lpjToSettle",
+                    "accounts",
+                    "cashTotal",
+                    "advancesWithoutLpj",
+                    "lpjDueDays",
+                    "cashFlow",
+                    "lastClosedPeriod",
+                    "nextClosable"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/pm": {
+      "get": {
+        "summary": "PM home (team scope): waiting for my \"Diketahui\", team month (K-13), LPJ (K-12a/b), project budgets (K-08), cost centers (K-15); attendance/progress = F5",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string"
+                    },
+                    "month": {
+                      "type": "string"
+                    },
+                    "hasScope": {
+                      "type": "boolean"
+                    },
+                    "waitingForMe": {
+                      "type": "integer"
+                    },
+                    "teamMonth": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "sum": {
+                          "type": "integer",
+                          "description": "Rupiah (integer)"
+                        },
+                        "waiting": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "sum",
+                        "waiting"
+                      ]
+                    },
+                    "lpj": {
+                      "type": "object",
+                      "properties": {
+                        "withoutLpj": {
+                          "type": "integer"
+                        },
+                        "overdue": {
+                          "type": "integer"
+                        },
+                        "lpjDueDays": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "withoutLpj",
+                        "overdue",
+                        "lpjDueDays"
+                      ]
+                    },
+                    "projects": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "budget": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Rupiah (integer)"
+                          },
+                          "committed": {
+                            "type": "integer",
+                            "description": "K-07 Komitmen"
+                          },
+                          "committedCount": {
+                            "type": "integer"
+                          },
+                          "pct": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "K-08 % komitmen / RAB"
+                          },
+                          "tone": {
+                            "type": "string",
+                            "enum": [
+                              "none",
+                              "ok",
+                              "warn",
+                              "over"
+                            ],
+                            "description": "K-08 colour: Tanpa RAB / Aman / Waspada / Lewat RAB (Komitmen basis)"
+                          },
+                          "disbursedNet": {
+                            "type": "integer",
+                            "description": "K-05 Dicairkan bersih"
+                          },
+                          "realized": {
+                            "type": "integer",
+                            "description": "K-06 Realisasi terverifikasi"
+                          },
+                          "pctDisbursed": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "Percent, 2 decimals; null = no budget"
+                          },
+                          "pctRealized": {
+                            "type": [
+                              "number",
+                              "null"
+                            ],
+                            "description": "Percent, 2 decimals; null = no budget"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "code",
+                          "name",
+                          "status",
+                          "budget",
+                          "committed",
+                          "committedCount",
+                          "pct",
+                          "tone",
+                          "disbursedNet",
+                          "realized",
+                          "pctDisbursed",
+                          "pctRealized"
+                        ]
+                      }
+                    },
+                    "costCenters": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "fromRequests": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "manualOut": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "manualIn": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "description": "K-15"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "code",
+                          "name",
+                          "fromRequests",
+                          "manualOut",
+                          "manualIn",
+                          "total"
+                        ]
+                      }
+                    },
+                    "latest": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "docNo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "requestDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "advance",
+                              "reimburse"
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "scopeName": {
+                            "type": "string"
+                          },
+                          "requesters": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "grandTotal": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "approvedAmount": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Rupiah (integer)"
+                          },
+                          "disbursed": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "refund": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "realized": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "openFlags": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "docNo",
+                          "requestDate",
+                          "type",
+                          "title",
+                          "scopeName",
+                          "requesters",
+                          "status",
+                          "grandTotal",
+                          "approvedAmount",
+                          "disbursed",
+                          "refund",
+                          "realized",
+                          "openFlags"
+                        ]
+                      }
+                    },
+                    "attendance": {
+                      "type": "object",
+                      "properties": {
+                        "available": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "phase": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "available",
+                        "phase"
+                      ]
+                    },
+                    "progressReports": {
+                      "type": "object",
+                      "properties": {
+                        "available": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "phase": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "available",
+                        "phase"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "month",
+                    "hasScope",
+                    "waitingForMe",
+                    "teamMonth",
+                    "lpj",
+                    "projects",
+                    "costCenters",
+                    "latest",
+                    "attendance",
+                    "progressReports"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/admin": {
+      "get": {
+        "summary": "Admin home: master-data gaps and latest audit rows",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "gaps": {
+                      "type": "object",
+                      "properties": {
+                        "usersIncomplete": {
+                          "type": "integer"
+                        },
+                        "projectsWithoutPm": {
+                          "type": "integer"
+                        },
+                        "costCentersWithoutManager": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "usersIncomplete",
+                        "projectsWithoutPm",
+                        "costCentersWithoutManager"
+                      ]
+                    },
+                    "latestAudit": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                      }
+                    }
+                  },
+                  "required": [
+                    "gaps",
+                    "latestAudit"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/me": {
+      "get": {
+        "summary": "Own requests: \"Perlu tindakan saya\" and latest (any role)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "actions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "docNo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "advance",
+                              "reimburse"
+                            ]
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "grandTotal": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "ageDays": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "docNo",
+                          "title",
+                          "type",
+                          "status",
+                          "grandTotal",
+                          "ageDays"
+                        ]
+                      }
+                    },
+                    "latest": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "docNo": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "advance",
+                              "reimburse"
+                            ]
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "grandTotal": {
+                            "type": "integer",
+                            "description": "Rupiah (integer)"
+                          },
+                          "ageDays": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "docNo",
+                          "title",
+                          "type",
+                          "status",
+                          "grandTotal",
+                          "ageDays"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "actions",
+                    "latest"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{code}": {
+      "get": {
+        "summary": "One report page as JSON (same filters/scope as /admin/laporan/{code}); audit-log: Owner/Admin/Finance",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rekap-kas",
+                "buku-kas",
+                "pengeluaran-kategori",
+                "anggaran-project",
+                "rekap-pengajuan",
+                "kelengkapan",
+                "biaya-kendaraan",
+                "audit-log"
+              ]
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Keyset cursor (paged reports: buku-kas, rekap-pengajuan, audit-log)"
+            },
+            "required": false,
+            "description": "Keyset cursor (paged reports: buku-kas, rekap-pengajuan, audit-log)",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "From: YYYY-MM-DD (rekap-kas: YYYY-MM)"
+            },
+            "required": false,
+            "description": "From: YYYY-MM-DD (rekap-kas: YYYY-MM)",
+            "name": "dari",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "To: YYYY-MM-DD (rekap-kas: YYYY-MM)"
+            },
+            "required": false,
+            "description": "To: YYYY-MM-DD (rekap-kas: YYYY-MM)",
+            "name": "sampai",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "project",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cost center id"
+            },
+            "required": false,
+            "description": "Cost center id",
+            "name": "pusat",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "kategori",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "advance | reimburse (audit-log: document type)"
+            },
+            "required": false,
+            "description": "advance | reimburse (audit-log: document type)",
+            "name": "jenis",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma separated request statuses (rekap-pengajuan)"
+            },
+            "required": false,
+            "description": "Comma separated request statuses (rekap-pengajuan)",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "akun",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "kendaraan",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "pemohon",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "dicairkan | realisasi (pengeluaran-kategori)"
+            },
+            "required": false,
+            "description": "dicairkan | realisasi (pengeluaran-kategori)",
+            "name": "dasar",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "kategori | lingkup (pengeluaran-kategori)"
+            },
+            "required": false,
+            "description": "kategori | lingkup (pengeluaran-kategori)",
+            "name": "grup",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "user",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "aksi",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "nodok",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "sumber",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "enum": [
+                        "rekap-kas",
+                        "buku-kas",
+                        "pengeluaran-kategori",
+                        "anggaran-project",
+                        "rekap-pengajuan",
+                        "kelengkapan",
+                        "biaya-kendaraan",
+                        "audit-log"
+                      ]
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "kpi": {
+                      "type": "string"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "all",
+                        "team"
+                      ]
+                    },
+                    "count": {
+                      "type": "integer"
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "main": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "columns": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "text",
+                                  "money",
+                                  "int",
+                                  "date",
+                                  "datetime",
+                                  "pct"
+                                ]
+                              },
+                              "primary": {
+                                "type": "boolean"
+                              },
+                              "width": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "label",
+                              "type"
+                            ]
+                          }
+                        },
+                        "rows": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "totals": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "title",
+                        "columns",
+                        "rows",
+                        "totals"
+                      ]
+                    },
+                    "extra": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "columns": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string"
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string",
+                                  "enum": [
+                                    "text",
+                                    "money",
+                                    "int",
+                                    "date",
+                                    "datetime",
+                                    "pct"
+                                  ]
+                                },
+                                "primary": {
+                                  "type": "boolean"
+                                },
+                                "width": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label",
+                                "type"
+                              ]
+                            }
+                          },
+                          "rows": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "totals": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "additionalProperties": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "title",
+                          "columns",
+                          "rows",
+                          "totals"
+                        ]
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "formats": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "csv",
+                          "xlsx",
+                          "pdf"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "title",
+                    "kpi",
+                    "scope",
+                    "count",
+                    "nextCursor",
+                    "main",
+                    "extra",
+                    "notes",
+                    "formats"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{code}/{format}": {
+      "get": {
+        "summary": "Download (CSV streamed UTF-8 BOM \";\"; XLSX ≤ 10 000 rows; PDF ≤ 500 rows for rekap-kas, pengeluaran-kategori, anggaran-project). Audited `export`; 10/min per user",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "rekap-kas",
+                "buku-kas",
+                "pengeluaran-kategori",
+                "anggaran-project",
+                "rekap-pengajuan",
+                "kelengkapan",
+                "biaya-kendaraan",
+                "audit-log"
+              ]
+            },
+            "required": true,
+            "name": "code",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "csv",
+                "xlsx",
+                "pdf"
+              ]
+            },
+            "required": true,
+            "name": "format",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Keyset cursor (paged reports: buku-kas, rekap-pengajuan, audit-log)"
+            },
+            "required": false,
+            "description": "Keyset cursor (paged reports: buku-kas, rekap-pengajuan, audit-log)",
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "From: YYYY-MM-DD (rekap-kas: YYYY-MM)"
+            },
+            "required": false,
+            "description": "From: YYYY-MM-DD (rekap-kas: YYYY-MM)",
+            "name": "dari",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "To: YYYY-MM-DD (rekap-kas: YYYY-MM)"
+            },
+            "required": false,
+            "description": "To: YYYY-MM-DD (rekap-kas: YYYY-MM)",
+            "name": "sampai",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "project",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Cost center id"
+            },
+            "required": false,
+            "description": "Cost center id",
+            "name": "pusat",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "kategori",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "advance | reimburse (audit-log: document type)"
+            },
+            "required": false,
+            "description": "advance | reimburse (audit-log: document type)",
+            "name": "jenis",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Comma separated request statuses (rekap-pengajuan)"
+            },
+            "required": false,
+            "description": "Comma separated request statuses (rekap-pengajuan)",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "akun",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "kendaraan",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "pemohon",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "dicairkan | realisasi (pengeluaran-kategori)"
+            },
+            "required": false,
+            "description": "dicairkan | realisasi (pengeluaran-kategori)",
+            "name": "dasar",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "kategori | lingkup (pengeluaran-kategori)"
+            },
+            "required": false,
+            "description": "kategori | lingkup (pengeluaran-kategori)",
+            "name": "grup",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "user",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "aksi",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "nodok",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "sumber",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File (Content-Disposition: attachment)",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {}
