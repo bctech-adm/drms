@@ -46,6 +46,7 @@
           sets OIDC_REDIRECT_URI to it and Keycloak allows it). Manual intent-filter per flutter_appauth
           README "Android setup".
         -->
+        <!-- nosemgrep: java.android.security.exported_activity.exported_activity (AppAuth redirect receiver must be exported so the browser can return the OIDC response; it only accepts VIEW intents for https://HOST/app/callback and the app scheme, holds no privileged state, and PKCE S256 plus state protect the authorization code) -->
         <activity
             android:name="net.openid.appauth.RedirectUriReceiverActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"

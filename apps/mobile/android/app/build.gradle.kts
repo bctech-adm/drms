@@ -34,6 +34,11 @@ android {
         manifestPlaceholders["appAuthRedirectScheme"] = "id.co.drms.proyekkas"
     }
 
+    // AGP 9 disables custom resValue by default; the flavors set @string/app_name through it.
+    buildFeatures {
+        resValues = true
+    }
+
     flavorDimensions += "env"
     productFlavors {
         create("staging") {
