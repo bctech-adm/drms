@@ -923,6 +923,23 @@ export const openapiDocument = {
                 ],
                 "exclusiveMinimum": 0
               },
+              "acknowledgeDelegatedTo": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "owner",
+                  "admin",
+                  null
+                ]
+              },
+              "acknowledgeDelegationReason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "steps": {
                 "type": "array",
                 "items": {
@@ -974,6 +991,8 @@ export const openapiDocument = {
               "name",
               "acknowledge",
               "acknowledgerUserId",
+              "acknowledgeDelegatedTo",
+              "acknowledgeDelegationReason",
               "steps",
               "signDiajukan",
               "signDibuat"
@@ -1370,6 +1389,32 @@ export const openapiDocument = {
             ],
             "exclusiveMinimum": 0
           },
+          "resubmitOf": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "docNo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "docNo",
+              "title"
+            ]
+          },
           "submittedAt": {
             "type": [
               "string",
@@ -1442,6 +1487,7 @@ export const openapiDocument = {
           "budget",
           "allowedActions",
           "resubmitOfId",
+          "resubmitOf",
           "submittedAt",
           "cancelReason",
           "rejectReason",

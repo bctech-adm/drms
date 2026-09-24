@@ -1,6 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
-import { relId, userId } from '@/access/roles'
+import { relId, ROLE_LABELS, userId } from '@/access/roles'
 import { writeAudit } from '@/audit/writer'
 import { allocateDocNo, loadSequence } from '@/domain/numbering-db'
 import { formatDocNo, parseBusinessDate } from '@/domain/numbering'
@@ -17,6 +17,7 @@ import {
   openWarningFlags,
   projectCommitted,
   requireAction,
+  requireActionAudited,
   resolveSignature,
   settings,
   today,
@@ -26,7 +27,7 @@ import {
 } from './common'
 import { fromDocLines, validateContent } from './drafts'
 import { assertEveryLineHasReceipt, recomputeFlags } from './receipts'
-import { budgetImpact, lastLevel, type ApprovalSnapshot } from './rules'
+import { ACK_DELEGATE_ROLE, budgetImpact, lastLevel, type AckDelegate, type ApprovalSnapshot } from './rules'
 import { selectAndSnapshot, writeSnapshot } from './snapshot'
 import type { ApprovalDecision, ApprovalPosition } from './types'
 
@@ -48,6 +49,8 @@ async function insertApproval(
     signature: Signature | null
     budget?: { before: number | null; after: number | null }
     openFlags?: number
+    /** F2e: "Diketahui" given by a delegated Owner/Admin (recorded in the audit row). */
+    delegation?: { to: AckDelegate; reason: string | null } | null
   },
 ) {
   const meta = requestMeta(req)
@@ -94,8 +97,9 @@ async function insertApproval(
         budgetPctAfter: row.budget?.after ?? null,
         openFlags: row.openFlags ?? null,
         onBehalf: row.onBehalf ?? false,
+        ...(row.delegation ? { delegatedTo: row.delegation.to } : {}),
       },
-      reason: row.reason ?? undefined,
+      reason: row.reason ?? (row.delegation ? `dilimpahkan ke ${ROLE_LABELS[ACK_DELEGATE_ROLE[row.delegation.to]]}: ${row.delegation.reason ?? ''}`.trim() : undefined),
     },
   ])
   return created
@@ -212,6 +216,21 @@ export async function submit(req: PayloadRequest, id: number, opts: SubmitOption
       signature: diajukanSig,
     })
   }
+  if (needsAck && snapshot.acknowledgeDelegatedTo) {
+    // F2e: the delegation is part of the submit's audit trail (who was skipped, to whom, why).
+    await writeAudit(req, [
+      {
+        action: 'acknowledge_delegated',
+        docType: 'expense_request',
+        docId: String(id),
+        docNo,
+        field: 'diketahui',
+        oldValue: { userId: snapshot.acknowledgeOriginalUserId ?? null },
+        newValue: { delegatedTo: snapshot.acknowledgeDelegatedTo, delegateUserIds: snapshot.acknowledgeDelegateUserIds ?? [], cycle },
+        reason: snapshot.acknowledgeDelegationReason ?? undefined,
+      },
+    ])
+  }
   await writeSnapshot(req, updated, 'submit')
   await recomputeFlags(req, id)
   return updated
@@ -234,15 +253,17 @@ export async function cancel(req: PayloadRequest, id: number, reason: string): P
 /** POST …/acknowledge — "Diketahui Oleh" (US-42, Q-07/Q-08 defaults). */
 export async function acknowledge(req: PayloadRequest, id: number, opts: SignOpts = {}): Promise<RequestDoc> {
   const visible = await loadVisible(req, id, { lock: true })
-  requireAction(await actorContext(req, visible), 'acknowledge')
+  await requireActionAudited(req, await actorContext(req, visible), 'acknowledge', visible)
   const doc = await loadRaw(req, id)
   const caller = userId(req)!
   const sig = await requireSignature(req, caller, 'required', opts.signatureMediaId)
+  const snap = doc.approvalSnapshot ?? null
   await insertApproval(req, doc, {
     position: 'diketahui',
     level: 0,
     decision: 'acknowledged',
     actor: caller,
+    delegation: snap?.acknowledgeDelegatedTo ? { to: snap.acknowledgeDelegatedTo, reason: snap.acknowledgeDelegationReason ?? null } : null,
     signature: sig,
     budget: await budgetFor(req, doc),
     openFlags: await openWarningFlags(req, id),
@@ -259,7 +280,7 @@ export async function acknowledge(req: PayloadRequest, id: number, opts: SignOpt
  */
 export async function approve(req: PayloadRequest, id: number, opts: SignOpts = {}): Promise<RequestDoc> {
   const visible = await loadVisible(req, id, { lock: true })
-  requireAction(await actorContext(req, visible), 'approve')
+  await requireActionAudited(req, await actorContext(req, visible), 'approve', visible)
   const doc = await loadRaw(req, id)
   const caller = userId(req)!
   const sig = await requireSignature(req, caller, 'required', opts.signatureMediaId)
@@ -283,7 +304,7 @@ export async function approve(req: PayloadRequest, id: number, opts: SignOpts = 
 /** POST …/reject — reason required (G7); at the Diketahui step or at an approval level. */
 export async function reject(req: PayloadRequest, id: number, reason: string, opts: SignOpts = {}): Promise<RequestDoc> {
   const visible = await loadVisible(req, id, { lock: true })
-  requireAction(await actorContext(req, visible), 'reject')
+  await requireActionAudited(req, await actorContext(req, visible), 'reject', visible)
   const doc = await loadRaw(req, id)
   const caller = userId(req)!
   const sig = await resolveSignature(req, caller, opts.signatureMediaId)
@@ -293,6 +314,10 @@ export async function reject(req: PayloadRequest, id: number, reason: string, op
     decision: 'rejected',
     actor: caller,
     reason,
+    delegation:
+      doc.status === 'pending_ack' && doc.approvalSnapshot?.acknowledgeDelegatedTo
+        ? { to: doc.approvalSnapshot.acknowledgeDelegatedTo, reason: doc.approvalSnapshot.acknowledgeDelegationReason ?? null }
+        : null,
     signature: sig,
     budget: await budgetFor(req, doc),
     openFlags: await openWarningFlags(req, id),

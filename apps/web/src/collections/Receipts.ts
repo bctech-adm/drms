@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { RIWAYAT_TAB } from '@/admin/config'
 
-import { denyAll } from '@/access/roles'
+import { denyAll, isStaffOnly } from '@/access/roles'
 import { reasonOnChange, withAudit } from '@/audit/hooks'
 import { byVisibleRequest, denyDeleteLogged } from '@/domain/expense/access'
 import { uuidField } from '@/fields/common'
@@ -28,7 +28,8 @@ export const Receipts: CollectionConfig = withAudit(
       { name: 'lineNo', type: 'number', label: 'Baris ke-', admin: ro },
       { name: 'receiptNo', type: 'text', label: 'Nomor nota', maxLength: 64 },
       { name: 'receiptNoNorm', type: 'text', index: true, admin: { ...ro, hidden: true } },
-      { name: 'vendor', type: 'relationship', relationTo: 'vendors', label: 'Vendor (master)' },
+      // F2e UAT: not rendered for staff (no read access to vendors → the input's query was a 403).
+      { name: 'vendor', type: 'relationship', relationTo: 'vendors', label: 'Vendor (master)', admin: { condition: (_d, _s, { user }) => !isStaffOnly(user) } },
       { name: 'vendorName', type: 'text', label: 'Vendor / toko', required: true, maxLength: 160 },
       { name: 'vendorNorm', type: 'text', index: true, admin: { ...ro, hidden: true } },
       businessDateField('receiptDate', 'Tanggal nota', { required: true }),

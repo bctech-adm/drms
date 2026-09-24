@@ -1,8 +1,8 @@
-import { APIError, ValidationError, type CollectionAfterChangeHook, type CollectionBeforeChangeHook, type CollectionConfig, type Field } from 'payload'
+import { APIError, ValidationError, type CollectionAfterChangeHook, type Condition, type CollectionBeforeChangeHook, type CollectionConfig, type Field } from 'payload'
 
 import { RIWAYAT_TAB } from '@/admin/config'
 
-import { relId, userId } from '@/access/roles'
+import { relId, rolesOf, userId } from '@/access/roles'
 import { fieldNever, rolesAllowed } from '@/access/policies'
 import { normalizeValue, reasonOnChange, withAudit } from '@/audit/hooks'
 import { writeAudit, type AuditRow } from '@/audit/writer'
@@ -37,6 +37,9 @@ import { notifyTransition } from '@/domain/notifications'
  */
 
 const system = { create: fieldNever, update: fieldNever }
+
+/** Roles that may read `approval-rules` (collection read access) — the field is shown only to them. */
+const canSeeApprovalRules: Condition = (_data, _sibling, { user }) => rolesOf(user).some((r) => r === 'pk-admin' || r === 'pk-owner' || r === 'pk-finance')
 const ro = { readOnly: true }
 const jsonView = { readOnly: true, components: { Field: '@/components/ReadOnlyJson#ReadOnlyJson' } }
 
@@ -269,13 +272,23 @@ export const ExpenseRequests: CollectionConfig = withAudit(
       { ...rupiahField('transferredTotal', 'Total ditransfer (Rp)'), access: system, admin: { ...ro, position: 'sidebar' } },
       { ...rupiahField('verifiedReceiptsTotal', 'Total nota terverifikasi LPJ (Rp)'), access: system, admin: { ...ro, position: 'sidebar' } },
       { name: 'attachments', type: 'upload', relationTo: 'media-attachments', hasMany: true, label: 'Lampiran umum' },
-      { name: 'approvalRule', type: 'relationship', relationTo: 'approval-rules', label: 'Aturan approval', access: system, admin: ro },
-      { name: 'approvalSnapshot', type: 'json', label: 'Snapshot aturan approval', access: system, admin: jsonView },
+      // F2e UAT: office-only fields are not rendered for users who cannot read their target
+      // (staff/PM → the relationship input fired POST /api/approval-rules → 403 on every view).
+      { name: 'approvalRule', type: 'relationship', relationTo: 'approval-rules', label: 'Aturan approval', access: system, admin: { ...ro, condition: canSeeApprovalRules } },
+      { name: 'approvalSnapshot', type: 'json', label: 'Snapshot aturan approval', access: system, admin: { ...jsonView, condition: canSeeApprovalRules } },
       { name: 'approvalCycle', type: 'number', label: 'Siklus approval', defaultValue: 0, access: system, admin: { ...ro, hidden: true } },
       { name: 'currentLevel', type: 'number', label: 'Level approval berjalan', access: system, admin: ro },
       { name: 'submittedAt', type: 'date', label: 'Diajukan (server)', access: system, admin: { ...ro, date: { pickerAppearance: 'dayAndTime' } } },
       { name: 'contentHash', type: 'text', label: 'Hash isi terkunci', access: system, admin: { ...ro, hidden: true } },
-      { name: 'resubmitOf', type: 'relationship', relationTo: 'expense-requests', label: 'Pengajuan ulang dari', access: system, admin: ro },
+      {
+        name: 'resubmitOf',
+        type: 'relationship',
+        relationTo: 'expense-requests',
+        label: 'Pengajuan ulang dari',
+        access: system,
+        // F2e: number + title of the previous request (not only its title), read-only link.
+        admin: { ...ro, components: { Field: '@/admin/components/ResubmitOfField#ResubmitOfField' } },
+      },
       { name: 'cancelReason', type: 'text', label: 'Alasan batal', access: system, admin: ro },
       { name: 'rejectReason', type: 'text', label: 'Alasan ditolak', access: system, admin: ro },
       { name: 'clientUuid', type: 'text', label: 'Client UUID (APK offline)', unique: true, index: true, access: { update: fieldNever }, admin: { ...ro, hidden: true } },

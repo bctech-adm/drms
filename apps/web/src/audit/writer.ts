@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto'
 
 import { sql } from '@payloadcms/db-postgres'
-import type { PayloadRequest } from 'payload'
+import { createLocalReq, type PayloadRequest } from 'payload'
 
 import { rolesOf } from '@/access/roles'
 import { requestMeta } from '@/lib/request-meta'
+import { withReqTransaction } from '@/lib/system-tx'
 import { getRequestTx } from '@/lib/tx'
 
 /** Values of `audit_logs.action` (ADR 0006 §3 + requirements v1.1 §8). Postgres enum via select. */
@@ -42,6 +43,10 @@ export const AUDIT_ACTIONS = [
   'approve',
   'reject',
   'verify',
+  // F2e: "Diketahui" delegated to Owner/Admin at submit (Q-07/Q-08 fallback); a guard refused an
+  // action and the attempt is recorded in its own transaction (e.g. Finance on its own request).
+  'acknowledge_delegated',
+  'access_denied',
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
@@ -109,5 +114,24 @@ export async function writeAudit(req: PayloadRequest, rows: AuditRow[], user?: U
       // (utilities/createLocalReq.js getRequestContext), which would leak into later operations.
       overrideAccess: true, // SYSTEM-WRITE: append-only audit (collection create access is false)
     })
+  }
+}
+
+/**
+ * Writes audit rows in their OWN transaction, for denied attempts: the business operation that
+ * triggered them fails and rolls back, the record of the attempt must survive (architecture §7.4,
+ * `delete_attempt` pattern). Never throws — a failing audit write is logged, the denial stands.
+ */
+export async function writeAuditDetached(req: PayloadRequest, rows: AuditRow[]): Promise<void> {
+  if (rows.length === 0 || !req.user) return
+  try {
+    const meta = requestMeta(req)
+    const logReq = await createLocalReq(
+      { req: { headers: req.headers }, user: req.user, context: { pkRequestId: meta.requestId, auditSource: meta.source } },
+      req.payload,
+    )
+    await withReqTransaction(logReq, () => writeAudit(logReq, rows))
+  } catch (err) {
+    req.payload.logger.error({ msg: 'detached audit write failed', action: rows[0]?.action, err: (err as Error).message })
   }
 }

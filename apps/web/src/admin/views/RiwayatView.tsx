@@ -27,6 +27,8 @@ const ACTION_LABELS: Record<string, string> = {
   print: 'cetak',
   view_sensitive: 'dilihat (sensitif)',
   delete_attempt: 'percobaan hapus',
+  acknowledge_delegated: 'Diketahui dilimpahkan',
+  access_denied: 'aksi ditolak (hak akses)',
 }
 
 const DOC_LABELS: Record<string, string> = { expense_request: 'Pengajuan', receipt: 'Nota', transfer: 'Transfer', settlement: 'LPJ', cash_entry: 'Kas' }

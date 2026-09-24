@@ -1,6 +1,7 @@
 import { WorkflowPanel as WorkflowPanel_6fcc9de32a179d40aa1576187df45f1e } from '@/admin/components/WorkflowPanel'
 import { PdfLinks as PdfLinks_baf3bc4fa5b0188cc15c74a19f03943f } from '@/admin/components/PdfLinks'
 import { ReadOnlyJson as ReadOnlyJson_08329374a86bb7164f48836797d5c216 } from '@/components/ReadOnlyJson'
+import { ResubmitOfField as ResubmitOfField_c0f3cc59bdb1242c0f258beab78a7cba } from '@/admin/components/ResubmitOfField'
 import { RiwayatView as RiwayatView_5fd51ea07b7ad6c5f81167eb6f8e8f96 } from '@/admin/views/RiwayatView'
 import { LogoutButton as LogoutButton_db9ac62598c46d0f1db201f6af05442e } from '@/components/LogoutButton'
 import { F2NavLinks as F2NavLinks_38e074e6119fcd331b882e852809cb24 } from '@/admin/components/F2NavLinks'
@@ -15,6 +16,7 @@ export const importMap = {
   "@/admin/components/WorkflowPanel#WorkflowPanel": WorkflowPanel_6fcc9de32a179d40aa1576187df45f1e,
   "@/admin/components/PdfLinks#PdfLinks": PdfLinks_baf3bc4fa5b0188cc15c74a19f03943f,
   "@/components/ReadOnlyJson#ReadOnlyJson": ReadOnlyJson_08329374a86bb7164f48836797d5c216,
+  "@/admin/components/ResubmitOfField#ResubmitOfField": ResubmitOfField_c0f3cc59bdb1242c0f258beab78a7cba,
   "@/admin/views/RiwayatView#RiwayatView": RiwayatView_5fd51ea07b7ad6c5f81167eb6f8e8f96,
   "@/components/LogoutButton#LogoutButton": LogoutButton_db9ac62598c46d0f1db201f6af05442e,
   "@/admin/components/F2NavLinks#F2NavLinks": F2NavLinks_38e074e6119fcd331b882e852809cb24,

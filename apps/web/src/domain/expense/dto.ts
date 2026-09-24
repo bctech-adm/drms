@@ -131,6 +131,8 @@ export async function detail(req: PayloadRequest, id: number) {
           name: snap.ruleName,
           acknowledge: snap.acknowledge,
           acknowledgerUserId: snap.acknowledgerUserId,
+          acknowledgeDelegatedTo: snap.acknowledgeDelegatedTo ?? null,
+          acknowledgeDelegationReason: snap.acknowledgeDelegationReason ?? null,
           steps: snap.steps,
           signDiajukan: snap.signDiajukan,
           signDibuat: snap.signDibuat,
@@ -217,6 +219,11 @@ export async function detail(req: PayloadRequest, id: number) {
     openWarningFlags: flags.filter((f) => f.status === 'open' && f.level === 'warning').length,
     allowedActions: allowedActions(ctx),
     resubmitOfId: relId(doc.resubmitOf) ?? null,
+    // F2e: the previous (rejected) request by number + title ("Pengajuan ulang dari").
+    resubmitOf:
+      doc.resubmitOf && typeof doc.resubmitOf === 'object'
+        ? { id: (doc.resubmitOf as { id: number }).id, docNo: (doc.resubmitOf as { docNo?: string | null }).docNo ?? null, title: (doc.resubmitOf as { title?: string }).title ?? '' }
+        : null,
     submittedAt: doc.submittedAt ?? null,
     cancelReason: doc.cancelReason ?? null,
     rejectReason: doc.rejectReason ?? null,
