@@ -82,6 +82,17 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
           </Link>
         </>
       ) : null}
+      {/* F3: reports (Finance/Owner all, PM team) and the global audit log (Owner/Admin/Finance, Q-F3-4) */}
+      {office || roles.includes('pk-pm') ? (
+        <Link href="/admin/laporan" style={link} data-pk-nav-link="laporan">
+          Laporan
+        </Link>
+      ) : null}
+      {office || roles.includes('pk-admin') ? (
+        <Link href="/admin/audit-log" style={link} data-pk-nav-link="audit-log">
+          Audit Log
+        </Link>
+      ) : null}
       {requesterLinks}
     </div>
   )

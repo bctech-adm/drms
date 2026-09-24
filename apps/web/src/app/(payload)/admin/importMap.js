@@ -9,6 +9,10 @@ import { SsoLoginButton as SsoLoginButton_e910a89f6cf03666cb4ab2594dae916d } fro
 import { ApprovalInbox as ApprovalInbox_38358c8fa3c2f08f616ef2728997b5dc } from '@/admin/views/ApprovalInbox'
 import { TransferQueue as TransferQueue_8a6e0f53c8f086ccf31fb1d3d209ace9 } from '@/admin/views/TransferQueue'
 import { LpjVerification as LpjVerification_0e13d2751aafbaa3ddc692019a4025e1 } from '@/admin/views/LpjVerification'
+import { Dashboard as Dashboard_1892ca63063ac8b0682f63e4a9002f9d } from '@/admin/views/Dashboard'
+import { ReportsIndex as ReportsIndex_0364f359823c4f9d190564be3bae51f6 } from '@/admin/views/Reports'
+import { ReportView as ReportView_0364f359823c4f9d190564be3bae51f6 } from '@/admin/views/Reports'
+import { AuditLogView as AuditLogView_0364f359823c4f9d190564be3bae51f6 } from '@/admin/views/Reports'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -24,5 +28,9 @@ export const importMap = {
   "@/admin/views/ApprovalInbox#ApprovalInbox": ApprovalInbox_38358c8fa3c2f08f616ef2728997b5dc,
   "@/admin/views/TransferQueue#TransferQueue": TransferQueue_8a6e0f53c8f086ccf31fb1d3d209ace9,
   "@/admin/views/LpjVerification#LpjVerification": LpjVerification_0e13d2751aafbaa3ddc692019a4025e1,
+  "@/admin/views/Dashboard#Dashboard": Dashboard_1892ca63063ac8b0682f63e4a9002f9d,
+  "@/admin/views/Reports#ReportsIndex": ReportsIndex_0364f359823c4f9d190564be3bae51f6,
+  "@/admin/views/Reports#ReportView": ReportView_0364f359823c4f9d190564be3bae51f6,
+  "@/admin/views/Reports#AuditLogView": AuditLogView_0364f359823c4f9d190564be3bae51f6,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

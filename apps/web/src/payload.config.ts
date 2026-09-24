@@ -7,7 +7,7 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
 import { withStaffHiddenGlobals, withStaffPanelVisibility } from './access/panel-visibility'
-import { F2_ADMIN_VIEWS } from './admin/config'
+import { F2_ADMIN_VIEWS, F3_ADMIN_VIEWS } from './admin/config'
 import { v1Endpoints } from './api/v1'
 import { ApprovalRules } from './collections/ApprovalRules'
 import { Approvals } from './collections/Approvals'
@@ -107,7 +107,8 @@ export default buildConfig({
       logout: { Button: '@/components/LogoutButton#LogoutButton' },
       // F2 work views (approval inbox, transfer queue, LPJ verification) + nav badges.
       afterNavLinks: ['@/admin/components/F2NavLinks#F2NavLinks'],
-      views: F2_ADMIN_VIEWS,
+      // F3: role dashboards (Beranda), reports, global audit log.
+      views: { ...F2_ADMIN_VIEWS, ...F3_ADMIN_VIEWS },
     },
     timezones: { defaultTimezone: 'Asia/Makassar' },
     // Default 'gravatar' sends md5(email) to www.gravatar.com (privacy + CSP img-src), spike f.
