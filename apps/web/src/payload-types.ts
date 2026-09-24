@@ -227,6 +227,9 @@ export interface User {
   roles?: ('pk-staff' | 'pk-pm' | 'pk-finance' | 'pk-owner' | 'pk-admin')[] | null;
   employee?: (number | null) | Employee;
   phone?: string | null;
+  /**
+   * PNG tanda tangan Anda (latar putih/transparan). Dipakai otomatis saat mengirim/menyetujui pengajuan (US-43). Klik "Buat Baru" untuk mengunggah, lalu Simpan.
+   */
   signature?: (number | null) | MediaSignature;
   /**
    * Diisi otomatis dari Keycloak.

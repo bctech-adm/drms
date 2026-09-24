@@ -37,6 +37,22 @@ export type DraftInput = {
 
 const OFFICE = ['pk-admin', 'pk-finance', 'pk-owner'] as const
 
+/**
+ * req.context flag: the service already ran validateContent() (or deliberately skips it, e.g. the
+ * resubmit clone) → the collection hook does not validate the same write twice.
+ */
+export const CONTENT_VALIDATED = 'pkContentValidated'
+
+async function validated<T>(req: PayloadRequest, fn: () => Promise<T>): Promise<T> {
+  const before = req.context[CONTENT_VALIDATED]
+  req.context[CONTENT_VALIDATED] = true
+  try {
+    return await fn()
+  } finally {
+    req.context[CONTENT_VALIDATED] = before
+  }
+}
+
 async function activeIds(req: PayloadRequest, collection: CollectionSlug, wanted: number[]): Promise<Set<number>> {
   if (wanted.length === 0) return new Set()
   const res = await req.payload.find({
@@ -201,7 +217,7 @@ export async function createDraft(req: PayloadRequest, input: DraftInput & { typ
   const requesterIds = input.requesterIds && input.requesterIds.length > 0 ? input.requesterIds : emp !== undefined ? [emp] : []
   const lines = input.lines ?? []
   await validateContent(req, { ...input, requesterIds, lines }, { forSubmit: false, creatorId: uid })
-  const doc = await req.payload.create({
+  const doc = await validated(req, () => req.payload.create({
     collection: 'expense-requests',
     data: {
       type: input.type,
@@ -222,7 +238,7 @@ export async function createDraft(req: PayloadRequest, input: DraftInput & { typ
     user: req.user,
     overrideAccess: false, // collection create access + hooks (createdBy/status/grandTotal server-set)
     req,
-  })
+  }))
   return { doc: doc as unknown as RequestDoc, created: true }
 }
 
@@ -264,7 +280,7 @@ export async function updateDraft(req: PayloadRequest, id: number, input: DraftI
   if (input.bankAccountId !== undefined) data.bankAccount = input.bankAccountId
   if (input.lines !== undefined) data.lines = toDocLines(input.lines)
   if (input.attachmentIds !== undefined) data.attachments = input.attachmentIds
-  const updated = await req.payload.update({
+  const updated = await validated(req, () => req.payload.update({
     collection: 'expense-requests',
     id,
     data: data as never,
@@ -272,7 +288,7 @@ export async function updateDraft(req: PayloadRequest, id: number, input: DraftI
     user: req.user,
     overrideAccess: false, // update access = own Draft (G8)
     req,
-  })
+  }))
   return updated as unknown as RequestDoc
 }
 
@@ -286,7 +302,8 @@ export async function resubmitAsDraft(req: PayloadRequest, id: number): Promise<
   const doc = await loadVisible(req, id, { lock: true })
   requireAction(await actorContext(req, doc), 'resubmit')
   const src = await loadRaw(req, id)
-  const created = await req.payload.create({
+  // The clone keeps the rejected content as-is (US-06); it is fully validated at submit.
+  const created = await validated(req, () => req.payload.create({
     collection: 'expense-requests',
     data: {
       type: src.type,
@@ -306,7 +323,7 @@ export async function resubmitAsDraft(req: PayloadRequest, id: number): Promise<
     user: req.user,
     overrideAccess: false, // same create path as a new draft (createdBy = caller)
     req,
-  })
+  }))
   // resubmitOf is a system field (create access false for users) → set by the service.
   req.context.pkTransition = true
   try {

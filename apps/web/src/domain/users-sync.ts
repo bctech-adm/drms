@@ -5,7 +5,7 @@ import type {
 } from 'payload'
 import { APIError } from 'payload'
 
-import { isRole, type Role } from '@/access/roles'
+import { hasRole, isRole, type Role } from '@/access/roles'
 import { getKeycloakAdmin, type KeycloakAdmin } from '@/auth/keycloak-admin'
 import { writeAudit } from '@/audit/writer'
 import { getEnv } from '@/lib/env'
@@ -66,6 +66,9 @@ export const keycloakSyncBeforeChange: CollectionBeforeChangeHook = async ({ dat
   if (d.email) d.email = d.email.trim().toLowerCase()
   if (operation !== 'create' && operation !== 'update') return data
   if (context?.roleSync === true) return data
+  // F2c self-service profile (signature only — field access strips every Keycloak-relevant
+  // field for non-admins, selfProfileGuard runs first): nothing to sync to Keycloak.
+  if (operation === 'update' && req.user && !hasRole(req, 'pk-admin')) return data
   if (context?.skipKeycloakSync === true) {
     if (operation === 'create' && !d.keycloakSub) throw new APIError('keycloakSub wajib untuk bootstrap.', 400)
     return data
