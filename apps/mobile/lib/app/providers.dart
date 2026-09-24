@@ -1,0 +1,94 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/config/app_env.dart';
+import '../core/db/app_database.dart';
+import '../core/device/device_identity.dart';
+import '../core/media/photo_compressor.dart';
+import '../core/network/api_client.dart';
+import '../core/storage/secure_store.dart';
+import '../core/time/device_clock.dart';
+import '../core/util/async_lock.dart';
+import '../features/app_config/data/app_config_api.dart';
+import '../features/approvals/data/approvals_api.dart';
+import '../features/auth/data/oidc_client.dart';
+import '../features/auth/data/profile_api.dart';
+import '../features/auth/data/token_manager.dart';
+import '../features/expense/application/draft_service.dart';
+import '../features/expense/data/draft_repository.dart';
+import '../features/expense/data/expense_api.dart';
+import '../features/masters/data/masters_repository.dart';
+import '../features/notifications/data/push_service.dart';
+import '../features/sync/application/sync_engine.dart';
+import '../features/sync/data/outbox_repository.dart';
+import '../features/sync/data/sync_api.dart';
+import '../core/connectivity/connectivity_controller.dart';
+
+/// Bootstrapped singletons — overridden in main() / tests.
+final appEnvProvider = Provider<AppEnv>((ref) => throw UnimplementedError('appEnvProvider'));
+final secureStoreProvider = Provider<SecureStore>((ref) => throw UnimplementedError('secureStoreProvider'));
+final deviceIdentityProvider = Provider<DeviceIdentity>((ref) => throw UnimplementedError('deviceIdentityProvider'));
+final databaseProvider = Provider<AppDatabase>((ref) => throw UnimplementedError('databaseProvider'));
+
+final deviceClockProvider = Provider<DeviceClock>((ref) => AndroidDeviceClock());
+final oidcBrowserClientProvider = Provider<OidcBrowserClient>((ref) => AppAuthBrowserClient(ref.watch(appEnvProvider)));
+final photoCompressorProvider = Provider<PhotoCompressor>((ref) => DevicePhotoCompressor());
+final syncLockProvider = Provider<AsyncLock>((ref) => AsyncLock());
+
+/// Set by the ApiClient when the server answers 426; the router then shows the update screen.
+final upgradeRequiredProvider = NotifierProvider<UpgradeRequired, String?>(UpgradeRequired.new);
+
+class UpgradeRequired extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void set(String? minVersion) => state = minVersion ?? '?';
+}
+
+final tokenManagerProvider = Provider<TokenManager>(
+  (ref) => TokenManager(env: ref.watch(appEnvProvider), store: ref.watch(secureStoreProvider)),
+);
+
+final apiClientProvider = Provider<ApiClient>((ref) {
+  final env = ref.watch(appEnvProvider);
+  return ApiClient(
+    baseUrl: env.apiV1,
+    tokens: ref.watch(tokenManagerProvider),
+    headers: ref.watch(deviceIdentityProvider),
+    onReachability: (ok) => ref.read(connectivityProvider.notifier).reportServerReachable(ok),
+    onUpgradeRequired: (min) => ref.read(upgradeRequiredProvider.notifier).set(min),
+  );
+});
+
+final profileApiProvider = Provider((ref) => ProfileApi(ref.watch(apiClientProvider)));
+final appConfigApiProvider = Provider((ref) => AppConfigApi(ref.watch(apiClientProvider)));
+final expenseApiProvider = Provider((ref) => ExpenseApi(ref.watch(apiClientProvider)));
+final approvalsApiProvider = Provider((ref) => ApprovalsApi(ref.watch(apiClientProvider)));
+final syncApiProvider = Provider((ref) => SyncApi(ref.watch(apiClientProvider)));
+
+final draftRepositoryProvider = Provider((ref) => DraftRepository(ref.watch(databaseProvider)));
+final outboxRepositoryProvider = Provider((ref) => OutboxRepository(ref.watch(databaseProvider)));
+final mastersRepositoryProvider =
+    Provider((ref) => MastersRepository(ref.watch(apiClientProvider), ref.watch(databaseProvider)));
+
+final syncEngineProvider = Provider((ref) {
+  final device = ref.watch(deviceIdentityProvider);
+  return SyncEngine(
+    outbox: ref.watch(outboxRepositoryProvider),
+    drafts: ref.watch(draftRepositoryProvider),
+    api: ref.watch(syncApiProvider),
+    db: ref.watch(databaseProvider),
+    clock: ref.watch(deviceClockProvider),
+    deviceId: () => device.deviceId,
+    lock: ref.watch(syncLockProvider),
+  );
+});
+
+final draftServiceProvider = Provider((ref) => DraftService(
+      drafts: ref.watch(draftRepositoryProvider),
+      outbox: ref.watch(outboxRepositoryProvider),
+      api: ref.watch(expenseApiProvider),
+      clock: ref.watch(deviceClockProvider),
+      lock: ref.watch(syncLockProvider),
+    ));
+
+/// Push is behind the build flag PK_PUSH_ENABLED (Firebase project pending, Q-44).
+final pushServiceProvider = Provider<PushService>((ref) => createPushService(enabled: ref.watch(appEnvProvider).pushEnabled));

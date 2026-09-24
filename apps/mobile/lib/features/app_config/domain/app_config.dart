@@ -1,0 +1,45 @@
+/// `GET /api/v1/app/config` (F4 backend, parsed defensively: every field optional).
+class AppConfig {
+  const AppConfig({this.minAppVersion, this.latestAppVersion, this.appDownloadUrl, this.serverTime});
+  final String? minAppVersion;
+  final String? latestAppVersion;
+  final String? appDownloadUrl;
+  final String? serverTime;
+
+  factory AppConfig.fromJson(Map<String, dynamic> j) {
+    String? s(String k) => j[k] is String && (j[k] as String).isNotEmpty ? j[k] as String : null;
+    return AppConfig(
+      minAppVersion: s('minAppVersion'),
+      latestAppVersion: s('latestAppVersion'),
+      appDownloadUrl: s('appDownloadUrl'),
+      serverTime: s('serverTime'),
+    );
+  }
+}
+
+/// Compares dotted numeric versions (`0.1.10` > `0.1.9`); build suffixes (`+12`) are ignored.
+int compareVersions(String a, String b) {
+  List<int> parts(String v) =>
+      v.split('+').first.split('-').first.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+  final pa = parts(a);
+  final pb = parts(b);
+  for (var i = 0; i < (pa.length > pb.length ? pa.length : pb.length); i++) {
+    final x = i < pa.length ? pa[i] : 0;
+    final y = i < pb.length ? pb[i] : 0;
+    if (x != y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+enum VersionGate { ok, updateAvailable, updateRequired }
+
+VersionGate evaluateVersion(String current, AppConfig? cfg) {
+  if (cfg == null) return VersionGate.ok;
+  if (cfg.minAppVersion != null && compareVersions(current, cfg.minAppVersion!) < 0) {
+    return VersionGate.updateRequired;
+  }
+  if (cfg.latestAppVersion != null && compareVersions(current, cfg.latestAppVersion!) < 0) {
+    return VersionGate.updateAvailable;
+  }
+  return VersionGate.ok;
+}
