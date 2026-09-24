@@ -196,7 +196,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginCancelled.
   ///
   /// In id, this message translates to:
-  /// **'Login dibatalkan.'**
+  /// **'Login dibatalkan. Jika halaman login tidak kembali ke aplikasi, tutup browser lalu tekan Masuk lagi.'**
   String get loginCancelled;
 
   /// No description provided for @loginFailed.
@@ -240,6 +240,12 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Unduh versi terbaru dari:'**
   String get updateDownloadHint;
+
+  /// No description provided for @copyLink.
+  ///
+  /// In id, this message translates to:
+  /// **'Salin tautan'**
+  String get copyLink;
 
   /// No description provided for @updateContactAdmin.
   ///
@@ -798,6 +804,18 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Mengompres foto…'**
   String get photoCompressing;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Cari…'**
+  String get searchHint;
+
+  /// No description provided for @draftNotFound.
+  ///
+  /// In id, this message translates to:
+  /// **'Draft tidak ditemukan.'**
+  String get draftNotFound;
 
   /// No description provided for @cameraUnavailable.
   ///

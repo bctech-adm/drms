@@ -74,7 +74,7 @@ class _PickerDialogState extends State<_PickerDialog> {
           children: [
             TextField(
               autofocus: false,
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Cari…'),
+              decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: t.searchHint),
               onChanged: (v) => setState(() => _q = v),
             ),
             Expanded(

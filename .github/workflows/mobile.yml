@@ -1,0 +1,162 @@
+# ProyekKas Android app CI (ADR 0010 decision 13). Flutter comes from the official tarball, pinned and
+# sha256-verified (releases_linux.json, 3.47.5 / Dart 3.13.4). Actions are pinned by commit SHA (resolved
+# with `git ls-remote`). Syntax is checked with actionlint 1.7.12.
+#
+# Artifacts:
+#   proyekkas-staging-debug-apk        always: debug build, staging flavor, OIDC redirect = custom scheme
+#                                      id.co.drms.proyekkas:/oauth2redirect (debug keys differ per run,
+#                                      so the HTTPS App Link could never verify)
+#   proyekkas-staging-release-apk      only when the ANDROID_STAGING_* secrets exist: release build signed
+#                                      with the stable staging key, redirect = App Link
+#                                      https://drms-kas.staging.bimacreative.tech/app/callback
+#                                      (that key's SHA-256 must be in the server's ANDROID_APP_CERT_SHA256)
+# Production release signing (ANDROID_KEYSTORE_* secrets, main / tag mobile-vX.Y.Z, environment approval)
+# is a later step. apps/mobile/README.md explains how to create the keystore.
+name: mobile
+
+on:
+  push:
+    branches: [main, develop, "feat/mobile-**", "fix/mobile-**"]
+    paths: ["apps/mobile/**", ".github/workflows/mobile.yml"]
+  pull_request:
+    paths: ["apps/mobile/**", ".github/workflows/mobile.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.5
+  FLUTTER_SHA256: 2132e990f236f8d22e7c6314b29a191a95b10d7cbcfec9b4e2e303d996652cbb
+  JAVA_VERSION: "17"
+
+defaults:
+  run:
+    working-directory: apps/mobile
+
+jobs:
+  verify:
+    name: analyze · format · codegen drift · tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Flutter ${{ env.FLUTTER_VERSION }} (official tarball, sha256-verified)
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -fsSL -o flutter.tar.xz \
+            "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+          echo "${FLUTTER_SHA256}  flutter.tar.xz" | sha256sum -c -
+          tar xJf flutter.tar.xz && rm flutter.tar.xz
+          echo "${RUNNER_TEMP}/flutter/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ env.FLUTTER_VERSION }}-${{ hashFiles('apps/mobile/pubspec.lock') }}
+      - run: flutter config --no-analytics && flutter --version
+      - run: flutter pub get --enforce-lockfile
+      - name: Generated code is up to date (drift, freezed, l10n)
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          flutter gen-l10n
+          git diff --exit-code -- .
+      - name: dart format (hand-written files)
+        run: |
+          git ls-files 'lib/*.dart' 'test/*.dart' | grep -v -e '\.g\.dart$' -e '\.freezed\.dart$' -e '^lib/l10n/gen/' \
+            | xargs dart format --set-exit-if-changed --output=none
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test --coverage
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mobile-coverage
+          path: apps/mobile/coverage/lcov.info
+          retention-days: 14
+
+  apk:
+    name: build APKs (staging)
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      HAS_STAGING_KEY: ${{ secrets.ANDROID_STAGING_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Install Flutter ${{ env.FLUTTER_VERSION }} (official tarball, sha256-verified)
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -fsSL -o flutter.tar.xz \
+            "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz"
+          echo "${FLUTTER_SHA256}  flutter.tar.xz" | sha256sum -c -
+          tar xJf flutter.tar.xz && rm flutter.tar.xz
+          echo "${RUNNER_TEMP}/flutter/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: apk-${{ runner.os }}-${{ env.FLUTTER_VERSION }}-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/android/**/*.kts') }}
+      - run: flutter config --no-analytics && flutter pub get --enforce-lockfile
+
+      - name: Debug APK (staging flavor, custom-scheme redirect)
+        run: |
+          flutter build apk --debug --flavor staging \
+            --dart-define-from-file=config/staging.json \
+            --dart-define=PK_OIDC_REDIRECT_URI=id.co.drms.proyekkas:/oauth2redirect \
+            --build-number="${GITHUB_RUN_NUMBER}"
+          ls -l build/app/outputs/flutter-apk/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: proyekkas-staging-debug-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-staging-debug.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: No staging signing key → skip the signed release build
+        if: env.HAS_STAGING_KEY != 'true'
+        run: echo "::notice::ANDROID_STAGING_* secrets not set; only the debug APK (custom-scheme redirect) was built."
+      - name: Decode staging keystore
+        if: env.HAS_STAGING_KEY == 'true'
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_STAGING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STAGING_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_STAGING_KEY_ALIAS }}
+        run: |
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/staging.jks"
+          echo "Signing certificate SHA-256 (must be in ANDROID_APP_CERT_SHA256 on staging):"
+          keytool -list -v -keystore "$RUNNER_TEMP/staging.jks" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" \
+            | grep -E '^\s*SHA256:'
+      - name: Release APK (staging flavor, stable key, App Link redirect)
+        if: env.HAS_STAGING_KEY == 'true'
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/staging.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_STAGING_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_STAGING_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_STAGING_KEY_PASSWORD }}
+        run: |
+          flutter build apk --release --flavor staging \
+            --dart-define-from-file=config/staging.json \
+            --build-number="${GITHUB_RUN_NUMBER}" \
+            --obfuscate --split-debug-info=build/symbols
+          ls -l build/app/outputs/flutter-apk/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: env.HAS_STAGING_KEY == 'true'
+        with:
+          name: proyekkas-staging-release-apk
+          path: |
+            apps/mobile/build/app/outputs/flutter-apk/app-staging-release.apk
+            apps/mobile/build/symbols/
+          retention-days: 90
+          if-no-files-found: error
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/staging.jks"

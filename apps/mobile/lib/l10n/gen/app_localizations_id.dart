@@ -65,7 +65,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get loginButton => 'Masuk';
 
   @override
-  String get loginCancelled => 'Login dibatalkan.';
+  String get loginCancelled =>
+      'Login dibatalkan. Jika halaman login tidak kembali ke aplikasi, tutup browser lalu tekan Masuk lagi.';
 
   @override
   String get loginFailed => 'Login gagal. Coba lagi.';
@@ -89,6 +90,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get updateDownloadHint => 'Unduh versi terbaru dari:';
+
+  @override
+  String get copyLink => 'Salin tautan';
 
   @override
   String get updateContactAdmin => 'Hubungi admin untuk mendapatkan APK terbaru.';
@@ -381,6 +385,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get photoCompressing => 'Mengompres foto…';
+
+  @override
+  String get searchHint => 'Cari…';
+
+  @override
+  String get draftNotFound => 'Draft tidak ditemukan.';
 
   @override
   String get cameraUnavailable => 'Kamera belakang tidak tersedia.';

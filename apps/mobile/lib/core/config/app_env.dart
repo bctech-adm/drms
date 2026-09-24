@@ -33,6 +33,13 @@ class AppEnv {
   final String oidcRedirectUri;
   final bool pushEnabled;
 
+  /// Fallback redirect when the HTTPS App Link cannot be verified (e.g. build not signed with the key
+  /// listed in /.well-known/assetlinks.json): private-use reverse-domain scheme (flutter_appauth README,
+  /// lowercase). Must also be allowed in Keycloak client `proyekkas-mobile`.
+  static const customSchemeRedirect = 'id.co.drms.proyekkas:/oauth2redirect';
+
+  bool get usesAppLink => oidcRedirectUri.startsWith('https://');
+
   static const scopes = ['openid', 'offline_access'];
 
   bool get isProd => flavor == 'prod';

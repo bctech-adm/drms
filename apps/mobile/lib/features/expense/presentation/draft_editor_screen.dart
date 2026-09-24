@@ -46,7 +46,7 @@ class DraftEditorRoute extends ConsumerWidget {
     return AsyncBody(
       value: ref.watch(_draftLoadProvider(uuid!)),
       data: (d) => d == null
-          ? const Scaffold(body: Center(child: Text('Draft tidak ditemukan.')))
+          ? Scaffold(body: Center(child: Text(AppLocalizations.of(context).draftNotFound)))
           : _withMasters(masters, (m) => DraftEditorScreen(initial: d, masters: m, isNew: false)),
     );
   }

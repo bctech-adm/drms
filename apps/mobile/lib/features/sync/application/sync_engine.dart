@@ -28,7 +28,7 @@ class SyncRunResult {
   final int conflicts;
 }
 
-/// Sends the offline outbox: media first (`PUT /sync/media/{uuid}`), then JSON items in batches
+/// Sends the offline outbox: receipt photos first (`POST /media/receipts` → `media_id`), then JSON items in batches
 /// (`POST /sync/batch`), and applies the per-item result rules of ADR 0010:
 /// applied/duplicate → done; rejected → never retried, message shown; deferred → back-off;
 /// conflict → server wins, local version kept as "Salinan konflik".

@@ -46,7 +46,7 @@ class UpdateRequiredScreen extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () => Clipboard.setData(ClipboardData(text: url)),
                   icon: const Icon(Icons.copy),
-                  label: const Text('Salin tautan'),
+                  label: Text(t.copyLink),
                 ),
               ] else
                 Text(t.updateContactAdmin, textAlign: TextAlign.center),
