@@ -1,7 +1,8 @@
-import { APIError, type Endpoint, type PayloadRequest } from 'payload'
+import { addDataAndFileToRequest, APIError, ValidationError, type Endpoint, type PayloadRequest } from 'payload'
 import type { z } from 'zod'
 
 import { hasRole, type Role } from '@/access/roles'
+import { claimKey, IDEMPOTENCY_KEY_RE, requestHash, storeResponse } from '@/lib/idempotency'
 import { requestMeta } from '@/lib/request-meta'
 import { takeToken } from '@/lib/rate-limit'
 import { withReqTransaction } from '@/lib/system-tx'
@@ -16,6 +17,13 @@ export function problem(status: number, title: string, extra: Record<string, unk
 
 export function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } })
+}
+
+/** Carries an error response out of the transaction so that it rolls back. */
+class RolledBack extends Error {
+  constructor(readonly response: Response) {
+    super('rolled back')
+  }
 }
 
 export class HttpError extends Error {
@@ -53,7 +61,7 @@ async function minAppVersion(req: PayloadRequest): Promise<string | null> {
 
 export type V1Options<B extends z.ZodType | undefined> = {
   path: string
-  method: 'get' | 'post'
+  method: 'get' | 'post' | 'patch'
   /** 'public' = no authentication (health only). Default: any authenticated user. */
   auth?: 'public' | 'user'
   roles?: Role[]
@@ -62,6 +70,14 @@ export type V1Options<B extends z.ZodType | undefined> = {
   rateLimit?: [number, number]
   /** Run the handler inside ONE DB transaction on this req (mutations). */
   transactional?: boolean
+  /**
+   * Honour `Idempotency-Key` (G15): the first 2xx response is stored and replayed for retries
+   * with the same key and body; a different body → 422. Requires `transactional`. The APK must
+   * send the header on these endpoints (400 without it); web callers may omit it.
+   */
+  idempotent?: boolean
+  /** multipart/form-data upload (file in field `file`, JSON fields in `_payload`); no zod body. */
+  multipart?: boolean
   handler: (ctx: {
     req: PayloadRequest
     body: B extends z.ZodType ? z.infer<B> : undefined
@@ -98,10 +114,14 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
           }
         }
         let body: unknown = undefined
-        if (opts.body) {
+        let rawText = ''
+        if (opts.multipart) {
+          await addDataAndFileToRequest(req)
+        } else if (opts.body) {
           let raw: unknown
           try {
-            raw = await req.json?.()
+            rawText = (await req.text?.()) ?? ''
+            raw = rawText ? JSON.parse(rawText) : {}
           } catch {
             return problem(400, 'Bad Request', { detail: 'Body harus JSON.' })
           }
@@ -115,11 +135,49 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
         }
         const params = Object.fromEntries(Object.entries(req.routeParams ?? {}).map(([k, v]) => [k, String(v)]))
         const run = () => opts.handler({ req, body: body as never, params })
-        return opts.transactional ? await withReqTransaction(req, run) : await run()
+        const key = opts.idempotent ? req.headers.get('idempotency-key')?.trim() : undefined
+        if (opts.idempotent) {
+          if (key !== undefined && !IDEMPOTENCY_KEY_RE.test(key)) return problem(400, 'Bad Request', { detail: 'Idempotency-Key harus UUID.' })
+          if (key === undefined && requestMeta(req).source === 'apk') return problem(400, 'Bad Request', { detail: 'Idempotency-Key wajib untuk aplikasi Android.' })
+        }
+        if (!opts.transactional) return await run()
+        if (!key) return await withReqTransaction(req, run)
+        const uid = (req.user as { id: number }).id
+        const path = new URL(req.url ?? 'http://local/').pathname
+        const hash = requestHash(opts.method, path, rawText)
+        try {
+          return await withReqTransaction(req, async () => {
+            const claim = await claimKey(req, uid, key, opts.method, path, hash)
+            if (claim.kind === 'mismatch') throw new RolledBack(problem(422, 'Unprocessable Content', { detail: 'Idempotency-Key sudah dipakai untuk permintaan lain.' }))
+            if (claim.kind === 'replay') {
+              const res = json(claim.body, claim.status)
+              res.headers.set('Idempotent-Replayed', 'true')
+              return res
+            }
+            const res = await run()
+            if (res.status >= 400) throw new RolledBack(res) // never store errors; undo the claim
+            await storeResponse(req, uid, key, res.status, await res.clone().json().catch(() => null))
+            return res
+          })
+        } catch (err) {
+          if (err instanceof RolledBack) return err.response
+          throw err
+        }
       } catch (err) {
         if (err instanceof HttpError) return problem(err.status, err.title, err.extra)
+        if (err instanceof ValidationError) {
+          const errors = ((err.data as { errors?: Array<{ path?: string; message?: string }> } | undefined)?.errors ?? []).map((e) => ({ path: e.path ?? '', message: e.message ?? '' }))
+          return problem(400, 'Bad Request', { detail: 'Data tidak valid.', errors })
+        }
         if (err instanceof APIError && err.status < 500) {
-          return problem(err.status, err.isPublic ? err.message : 'Request rejected')
+          const errors = (err.data as { errors?: unknown } | null | undefined)?.errors
+          return problem(err.status, err.isPublic ? err.message : 'Request rejected', err.isPublic && Array.isArray(errors) ? { errors } : {})
+        }
+        const pg = err as { code?: string; message?: string }
+        if (typeof pg.code === 'string' && /^(42501|23505|23514|P0001)$/.test(pg.code)) {
+          // DB guards (triggers/constraints) are the last line of defence → 409, never a 500.
+          req.payload.logger.warn({ msg: 'v1 db guard', path: opts.path, code: pg.code, err: pg.message })
+          return problem(409, 'Conflict', { detail: 'Ditolak oleh aturan integritas data.' })
         }
         req.payload.logger.error({ msg: 'v1 handler failed', path: opts.path, err: (err as Error).message })
         return problem(500, 'Internal Server Error')

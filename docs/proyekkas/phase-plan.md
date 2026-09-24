@@ -1,6 +1,6 @@
 # ProyekKas — Phase plan F0–F7
 
-- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging); F2 status updated 2026-09-24 (F2a–F2e done and deployed to staging `e9c07ab`; UAT run 4 56/59 PASS; **F2 ready for gate**) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Basis:** `architecture.md`, ADR 0001–0008 (this folder), ADR 0009–0011 (other agent), requirements v1.0
   (+ v1.1 in parallel), `/opt/infra/CLAUDE.md` §1 (workflow: stop and report at the end of every phase, wait
   for user approval), §5 (Definition of Done).
@@ -109,6 +109,49 @@
   manual cash in/out, void/reversal, period closing lock, PDF "Pengajuan Biaya" (ADR 0008), in-app
   notifications (push arrives in F4), admin custom views (approval inbox, transfer queue, LPJ verification,
   "Riwayat" tab).
+- **Status (2026-09-24): READY FOR GATE**
+  - **F2a — DONE** (merged to `develop` `c8c1af6`): expense requests (advance + reimburse) with lines,
+    requesters, "Diketahui"/approval positions + signatures, approval rules (US-34; default Owner-only,
+    Q-31; "Diketahui" required, Q-07), receipts + validation flags, Reimburse receipt verification
+    ("Nota Terverifikasi"), transfers with one automatic KK, manual cash in/out, void/reversal (KM/KK),
+    period close/re-open, DB guards (ADR 0005/0006), `Idempotency-Key`, `/api/v1` endpoints + OpenAPI, form
+    228 fixture in the integration tests. Onboarding prerequisite: PM per project / manager per cost center
+    (architecture §5.2). Also fixed the F1 WebP-thumbnail upload defect (architecture §9.1).
+  - **F2b — DONE** (merged `4d952ba`): LPJ/settlement (submit/revision/verify; exact amount settles at
+    verification, refund KM / shortfall transfer + KK; ADR 0005), Class B `settlements`/`notifications` DB guards
+    (ADR 0006), PDF "Pengajuan Biaya" (ADR 0008 "As implemented"), admin custom views (approval inbox, transfer
+    queue, LPJ verification, "Riwayat" tab), in-app notifications (`pushStatus`, push gated off — ADR 0011),
+    file endpoint `GET /api/v1/media/{collection}/{id}/file` (ADR 0004 §4a), Reimburse auto-close job (01:15 WITA).
+  - **F2c — DONE** (merged `59ba0a4`): requester actions in the web panel — `pk-staff` panel access with
+    restricted nav, self-service profile signature, submit/withdraw/cancel/resubmit/receipts/LPJ/confirm via
+    `/api/v1` + `Idempotency-Key`, status timeline; admin REST create/edit runs `validateContent` (security fix;
+    ADR 0003 §3a).
+  - **F2d — DONE** (merged `c11907a`, UAT fixes): Finance verifies Reimburse receipts in **Antrian Transfer**
+    (per receipt Valid/Tolak, flags reviewed, "Verifikasi semua nota"); "Profil & tanda tangan" linked for every
+    panel role incl. Owner; hint above "Baris item" for the Payload 3.90.1 row race.
+  - **F2e — DONE** (merged `e9c07ab`, UAT fixes): "Diketahui" **delegated** to an eligible Owner, else Admin, when
+    the PM / cost-center manager is a requester/creator or missing (user decision 2026-09-24 option a; Q-07/Q-08
+    edge case; architecture §5.2); resubmit shows the old number; office-only fields hidden for Staff/PM;
+    operational 4xx logged at warn; Finance self-involvement guard (service + DB triggers, G17); audit actions
+    `acknowledge_delegated`, `access_denied` (ADR 0006).
+  - **Deployed:** staging runs image `proyekkas-web:0.1.0-stg-e9c07ab` (web + worker). **UAT seed**
+    (`apps/web/src/seed/uat.ts`, env `UAT_USERS`, fictional `*.uji@proyekkas.test` accounts, project `UJI-PRJ`)
+    run on staging 2026-09-24. **UAT E2E (Playwright) runs 1–4** — run 4: 56 PASS, 2 FAIL (1.3b by design Q-04;
+    5.2 409 instead of 403, refused either way), 1 NOT TESTABLE (4.2) — `uat/f2-uat-report.md`.
+  - **F2 acceptance gate — evidence** (awaiting user gate approval):
+
+    | Gate item | Evidence |
+    |---|---|
+    | Seed form reproduces `228/PB-DRMS/20/IX/2026`, Rp 1.447.500, flags (Rp 124, dates, BBM "bulan") | `tests/integration/form-228.int.test.ts`; UAT run 4 scenario 1 (Rp 1.447.500, Rp 124 and "bulan" flags; date flag by design, Q-04) |
+    | PDF reviewed by user | layout **approved by the user 2026-09-24** (receipts on separate pages, 2 per page; logo pending Q-32); printed in UAT run 4 (1.10) |
+    | Full negative-authz suite (§7.4) green | `tests/integration/{authz,f2-authz-db,f2c-requester-web,f2d-finance-receipts,f2e-uat-fixes}.int.test.ts`; UAT run 4 scenario 5 |
+    | Every §8 event in audit with old→new | `tests/integration/audit.int.test.ts` + flow suites; `acknowledge_delegated` / `access_denied` in `f2e-uat-fixes.int`; Riwayat in UAT run 4 (1.11, 4.1) |
+    | Closed period rejects postings at DB level | `tests/integration/f2-authz-db.int.test.ts` (raw SQL as the app role; ADR 0005) |
+    | PDF render peak RSS measured | ≈ 138 MiB isolated, 149 MiB web cgroup after 3 renders (ADR 0008) |
+
+  - **Carried over (not blocking the gate, proposed):** the F6 backlog below, plus "5.2 409 vs 403 wording"
+    (state check answers before the G1 guard) and an "Admin Uji" test account for the delegation UAT (step 4.2).
+  - **F2 acceptance gate: READY FOR GATE** (user decision pending).
 - **Dependencies:** F1 gate.
 - **Agents / estimate:** nextjs-developer 26–36 pd · qa-security 7–9 pd · analyst 1–2 pd · docs 1–2 pd →
   **35–49 pd**.
@@ -159,6 +202,16 @@
   media), hash-chain decision (ADR 0006 §5), user guides per role (Bahasa Indonesia), deploy & ops
   runbooks, UAT checklist per user story, go-live data migration (opening balances, sequence start values),
   OCR receipts (nice-to-have, only if time allows).
+- **Backlog carried in (2026-09-24):** server-side 302 to `/admin/login` for unauthenticated admin routes
+  (today Payload renders a 200 shell that leaks only page titles, no data); settlement reversal (void of
+  refund KM / shortfall transfer currently 409); signed/time-limited media URLs (ADR 0004 §4); prod compose
+  + GHCR push/deploy jobs; container uid not mapped to a host user for prod secrets; `PUSH_FCM_ENABLED` in
+  the env schema (F4); ~~self-involvement guard for Finance receipt verification~~ (**done in F2e**, architecture
+  §5.5 G17); Payload 3.90.1
+  admin form-state race (adding an array row while a form-state request is pending leaves a skeleton row —
+  file upstream issue; UI hint added in F2d); **5.2 409 vs 403 wording** (a requester's `approve` on a request in
+  "Menunggu Diketahui" answers 409 from the state check before the G1 403 — refused either way, UAT run 4);
+  **"Admin Uji" test account** for the delegated-acknowledge UAT step 4.2 (the only staging Admin is the user's).
 - **Dependencies:** F2–F5.
 - **Agents / estimate:** qa-security 6–9 pd · nextjs-developer 4–6 pd · flutter-developer 2–3 pd ·
   docs-versioning 4–6 pd · infra-engineer 1–2 pd · analyst 1–2 pd → **18–28 pd**.

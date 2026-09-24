@@ -13,6 +13,8 @@
 #
 # Order: `docker compose run --rm drms-pk-stg-migrate` runs automatically via depends_on;
 # seed (idempotent): `docker compose --profile seed run --rm drms-pk-stg-seed`.
+# UAT seed (one-off, same service, no Keycloak access needed; see .env.example "UAT seed"):
+#   docker compose --profile seed run --rm -e UAT_USERS drms-pk-stg-seed node /app/node_modules/payload/bin.js run src/seed/uat.ts
 name: drms-proyekkas-stg
 
 x-hardening: &hardening

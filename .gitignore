@@ -14,3 +14,5 @@ apps/web/media/
 # real seed data (SEED_DATA_FILE) — never commit
 *.seed-data.json
 seed-data.*.json
+# PDF RAM measurement scratch dir (tests/integration/form-228.int.test.ts)
+apps/web/.pdf-rss-*/

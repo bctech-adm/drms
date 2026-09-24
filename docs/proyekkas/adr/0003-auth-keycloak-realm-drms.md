@@ -1,6 +1,6 @@
 # ADR 0003 — Authentication & identity: Keycloak realm `drms`, OIDC for web and APK
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation / staging deploy; F2c panel access recorded 2026-09-24 (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** brief §2 #3; `/opt/infra/CLAUDE.md` §3.2 (login), §3.6; `/opt/infra/identity/keycloak/*`
@@ -132,6 +132,26 @@
   **`jose@6.2.12`** (MIT, 2026-09-05) for JWT/JWKS (Payload itself depends on `jose` — registry deps list).
   Auth.js (control-plane) is the alternative; rejected here because Payload needs the session in its own
   strategy, and bridging Auth.js JWE cookies adds a second session format.
+
+### 3a. Web panel access by role (F2c, `develop` `59ba0a4`)
+
+Verified in `apps/web/src/access/{roles.ts,panel-visibility.ts}`, `src/collections/{Users.ts,ExpenseRequests.ts}`,
+`src/admin/components/{RequesterActions.tsx,ActionButton.tsx}`, `tests/integration/f2c-requester-web.int.test.ts`:
+- **`pk-staff` is in `PANEL_ROLES`** (`pk-admin`, `pk-finance`, `pk-owner`, `pk-pm`, `pk-staff`) → staff may log
+  in to the web panel. For **staff-only** users (no other role) the nav is restricted: every collection except
+  `expense-requests`, `receipts`, `notifications`, `users` (own profile) — and every global — gets
+  `admin.hidden`, and staff get requester shortcuts instead of the approval/finance work views.
+  `admin.hidden` is **UI only** (nav + list/edit routes); **data access is still enforced by the access
+  functions** (REST/Local API unaffected).
+- **Self-service signature:** every role may update **its own `users` row**; field access and the
+  `selfProfileGuard` (`beforeOperation`) limit that to the **`signature`** field — any change of an admin field
+  → 403, and the signature must be a `media-signatures` row the caller uploaded. No Keycloak sync for
+  self-service updates. Admin keeps full user management.
+- **Requester actions in the admin** (submit, withdraw/cancel, resubmit, receipts, LPJ, confirm) call the existing
+  **`/api/v1`** endpoints with the cookie session and an **`Idempotency-Key`** — no second write path.
+- **Security fix:** creating/editing an expense request through the admin form (generic REST
+  `/api/expense-requests`) now runs the **same `validateContent`** as `/api/v1` (Q-09 on-behalf only Admin/Finance,
+  G9 bank account of a requester, G10 scope, project XOR cost center); before F2c that path skipped these rules.
 
 ### 4. APK — bearer tokens on `/api/v1`
 - Strategy `mobileBearer`: only when `Authorization: Bearer` is present; verifies Keycloak **access token**
@@ -265,3 +285,7 @@ different auth design requires only `users` collection auth config + routes. No 
   quoted from the export. §6 open item closed: Admin API via internal networks `drms-kc-admin[-stg]` (Traefik
   alias `auth.bimacreative.tech`, `ClientIP && PathPrefix` router, trailing slash, no percent-encoding,
   20 r/s burst 40); public-hairpin `/admin` = 403 platform-wide (infra H5). Status stays accepted.
+- **2026-09-24 (F2c):** §3a added, verified against `develop` `59ba0a4`: `pk-staff` joins the panel roles with a
+  restricted nav (collections hidden in the UI; access functions enforce data); self-service signature (own row,
+  `signature` field only); requester actions in the admin call `/api/v1` with `Idempotency-Key`; admin REST
+  create/edit of expense requests runs the same `validateContent` as `/api/v1` (security fix). Status stays accepted.

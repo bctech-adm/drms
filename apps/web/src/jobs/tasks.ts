@@ -1,6 +1,8 @@
 import { sql } from '@payloadcms/db-postgres'
 import type { TaskConfig } from 'payload'
 
+import { autoCloseReimburse } from '@/domain/expense/auto-close'
+
 /**
  * Daily audit anchor (architecture §11 "daily audit hash anchor (optional)", ADR 0006 §5 first
  * step): logs yesterday's audit row count and the highest audit id to stdout → Loki, an external
@@ -76,4 +78,24 @@ export const sendEmailTask: TaskConfig<{
   },
 }
 
-export const tasks = [auditDailyAnchorTask, sendEmailTask]
+/**
+ * Reimburse auto-close (architecture §5.2 DT → SE "auto after N days", §11 jobs; setting
+ * reimburseAutoCloseDays). Daily 01:15 in the process TZ (Asia/Makassar, see auditDailyAnchor).
+ * Idempotent: only requests still "Ditransfer" whose latest transfer is ≥ N days old are closed.
+ */
+export const reimburseAutoCloseTask: TaskConfig<{
+  input: Record<string, never>
+  output: { closed: number }
+}> = {
+  slug: 'reimburseAutoClose',
+  schedule: [{ cron: '15 1 * * *', queue: 'default' }],
+  inputSchema: [],
+  outputSchema: [{ name: 'closed', type: 'number', required: true }],
+  handler: async ({ req }) => {
+    const ids = await autoCloseReimburse(req.payload)
+    req.payload.logger.info({ msg: 'reimburse auto-close', closed: ids.length, ids })
+    return { output: { closed: ids.length } }
+  },
+}
+
+export const tasks = [auditDailyAnchorTask, sendEmailTask, reimburseAutoCloseTask]

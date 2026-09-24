@@ -6,6 +6,112 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-24
+
+F2 expense-request flow (F2a–F2e) — GATE F2 approved by the user 2026-09-24 after browser UAT on staging (run 4: 56 PASS, 2 FAIL non-blocking, 1 not testable; `docs/proyekkas/uat/f2-uat-report.md`).
+
+F2a (expense request core, `c8c1af6`), F2b (LPJ/settlement, PDF, admin views, notifications, file endpoint,
+`4d952ba`), F2c (requester actions in the web panel, `59ba0a4`), F2d (`c11907a`) and F2e (`e9c07ab`) UAT fixes
+merged to `develop`; staging runs `0.1.0-stg-e9c07ab`. UAT E2E run 4 on staging: 56 PASS, 2 FAIL (1 by design,
+1 wording), 1 not testable (`docs/proyekkas/uat/f2-uat-report.md`); **F2 ready for gate**.
+
+### Added
+- **F2e acknowledge delegation** (user decision 2026-09-24, option a; Q-07/Q-08 edge case): when the project PM /
+  cost-center manager is a requester or the creator, or is missing, "Diketahui" is delegated at submit to an
+  eligible active Owner, else Admin (not a requester/creator; distinct-person matching so the acknowledger is
+  never also needed as approver). Delegates fixed in the approval snapshot (`acknowledgeDelegatedTo`,
+  `acknowledgeDelegateUserIds`, `acknowledgeDelegationReason`, `acknowledgeOriginalUserId`); audit action
+  `acknowledge_delegated`; PDF prints "(dilimpahkan)". Submit still returns 409 when nobody qualifies.
+- **F2e Finance self-involvement guard**: Finance cannot verify/reject receipts, review flags, verify all
+  receipts, request LPJ revision, verify the LPJ or settle on a request it requested or created → 403; DB
+  triggers `receipts_self_verify_guard` / `receipt_flags_self_review_guard` (function `pk_request_involves`).
+- **F2e audit action `access_denied`**: refused self-involvement attempts (G1 acknowledge/approve/reject and the
+  Finance guard) are recorded in their own transaction (`writeAuditDetached`, also used for `delete_attempt`).
+- **F2d Finance Reimburse receipt verification UI** in Antrian Transfer (per receipt Valid/Tolak, flags reviewed,
+  "Verifikasi semua nota"); nav badge counts Reimburse requests awaiting verification.
+- **F2 UAT report** `docs/proyekkas/uat/f2-uat-report.md` (Playwright E2E runs 1–4 on staging).
+- **F2c requester web panel** (`apps/web`): `pk-staff` may use the admin panel with a restricted nav (own
+  requests, receipts, notifications, own profile); self-service profile signature; workflow panel with status
+  timeline + next actor and the requester actions (Kirim pengajuan, Tarik kembali/Batalkan, Ajukan ulang, upload
+  nota per baris, Tandai nota lengkap, Kirim/Kirim ulang LPJ, Konfirmasi selesai) via `/api/v1` with
+  `Idempotency-Key`.
+- **F2b LPJ & settlement** (T5): `settlements` collection; receipts-complete, LPJ submit/revision/verify, settle —
+  exact amount settles at verification, surplus → KM "Pengembalian LPJ" (`settlement_refund`), shortfall →
+  `lpj_shortfall` transfer + KK.
+- **F2b PDF "Pengajuan Biaya"**: `GET /api/v1/expense-requests/{id}/pdf[?variant=internal]`, `@react-pdf/renderer`
+  4.9.0 (MIT), built-in Helvetica, receipts on separate pages (2 per page), semaphore 2 / 10 s → 503; layout
+  approved by the user 2026-09-24 (logo pending, Q-32). Measured peak RSS ≈ 138 MiB isolated, 149 MiB web cgroup
+  after 3 renders.
+- **F2b admin views**: approval inbox (`/admin/persetujuan`, budget impact), transfer queue
+  (`/admin/antrian-transfer`), LPJ verification (`/admin/verifikasi-lpj`), "Riwayat" tab; `GET /api/v1/approvals/inbox`.
+- **F2b notifications** (in-app): `notifications` collection, `GET /api/v1/notifications[/{id|uuid}]`,
+  `POST …/{id}/read`, `POST …/read-all`; column `pushStatus` (`skipped` unless `PUSH_FCM_ENABLED=true`; no FCM
+  dispatcher yet — F4).
+- **F2b file endpoint** `GET /api/v1/media/{collection}/{id}/file[?variant=thumb]` (scoped; other users' files → 404).
+- **F2b Reimburse auto-close** worker job `reimburseAutoClose`, daily 01:15 WITA (`reimburseAutoCloseDays`, default 30).
+- **UAT seed** (`apps/web/src/seed/uat.ts`, staging only): idempotent one-off that links app users to
+  EXISTING Keycloak users from `UAT_USERS` (no Keycloak call), creates employees `UJI-*`, sets the OPS-PB
+  manager to the PM only when empty, a fictional bank account, project `UJI-PRJ` + team assignments;
+  run command in `deploy/staging/.env.example`.
+- **F2a expense request flow** (`apps/web`): collections `expense-requests` (+ lines), `approval-rules`,
+  `approvals`, `expense-line-snapshots`, `receipts`, `receipt-flags`, `transfers`, `cash-entries`,
+  `period-closings`; T1 state machines (advance, reimburse incl. "Nota Terverifikasi (Antri Transfer)",
+  "Menunggu Diketahui", withdraw); approval rules (default Owner-only; "Diketahui" required, Q-07);
+  receipts with validation flags; transfers posting exactly one KK; manual cash in/out; void/reversal
+  numbered in the KM/KK series; monthly closing and Owner-only re-open of the latest closed period;
+  `/api/v1` expense-request, cash and media endpoints + OpenAPI; `Idempotency-Key` (table `idempotency_keys`,
+  72 h; required for the APK); historical number registration for the form-228 fixture without touching the
+  live counter; audit actions `approve`, `reject`, `verify`.
+
+### Changed
+- **F2e:** "Pengajuan ulang dari" shows the previous request's number and title (read-only link); office-only
+  fields hidden in the panel (`approvalRule`/`approvalSnapshot` for Staff/PM, `receipts.vendor` for Staff) —
+  removes the 403 noise on `POST /api/approval-rules`; operational 4xx (403/404/409) are logged at `warn`,
+  5xx stay `error`.
+- **F2d:** "Profil & tanda tangan" linked for every panel role incl. Owner; hint above "Baris item" for the
+  Payload 3.90.1 row race.
+- Docs: `architecture.md` §5.2/§5.5 (delegation, G1 extended, new G17, guard order, logging), ADR 0006 (F2e
+  triggers and audit actions), `open-questions-client.md` (Q-07/Q-08 edge case answered; main question open),
+  `phase-plan.md` (F2 ready for gate, gate evidence, carried-over items).
+- **Onboarding/staging:** the "submit 409 until PM / cost-center manager is set" prerequisite now applies only
+  when no Owner/Admin qualifies for the delegated "Diketahui".
+- ADR 0003, 0004, 0005, 0006, 0008, 0011, `architecture.md` (§5.1, §5.2, §6.3, §7.2, §9.2, §9.3, §11), `phase-plan.md`
+  and `traceability-matrix.md` (F2 implementation status) updated with the F2b/F2c outcomes (Revision history in
+  each; statuses stay accepted).
+- Build: `outputFileTracingIncludes` traces the pdfkit standard fonts into the standalone output (first render in
+  the image failed with `Cannot find module …/Helvetica.cjs`); the worker bundle replaces the PDF renderer with an
+  esbuild stub (the worker never renders PDFs).
+- ADR 0001, 0002, 0005, 0006, 0007, `architecture.md` (§5.2, G6, §9.1) and `phase-plan.md` updated with the
+  F2a outcomes (Revision history in each; statuses stay accepted). Business dates stored as text `YYYY-MM-DD`.
+- Build: `next build` skips its own type check (`typescript.ignoreBuildErrors`) because it OOMs at the 2 GiB
+  build cap; `npm run typecheck` remains a required CI gate before the image build.
+- **Onboarding/staging prerequisite:** set the PM on every project and the manager on every cost center —
+  with the default approval rule, submit returns 409 until the "Diketahui Oleh" party can be resolved.
+
+### Fixed
+- The F2b down migration is runnable (it dropped an FK already removed by `DROP TABLE … CASCADE` and re-cast the
+  job enums).
+- Image uploads to `media-transfer-proofs`, `media-attachments` and `media-progress-photos` always failed:
+  the WebP thumbnail was rejected by the collections' `mimeTypes`; these now use a JPEG thumbnail.
+
+### Security
+- **Admin form validation:** creating/editing an expense request through the admin panel (generic REST) now runs the
+  same `validateContent` as `/api/v1` (Q-09 on-behalf only Admin/Finance, G9 bank account of a requester, G10 scope,
+  project XOR cost center); before F2c this path skipped these rules.
+- Self-service profile updates are limited to the caller's own row and the `signature` field (403 otherwise; the
+  signature must be uploaded by the caller).
+- F2b DB guards: `settlements` and `notifications` are Class B (settlement status graph, settled rows frozen,
+  refund/shortfall amounts cross-checked; notifications identity immutable, no DELETE); `lpj_shortfall` transfers and
+  `settlement_refund` cash entries constrained. Void of a refund KM / shortfall transfer → 409 (settlement reversal
+  not implemented, F6 backlog).
+- PDF downloads audited `export`; transfer-proof file reads audited `view_sensitive`. Signed media URLs still open (F6).
+- DB guards (F2a security migration): request content frozen outside Draft/Revisi Nota via `content_hash` +
+  DEFERRED constraint triggers (child tables `expense_requests_lines/_rels` keep DELETE only for Payload's
+  rewrite); `approvals` and `expense_line_snapshots` append-only (Class A, G1 in the DB); Class B guards on
+  receipts, transfers (amount = approved amount), cash entries and period closings; period lock trigger.
+- Payload 3.90.1 swallows COMMIT errors (`@payloadcms/drizzle` `commitTransaction`) → deferred checks are
+  forced inside every app-owned transaction so a violation fails the request instead of silently rolling back.
+
 ## [0.1.0] - 2026-09-23
 
 F0 design + F1 foundation (GATE F1 approved by the user 2026-09-23). Staging runs image `0.1.0-stg-f8529e6`

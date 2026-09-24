@@ -1,3 +1,6 @@
 # Fingerprints (commit:file:rule:line) of verified false positives.
 # docs/proyekkas/f0-brief.md:43 (version/image-tag list, no credential) is allowed inline with `gitleaks:allow`,
 # because commit-bound fingerprints do not survive history rewrites.
+# False positive (generic-api-key): fictional Keycloak user UUIDs of the UAT test accounts in a unit-test fixture.
+9a8fe9a0699fe868cacde5846afbe146fc7216ca:apps/web/tests/unit/uat-seed.test.ts:generic-api-key:7
+9a8fe9a0699fe868cacde5846afbe146fc7216ca:apps/web/tests/unit/uat-seed.test.ts:generic-api-key:8

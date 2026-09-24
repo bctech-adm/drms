@@ -1,6 +1,6 @@
 # ADR 0007 — Document numbering (configurable per document type, client format by default)
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) and the F1 foundation (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) the F1 foundation and F2a (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §1 finding #8, §6 (company settings "format penomoran"), §7 (T1 `PG/YYMM/####`,
@@ -85,6 +85,14 @@
    concurrency load test.
    Postgres `SEQUENCE` objects rejected: not transactional (values consumed on rollback → gaps) and one
    sequence per doc type × period would need DDL at runtime.
+   **Historical registration (F2a):** `submit(req, id, { historical: { seq, requestDate } })`
+   (`src/domain/expense/workflow.ts`) registers a paper document with its original number and date: the
+   number is formatted from the `expense_request` pattern (`formatDocNo`) **without** calling
+   `allocateDocNo()`, so the live counter is not touched; a `number_issued` audit row with reason "nomor
+   historis (dokumen kertas), counter tidak berubah" is written. INTERNAL only (tests / data migration),
+   never reachable over HTTP. The form fixture (`src/seed/form-fixture.ts`, not loaded by the live seed)
+   registers `228/PB-DRMS/20/IX/2026` this way; go-live continues at 229. Resubmitting after a withdraw keeps
+   the number and the request date (Q-04); cash reversals take KM/KK numbers (ADR 0005 "As implemented").
 6. **Gap policy**: numbers are gapless for committed documents under normal operation. Cancelled
    documents **keep** their number (status Dibatalkan) — numbers are never reused or deleted. If a gap
    is ever detected (e.g. manual "set next value" upward, restore), the admin action records reason; a
@@ -132,3 +140,7 @@ None.
 - **2026-09-23 (F1 foundation):** §5 implementation recorded (`src/domain/numbering-db.ts`): counter trigger
   lets `next_value` only increase (no DELETE/TRUNCATE, key columns immutable); every allocation writes a
   `number_issued` audit row in the same transaction. Status stays accepted.
+- **2026-09-23 (F2a):** §5 historical registration option recorded (`submit(…, { historical })`, formats the
+  number without touching the live counter, audited `number_issued`; form fixture `228/PB-DRMS/20/IX/2026`);
+  withdraw → resubmit keeps number and date; reversals numbered KM/KK (the `reversal` doc type is unused).
+  Verified against `develop` `c8c1af6`. Status stays accepted.
