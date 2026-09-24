@@ -36,12 +36,7 @@ class FieldError {
 }
 
 class ProblemException extends ApiException {
-  const ProblemException({
-    required this.status,
-    this.title,
-    this.detail,
-    this.errors = const [],
-  });
+  const ProblemException({required this.status, this.title, this.detail, this.errors = const []});
 
   final int status;
   final String? title;

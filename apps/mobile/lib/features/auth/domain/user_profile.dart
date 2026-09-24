@@ -30,10 +30,7 @@ abstract class Employee with _$Employee {
 
 @freezed
 abstract class ImageTargets with _$ImageTargets {
-  const factory ImageTargets({
-    @Default(2000) int receiptsMaxPx,
-    @Default(80) int jpegQuality,
-  }) = _ImageTargets;
+  const factory ImageTargets({@Default(2000) int receiptsMaxPx, @Default(80) int jpegQuality}) = _ImageTargets;
 }
 
 /// `GET /api/v1/me` (openapi `Me`).

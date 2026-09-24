@@ -3,16 +3,16 @@ import 'package:intl/intl.dart';
 /// Display time zone from company-settings (`Asia/Makassar` default). Indonesia has no DST, so the
 /// three national zones map to fixed offsets without a tz database package.
 Duration offsetForZone(String? zone) => switch (zone) {
-      'Asia/Jakarta' || 'Asia/Pontianak' => const Duration(hours: 7),
-      'Asia/Jayapura' => const Duration(hours: 9),
-      _ => const Duration(hours: 8), // Asia/Makassar (WITA) default
-    };
+  'Asia/Jakarta' || 'Asia/Pontianak' => const Duration(hours: 7),
+  'Asia/Jayapura' => const Duration(hours: 9),
+  _ => const Duration(hours: 8), // Asia/Makassar (WITA) default
+};
 
 String zoneAbbrev(String? zone) => switch (zone) {
-      'Asia/Jakarta' || 'Asia/Pontianak' => 'WIB',
-      'Asia/Jayapura' => 'WIT',
-      _ => 'WITA',
-    };
+  'Asia/Jakarta' || 'Asia/Pontianak' => 'WIB',
+  'Asia/Jayapura' => 'WIT',
+  _ => 'WITA',
+};
 
 /// Server timestamps are UTC ISO-8601; show them in the company zone, e.g. `21 Sep 2026 12.05 WITA`.
 String formatServerDateTime(String? iso, {String? zone}) {
@@ -45,7 +45,8 @@ String formatWallClock(DateTime wall, Duration offset) {
   final sign = offset.isNegative ? '-' : '+';
   final abs = offset.abs();
   String two(int v) => v.toString().padLeft(2, '0');
-  final base = '${wall.year.toString().padLeft(4, '0')}-${two(wall.month)}-${two(wall.day)}'
+  final base =
+      '${wall.year.toString().padLeft(4, '0')}-${two(wall.month)}-${two(wall.day)}'
       'T${two(wall.hour)}:${two(wall.minute)}:${two(wall.second)}';
   return '$base$sign${two(abs.inHours)}:${two(abs.inMinutes % 60)}';
 }

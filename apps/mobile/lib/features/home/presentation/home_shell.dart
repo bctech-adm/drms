@@ -25,21 +25,58 @@ class HomeShell extends ConsumerWidget {
     final t = AppLocalizations.of(context);
     final profile = ref.watch(currentProfileProvider);
     final tabs = <(int, NavigationDestination)>[
-      (Tabs.home, NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: t.navHome)),
-      (Tabs.requests, NavigationDestination(icon: const Icon(Icons.receipt_long_outlined), selectedIcon: const Icon(Icons.receipt_long), label: t.navRequests)),
+      (
+        Tabs.home,
+        NavigationDestination(
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home),
+          label: t.navHome,
+        ),
+      ),
+      (
+        Tabs.requests,
+        NavigationDestination(
+          icon: const Icon(Icons.receipt_long_outlined),
+          selectedIcon: const Icon(Icons.receipt_long),
+          label: t.navRequests,
+        ),
+      ),
       if (profile?.hasApprovalInbox ?? false)
-        (Tabs.inbox, NavigationDestination(icon: const Icon(Icons.fact_check_outlined), selectedIcon: const Icon(Icons.fact_check), label: t.navInbox)),
+        (
+          Tabs.inbox,
+          NavigationDestination(
+            icon: const Icon(Icons.fact_check_outlined),
+            selectedIcon: const Icon(Icons.fact_check),
+            label: t.navInbox,
+          ),
+        ),
       if (profile?.canCreateRequests ?? false)
-        (Tabs.queue, NavigationDestination(icon: const Icon(Icons.cloud_sync_outlined), selectedIcon: const Icon(Icons.cloud_sync), label: t.navQueue)),
-      (Tabs.profile, NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: t.navProfile)),
+        (
+          Tabs.queue,
+          NavigationDestination(
+            icon: const Icon(Icons.cloud_sync_outlined),
+            selectedIcon: const Icon(Icons.cloud_sync),
+            label: t.navQueue,
+          ),
+        ),
+      (
+        Tabs.profile,
+        NavigationDestination(
+          icon: const Icon(Icons.person_outline),
+          selectedIcon: const Icon(Icons.person),
+          label: t.navProfile,
+        ),
+      ),
     ];
     var selected = tabs.indexWhere((e) => e.$1 == shell.currentIndex);
     if (selected < 0) selected = 0;
     return Scaffold(
-      body: Column(children: [
-        const OfflineBanner(),
-        Expanded(child: shell),
-      ]),
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: shell),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selected,
         destinations: [for (final e in tabs) e.$2],

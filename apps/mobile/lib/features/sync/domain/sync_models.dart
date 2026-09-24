@@ -49,19 +49,19 @@ class SyncItemResult {
   final Map<String, dynamic>? serverCopy;
 
   factory SyncItemResult.fromJson(Map<String, dynamic> j) => SyncItemResult(
-        clientUuid: '${j['client_uuid']}',
-        status: SyncItemStatus.fromCode(j['status'] as String?),
-        serverId: j['server_id']?.toString(),
-        rev: (j['rev'] as num?)?.toInt(),
-        receivedAt: j['received_at'] as String?,
-        flags: [for (final f in (j['flags'] as List<dynamic>? ?? const [])) '$f'],
-        errors: [
-          for (final e in (j['errors'] as List<dynamic>? ?? const []))
-            if (e is Map<String, dynamic>)
-              SyncError(code: e['code'] as String?, field: e['field'] as String?, message: e['message'] as String?),
-        ],
-        serverCopy: j['server_copy'] is Map<String, dynamic> ? j['server_copy'] as Map<String, dynamic> : null,
-      );
+    clientUuid: '${j['client_uuid']}',
+    status: SyncItemStatus.fromCode(j['status'] as String?),
+    serverId: j['server_id']?.toString(),
+    rev: (j['rev'] as num?)?.toInt(),
+    receivedAt: j['received_at'] as String?,
+    flags: [for (final f in (j['flags'] as List<dynamic>? ?? const [])) '$f'],
+    errors: [
+      for (final e in (j['errors'] as List<dynamic>? ?? const []))
+        if (e is Map<String, dynamic>)
+          SyncError(code: e['code'] as String?, field: e['field'] as String?, message: e['message'] as String?),
+    ],
+    serverCopy: j['server_copy'] is Map<String, dynamic> ? j['server_copy'] as Map<String, dynamic> : null,
+  );
 }
 
 class BatchResponse {
@@ -71,13 +71,13 @@ class BatchResponse {
   final List<SyncItemResult> results;
 
   factory BatchResponse.fromJson(Map<String, dynamic> j) => BatchResponse(
-        batchId: '${j['batch_id']}',
-        serverTime: '${j['server_time']}',
-        results: [
-          for (final r in (j['results'] as List<dynamic>? ?? const []))
-            if (r is Map<String, dynamic>) SyncItemResult.fromJson(r),
-        ],
-      );
+    batchId: '${j['batch_id']}',
+    serverTime: '${j['server_time']}',
+    results: [
+      for (final r in (j['results'] as List<dynamic>? ?? const []))
+        if (r is Map<String, dynamic>) SyncItemResult.fromJson(r),
+    ],
+  );
 }
 
 /// One queued item ready to be sent.
@@ -103,16 +103,16 @@ class QueuedItem {
   final List<String> dependsOn;
 
   Map<String, dynamic> toJson() => {
-        'client_uuid': clientUuid,
-        'type': type,
-        'schema_version': 1,
-        'offline': offline,
-        'device_time': deviceTime,
-        'elapsed_ms': elapsedMs,
-        'base_rev': baseRev,
-        'depends_on': dependsOn,
-        'payload': payload,
-      };
+    'client_uuid': clientUuid,
+    'type': type,
+    'schema_version': 1,
+    'offline': offline,
+    'device_time': deviceTime,
+    'elapsed_ms': elapsedMs,
+    'base_rev': baseRev,
+    'depends_on': dependsOn,
+    'payload': payload,
+  };
 }
 
 class ClockInfo {
@@ -130,12 +130,12 @@ class ClockInfo {
   final int? lastServerElapsedMs;
 
   Map<String, dynamic> toJson() => {
-        'device_time': deviceTime,
-        'elapsed_ms': elapsedMs,
-        'boot_id': bootId,
-        'last_server_time': lastServerTime,
-        'last_server_elapsed_ms': lastServerElapsedMs,
-      };
+    'device_time': deviceTime,
+    'elapsed_ms': elapsedMs,
+    'boot_id': bootId,
+    'last_server_time': lastServerTime,
+    'last_server_elapsed_ms': lastServerElapsedMs,
+  };
 }
 
 /// Contract limits (ADR 0010 decision 14): ≤ 50 items and ≤ 256 KB JSON per batch.

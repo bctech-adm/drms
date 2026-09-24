@@ -6,7 +6,8 @@ import '../domain/request_status.dart';
 /// JSON (openapi v1) → domain. Tolerant: unknown/missing optional fields never crash the app.
 typedef Json = Map<String, dynamic>;
 
-int _int(Object? v, [int fallback = 0]) => v is num ? v.toInt() : (v is String ? int.tryParse(v) ?? fallback : fallback);
+int _int(Object? v, [int fallback = 0]) =>
+    v is num ? v.toInt() : (v is String ? int.tryParse(v) ?? fallback : fallback);
 int? _intN(Object? v) => v is num ? v.toInt() : (v is String ? int.tryParse(v) : null);
 double? _dblN(Object? v) => v is num ? v.toDouble() : (v is String ? double.tryParse(v) : null);
 String? _strN(Object? v) => v?.toString();
@@ -22,7 +23,11 @@ RefItem? refFromJson(Object? v) {
 BudgetImpact budgetFromJson(Object? v) {
   final m = _map(v);
   if (m == null) return const BudgetImpact(basis: 'none');
-  return BudgetImpact(basis: '${m['basis'] ?? 'none'}', pctBefore: _dblN(m['pctBefore']), pctAfter: _dblN(m['pctAfter']));
+  return BudgetImpact(
+    basis: '${m['basis'] ?? 'none'}',
+    pctBefore: _dblN(m['pctBefore']),
+    pctAfter: _dblN(m['pctAfter']),
+  );
 }
 
 UserProfile userProfileFromJson(Json j) {
@@ -34,12 +39,17 @@ UserProfile userProfileFromJson(Json j) {
     email: '${j['email'] ?? ''}',
     name: _strN(j['name']),
     roles: {for (final r in _list(j['roles'])) ?Role.fromCode('$r')},
-    employee: emp == null ? null : Employee(id: _int(emp['id']), code: '${emp['code'] ?? ''}', name: '${emp['name'] ?? ''}'),
+    employee: emp == null
+        ? null
+        : Employee(id: _int(emp['id']), code: '${emp['code'] ?? ''}', name: '${emp['name'] ?? ''}'),
     timezone: '${settings['timezone'] ?? 'Asia/Makassar'}',
     minAppVersion: _strN(settings['minAppVersion']),
     imageTargets: targets == null
         ? const ImageTargets()
-        : ImageTargets(receiptsMaxPx: _int(targets['receiptsMaxPx'], 2000), jpegQuality: _int(targets['jpegQuality'], 80)),
+        : ImageTargets(
+            receiptsMaxPx: _int(targets['receiptsMaxPx'], 2000),
+            jpegQuality: _int(targets['jpegQuality'], 80),
+          ),
     serverTime: _strN(j['serverTime']),
   );
 }
@@ -65,11 +75,11 @@ ExpenseSummary summaryFromJson(Json j) {
 }
 
 SignPosition _position(Object? v) => switch (v) {
-      'diajukan' => SignPosition.diajukan,
-      'dibuat' => SignPosition.dibuat,
-      'diketahui' => SignPosition.diketahui,
-      _ => SignPosition.approval,
-    };
+  'diajukan' => SignPosition.diajukan,
+  'dibuat' => SignPosition.dibuat,
+  'diketahui' => SignPosition.diketahui,
+  _ => SignPosition.approval,
+};
 
 ExpenseDetail detailFromJson(Json j) {
   final status = RequestStatus.fromCode(j['status'] as String?);
@@ -153,7 +163,11 @@ ExpenseDetail detailFromJson(Json j) {
             steps: [
               for (final s in _list(rule['steps']))
                 if (_map(s) case final m?)
-                  RuleStep(level: _int(m['level'], 1), approverRole: _strN(m['approverRole']), approverUserId: _intN(m['approverUserId'])),
+                  RuleStep(
+                    level: _int(m['level'], 1),
+                    approverRole: _strN(m['approverRole']),
+                    approverUserId: _intN(m['approverUserId']),
+                  ),
             ],
           ),
     approvalCycle: _int(j['approvalCycle'], 1),
@@ -208,71 +222,71 @@ InboxItem inboxItemFromJson(Json j) {
 
 /// Local draft → `POST /api/v1/expense-requests` body (openapi `ExpenseRequestCreate`).
 Json draftToCreateBody(DraftRequest d) => {
-      'type': d.type.code,
-      'title': d.title.trim(),
-      'projectId': d.projectId,
-      'costCenterId': d.costCenterId,
-      'neededDate': d.neededDate,
-      'notes': (d.notes == null || d.notes!.trim().isEmpty) ? null : d.notes!.trim(),
-      if (d.requesterIds.isNotEmpty) 'requesterIds': d.requesterIds,
-      'bankAccountId': d.bankAccountId,
-      'lines': [for (final l in d.lines) lineToInput(l)],
-      'clientUuid': d.clientUuid,
-    };
+  'type': d.type.code,
+  'title': d.title.trim(),
+  'projectId': d.projectId,
+  'costCenterId': d.costCenterId,
+  'neededDate': d.neededDate,
+  'notes': (d.notes == null || d.notes!.trim().isEmpty) ? null : d.notes!.trim(),
+  if (d.requesterIds.isNotEmpty) 'requesterIds': d.requesterIds,
+  'bankAccountId': d.bankAccountId,
+  'lines': [for (final l in d.lines) lineToInput(l)],
+  'clientUuid': d.clientUuid,
+};
 
 Json lineToInput(DraftLine l) => {
-      'description': l.description.trim(),
-      'qty': l.qty,
-      'uomId': l.uomId,
-      'unitPrice': l.unitPrice,
-      'total': l.total,
-      'notes': (l.notes == null || l.notes!.trim().isEmpty) ? null : l.notes!.trim(),
-      'categoryId': l.categoryId,
-      'vehicleId': l.vehicleId,
-    };
+  'description': l.description.trim(),
+  'qty': l.qty,
+  'uomId': l.uomId,
+  'unitPrice': l.unitPrice,
+  'total': l.total,
+  'notes': (l.notes == null || l.notes!.trim().isEmpty) ? null : l.notes!.trim(),
+  'categoryId': l.categoryId,
+  'vehicleId': l.vehicleId,
+};
 
 /// Local draft → sync item payload `expense_request.draft_upsert` (ADR 0010 "Example B").
 /// [zoneOffset] is the company display offset used to build `receipt_time` (e.g. `+08:00`).
 /// [includeDraftId] adds `draft_client_uuid` for edits queued after the first upsert (the item
 /// `client_uuid` is then a new operation id) — additive field, see the F4a report.
 Json draftToSyncPayload(DraftRequest d, {String zoneOffset = '+08:00', bool includeDraftId = false}) => {
-      if (includeDraftId) 'draft_client_uuid': d.clientUuid,
-      'kind': d.type.code,
-      'project_id': d.projectId,
-      'cost_center_id': d.costCenterId,
-      'title': d.title.trim(),
-      'needed_date': d.neededDate,
-      'notes': (d.notes == null || d.notes!.trim().isEmpty) ? null : d.notes!.trim(),
-      'requester_ids': d.requesterIds,
-      'bank_account_id': d.bankAccountId,
-      'client_grand_total': d.previewGrandTotal,
-      'lines': [
-        for (final l in d.lines)
-          {
-            'client_uuid': l.clientUuid,
-            'no': l.no,
-            'description': l.description.trim(),
-            'qty': l.qty,
-            'uom_id': l.uomId,
-            'unit_price': l.unitPrice,
-            'total': l.total,
-            'category_id': l.categoryId,
-            'vehicle_id': l.vehicleId,
-            'remark': (l.notes == null || l.notes!.trim().isEmpty) ? null : l.notes!.trim(),
-            'receipts': [
-              for (final r in l.receipts)
-                {
-                  'client_uuid': r.clientUuid,
-                  'receipt_no': r.receiptNo,
-                  'vendor_name': r.vendorName.trim(),
-                  'receipt_time': '${r.receiptDate}T${r.receiptTime ?? '00:00'}:00$zoneOffset',
-                  'amount': r.amount,
-                  'media_client_uuid': r.mediaUuid,
-                },
-            ],
-          },
-      ],
-    };
+  if (includeDraftId) 'draft_client_uuid': d.clientUuid,
+  'kind': d.type.code,
+  'project_id': d.projectId,
+  'cost_center_id': d.costCenterId,
+  'title': d.title.trim(),
+  'needed_date': d.neededDate,
+  'notes': (d.notes == null || d.notes!.trim().isEmpty) ? null : d.notes!.trim(),
+  'requester_ids': d.requesterIds,
+  'bank_account_id': d.bankAccountId,
+  'client_grand_total': d.previewGrandTotal,
+  'lines': [
+    for (final l in d.lines)
+      {
+        'client_uuid': l.clientUuid,
+        'no': l.no,
+        'description': l.description.trim(),
+        'qty': l.qty,
+        'uom_id': l.uomId,
+        'unit_price': l.unitPrice,
+        'total': l.total,
+        'category_id': l.categoryId,
+        'vehicle_id': l.vehicleId,
+        'remark': (l.notes == null || l.notes!.trim().isEmpty) ? null : l.notes!.trim(),
+        'receipts': [
+          for (final r in l.receipts)
+            {
+              'client_uuid': r.clientUuid,
+              'receipt_no': r.receiptNo,
+              'vendor_name': r.vendorName.trim(),
+              'receipt_time': '${r.receiptDate}T${r.receiptTime ?? '00:00'}:00$zoneOffset',
+              'amount': r.amount,
+              'media_client_uuid': r.mediaUuid,
+            },
+        ],
+      },
+  ],
+};
 
 String offsetString(Duration d) {
   final sign = d.isNegative ? '-' : '+';

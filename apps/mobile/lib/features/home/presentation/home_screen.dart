@@ -58,7 +58,9 @@ class HomeScreen extends ConsumerWidget {
       if (profile.has(Role.staff) || profile.has(Role.pm))
         BigActionButton(icon: Icons.fingerprint, label: t.actionAttendance, onPressed: null),
       if (kind == HomeKind.finance)
-        Card(child: Padding(padding: const EdgeInsets.all(16), child: Text(t.financeHint))),
+        Card(
+          child: Padding(padding: const EdgeInsets.all(16), child: Text(t.financeHint)),
+        ),
     ];
 
     return Scaffold(
@@ -66,7 +68,10 @@ class HomeScreen extends ConsumerWidget {
         title: Text(t.appTitle),
         actions: [
           if (!ref.watch(appEnvProvider).isProd)
-            Padding(padding: const EdgeInsets.only(right: 12), child: Chip(label: Text(t.stagingBadge))),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Chip(label: Text(t.stagingBadge)),
+            ),
         ],
       ),
       body: RefreshIndicator(
@@ -74,13 +79,16 @@ class HomeScreen extends ConsumerWidget {
           await ref.read(authControllerProvider.notifier).refreshProfile();
           ref.invalidate(inboxProvider);
         },
-        child: ListView(padding: const EdgeInsets.all(16), children: [
-          Text(t.greeting(profile.displayName), style: Theme.of(context).textTheme.titleLarge),
-          if (gate == VersionGate.updateAvailable && latest != null)
-            Padding(padding: const EdgeInsets.only(top: 8), child: Text(t.updateAvailable(latest))),
-          const SizedBox(height: 16),
-          for (final a in actions) Padding(padding: const EdgeInsets.only(bottom: 12), child: a),
-        ]),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(t.greeting(profile.displayName), style: Theme.of(context).textTheme.titleLarge),
+            if (gate == VersionGate.updateAvailable && latest != null)
+              Padding(padding: const EdgeInsets.only(top: 8), child: Text(t.updateAvailable(latest))),
+            const SizedBox(height: 16),
+            for (final a in actions) Padding(padding: const EdgeInsets.only(bottom: 12), child: a),
+          ],
+        ),
       ),
     );
   }

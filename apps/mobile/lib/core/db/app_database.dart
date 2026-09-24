@@ -24,6 +24,7 @@ class LocalDrafts extends Table {
   IntColumn get bankAccountId => integer().nullable()();
   IntColumn get serverId => integer().nullable()();
   IntColumn get serverRev => integer().nullable()();
+
   /// local | queued | synced | conflict | rejected | submitted
   TextColumn get syncState => text().withDefault(const Constant('local'))();
   TextColumn get lastError => text().nullable()();
@@ -99,6 +100,7 @@ class Outbox extends Table {
   IntColumn get elapsedMs => integer()();
   TextColumn get bootId => text()();
   BoolColumn get offline => boolean().withDefault(const Constant(true))();
+
   /// pending | applied | rejected | conflict | failed
   TextColumn get status => text().withDefault(const Constant('pending'))();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
@@ -129,10 +131,10 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-        },
-      );
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 
   Future<String?> kvGet(String key) async =>
       (await (select(kvEntries)..where((t) => t.key.equals(key))).getSingleOrNull())?.value;
@@ -153,10 +155,12 @@ class AppDatabase extends _$AppDatabase {
 /// when the SQLite library has no cipher support.
 Future<AppDatabase> openEncryptedDatabase(SecureStore store) async {
   final key = await loadOrCreateDbKey(store);
-  return AppDatabase(driftDatabase(
-    name: 'proyekkas',
-    native: DriftNativeOptions(setup: (CommonDatabase db) => applyCipherKey(db, key)),
-  ));
+  return AppDatabase(
+    driftDatabase(
+      name: 'proyekkas',
+      native: DriftNativeOptions(setup: (CommonDatabase db) => applyCipherKey(db, key)),
+    ),
+  );
 }
 
 /// Applied in the drift background isolate; must only capture sendable values (drift_flutter docs).

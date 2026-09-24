@@ -21,25 +21,37 @@ class UpdateRequiredScreen extends ConsumerWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const Icon(Icons.system_update, size: 72),
-            const SizedBox(height: 16),
-            Text(t.updateRequiredTitle, textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            Text(t.updateRequiredBody(current, minimum), textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            if (url != null) ...[
-              Text(t.updateDownloadHint, textAlign: TextAlign.center),
-              SelectableText(url, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => Clipboard.setData(ClipboardData(text: url)),
-                icon: const Icon(Icons.copy),
-                label: const Text('Salin tautan'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.system_update, size: 72),
+              const SizedBox(height: 16),
+              Text(
+                t.updateRequiredTitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-            ] else
-              Text(t.updateContactAdmin, textAlign: TextAlign.center),
-          ]),
+              const SizedBox(height: 12),
+              Text(t.updateRequiredBody(current, minimum), textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              if (url != null) ...[
+                Text(t.updateDownloadHint, textAlign: TextAlign.center),
+                SelectableText(
+                  url,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Clipboard.setData(ClipboardData(text: url)),
+                  icon: const Icon(Icons.copy),
+                  label: const Text('Salin tautan'),
+                ),
+              ] else
+                Text(t.updateContactAdmin, textAlign: TextAlign.center),
+            ],
+          ),
         ),
       ),
     );

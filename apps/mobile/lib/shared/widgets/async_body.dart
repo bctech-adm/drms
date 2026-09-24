@@ -19,9 +19,11 @@ class AsyncBody<T> extends StatelessWidget {
     return switch (value) {
       AsyncData(:final value) => data(value),
       AsyncError(:final error) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Icon(error is NetworkException ? Icons.cloud_off : Icons.error_outline, size: 48),
               const SizedBox(height: 12),
               Text(errorText(error), textAlign: TextAlign.center),
@@ -29,13 +31,15 @@ class AsyncBody<T> extends StatelessWidget {
                 const SizedBox(height: 12),
                 OutlinedButton(onPressed: onRetry, child: Text(t.retry)),
               ],
-            ]),
+            ],
           ),
         ),
+      ),
       _ => const Center(child: CircularProgressIndicator()),
     };
   }
 }
 
-void showSnack(BuildContext context, String msg) =>
-    ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(SnackBar(content: Text(msg)));
+void showSnack(BuildContext context, String msg) => ScaffoldMessenger.of(context)
+  ..hideCurrentSnackBar()
+  ..showSnackBar(SnackBar(content: Text(msg)));

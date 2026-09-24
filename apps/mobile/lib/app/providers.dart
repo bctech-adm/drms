@@ -66,8 +66,9 @@ final syncApiProvider = Provider((ref) => SyncApi(ref.watch(apiClientProvider)))
 
 final draftRepositoryProvider = Provider((ref) => DraftRepository(ref.watch(databaseProvider)));
 final outboxRepositoryProvider = Provider((ref) => OutboxRepository(ref.watch(databaseProvider)));
-final mastersRepositoryProvider =
-    Provider((ref) => MastersRepository(ref.watch(apiClientProvider), ref.watch(databaseProvider)));
+final mastersRepositoryProvider = Provider(
+  (ref) => MastersRepository(ref.watch(apiClientProvider), ref.watch(databaseProvider)),
+);
 
 final syncEngineProvider = Provider((ref) {
   final device = ref.watch(deviceIdentityProvider);
@@ -82,13 +83,17 @@ final syncEngineProvider = Provider((ref) {
   );
 });
 
-final draftServiceProvider = Provider((ref) => DraftService(
-      drafts: ref.watch(draftRepositoryProvider),
-      outbox: ref.watch(outboxRepositoryProvider),
-      api: ref.watch(expenseApiProvider),
-      clock: ref.watch(deviceClockProvider),
-      lock: ref.watch(syncLockProvider),
-    ));
+final draftServiceProvider = Provider(
+  (ref) => DraftService(
+    drafts: ref.watch(draftRepositoryProvider),
+    outbox: ref.watch(outboxRepositoryProvider),
+    api: ref.watch(expenseApiProvider),
+    clock: ref.watch(deviceClockProvider),
+    lock: ref.watch(syncLockProvider),
+  ),
+);
 
 /// Push is behind the build flag PK_PUSH_ENABLED (Firebase project pending, Q-44).
-final pushServiceProvider = Provider<PushService>((ref) => createPushService(enabled: ref.watch(appEnvProvider).pushEnabled));
+final pushServiceProvider = Provider<PushService>(
+  (ref) => createPushService(enabled: ref.watch(appEnvProvider).pushEnabled),
+);

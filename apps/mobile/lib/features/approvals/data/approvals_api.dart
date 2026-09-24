@@ -20,23 +20,22 @@ class ApprovalsApi {
   final ApiClient client;
 
   Future<InboxPage> inbox() => client.run((d) => d.get<dynamic>('/approvals/inbox'), (data) {
-        final m = data as Map<String, dynamic>;
-        return InboxPage(
-          [for (final i in (m['items'] as List<dynamic>? ?? const [])) inboxItemFromJson(i as Map<String, dynamic>)],
-          (m['budgetWarnPct'] as num?)?.toDouble() ?? 85,
-        );
-      });
+    final m = data as Map<String, dynamic>;
+    return InboxPage([
+      for (final i in (m['items'] as List<dynamic>? ?? const [])) inboxItemFromJson(i as Map<String, dynamic>),
+    ], (m['budgetWarnPct'] as num?)?.toDouble() ?? 85);
+  });
 
   /// Signature drawn on screen → `media-signatures` id (PNG ≤ 800×300, ≤ 50 KB, requirements §9).
   Future<int> uploadSignature(Uint8List png) => client.run(
-        (d) => d.post<dynamic>(
-          '/media/signatures',
-          data: FormData.fromMap({
-            'file': MultipartFile.fromBytes(png, filename: 'signature.png', contentType: DioMediaType.parse('image/png')),
-          }),
-        ),
-        (data) => ((data as Map<String, dynamic>)['id'] as num).toInt(),
-      );
+    (d) => d.post<dynamic>(
+      '/media/signatures',
+      data: FormData.fromMap({
+        'file': MultipartFile.fromBytes(png, filename: 'signature.png', contentType: DioMediaType.parse('image/png')),
+      }),
+    ),
+    (data) => ((data as Map<String, dynamic>)['id'] as num).toInt(),
+  );
 
   /// `signatureMediaId` null → the server uses the profile signature (SignBody default).
   Future<ExpenseDetail> decide(
@@ -56,8 +55,11 @@ class ApprovalsApi {
       if (decision == Decision.reject) 'reason': reason,
     };
     return client.run(
-      (d) => d.post<dynamic>('/expense-requests/$requestId/$path',
-          data: body, options: Options(headers: {'Idempotency-Key': idempotencyKey})),
+      (d) => d.post<dynamic>(
+        '/expense-requests/$requestId/$path',
+        data: body,
+        options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+      ),
       (data) => detailFromJson(data as Map<String, dynamic>),
     );
   }

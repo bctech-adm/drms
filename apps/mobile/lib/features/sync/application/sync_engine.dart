@@ -83,7 +83,12 @@ class SyncEngine {
             return const SyncRunResult(SyncRunOutcome.serverUnsupported);
           }
           if (e.status == 409) {
-            await outbox.setStatus(item.opUuid, 'rejected', code: 'MEDIA_CONFLICT', message: 'Foto nota bentrok dengan data server.');
+            await outbox.setStatus(
+              item.opUuid,
+              'rejected',
+              code: 'MEDIA_CONFLICT',
+              message: 'Foto nota bentrok dengan data server.',
+            );
             await _markDraft(item, DraftSyncState.rejected, error: 'Foto nota bentrok dengan data server.');
           } else {
             await _deferOne(item, 'MEDIA_${e.status}', e.message);
@@ -113,7 +118,13 @@ class SyncEngine {
           items: batch,
         );
       } on NetworkException {
-        return SyncRunResult(SyncRunOutcome.offline, applied: applied, rejected: rejected, deferred: deferred, conflicts: conflicts);
+        return SyncRunResult(
+          SyncRunOutcome.offline,
+          applied: applied,
+          rejected: rejected,
+          deferred: deferred,
+          conflicts: conflicts,
+        );
       } on ProblemException catch (e) {
         final rows = [for (final q in batch) byUuid[q.clientUuid]!];
         if (e.status == 404 || e.status == 405 || e.status == 501) {
@@ -133,8 +144,13 @@ class SyncEngine {
           case SyncItemStatus.applied || SyncItemStatus.duplicate:
             applied++;
             await outbox.setStatus(row.opUuid, 'applied');
-            await drafts.setSyncState(row.targetUuid, DraftSyncState.synced,
-                serverId: int.tryParse(r.serverId ?? ''), serverRev: r.rev, clearError: true);
+            await drafts.setSyncState(
+              row.targetUuid,
+              DraftSyncState.synced,
+              serverId: int.tryParse(r.serverId ?? ''),
+              serverRev: r.rev,
+              clearError: true,
+            );
           case SyncItemStatus.rejected:
             rejected++;
             final msg = rejectionMessage(r.errors);
@@ -143,11 +159,14 @@ class SyncEngine {
           case SyncItemStatus.conflict:
             conflicts++;
             await outbox.setStatus(row.opUuid, 'conflict', code: 'CONFLICT', message: 'Draft diubah di web.');
-            await drafts.setSyncState(row.targetUuid, DraftSyncState.conflict,
-                serverId: int.tryParse(r.serverId ?? ''),
-                serverRev: r.rev,
-                error: 'Draft ini diubah di web. Versi server dipakai; versi HP disimpan sebagai salinan konflik.',
-                conflictCopyJson: r.serverCopy == null ? null : jsonEncode(r.serverCopy));
+            await drafts.setSyncState(
+              row.targetUuid,
+              DraftSyncState.conflict,
+              serverId: int.tryParse(r.serverId ?? ''),
+              serverRev: r.rev,
+              error: 'Draft ini diubah di web. Versi server dipakai; versi HP disimpan sebagai salinan konflik.',
+              conflictCopyJson: r.serverCopy == null ? null : jsonEncode(r.serverCopy),
+            );
           case SyncItemStatus.deferred || SyncItemStatus.unknown:
             deferred++;
             await _deferOne(row, 'DEFERRED', r.errors.firstOrNull?.message);
@@ -164,7 +183,13 @@ class SyncEngine {
 
   Future<void> _deferOne(OutboxData row, String code, String? msg) {
     final attempts = row.attempts + 1;
-    return outbox.defer(row.opUuid, attempts, clock.now().add(backoffFor(attempts, random: _random)), code: code, message: msg);
+    return outbox.defer(
+      row.opUuid,
+      attempts,
+      clock.now().add(backoffFor(attempts, random: _random)),
+      code: code,
+      message: msg,
+    );
   }
 
   Future<void> _deferAll(List<OutboxData> rows, String code, String msg) async {
@@ -191,10 +216,9 @@ class SyncEngine {
 
   Future<void> _rememberServerTime(String? serverTime) async {
     if (serverTime == null || DateTime.tryParse(serverTime) == null) return;
-    await db.kvPut(_lastServerKey, jsonEncode({
-      'server_time': serverTime,
-      'elapsed_ms': await clock.elapsedMs(),
-      'boot_id': await clock.bootId(),
-    }));
+    await db.kvPut(
+      _lastServerKey,
+      jsonEncode({'server_time': serverTime, 'elapsed_ms': await clock.elapsedMs(), 'boot_id': await clock.bootId()}),
+    );
   }
 }

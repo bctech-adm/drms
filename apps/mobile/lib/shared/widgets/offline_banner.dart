@@ -30,11 +30,13 @@ class OfflineBanner extends ConsumerWidget {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(children: [
-            Icon(online ? Icons.cloud_queue : Icons.cloud_off, size: 20),
-            const SizedBox(width: 8),
-            Expanded(child: Text(lines.join('\n'))),
-          ]),
+          child: Row(
+            children: [
+              Icon(online ? Icons.cloud_queue : Icons.cloud_off, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(lines.join('\n'))),
+            ],
+          ),
         ),
       ),
     );

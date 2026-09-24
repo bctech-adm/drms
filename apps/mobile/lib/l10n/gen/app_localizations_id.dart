@@ -43,8 +43,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get needsInternet => 'Butuh koneksi internet';
 
   @override
-  String get offlineBanner =>
-      'Offline — data disimpan di HP dan dikirim otomatis saat online.';
+  String get offlineBanner => 'Offline — data disimpan di HP dan dikirim otomatis saat online.';
 
   @override
   String pendingQueue(int count) {
@@ -60,8 +59,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get loginTitle => 'Masuk ke ProyekKas';
 
   @override
-  String get loginSubtitle =>
-      'Gunakan akun DRMS Anda. Halaman masuk dibuka di browser HP.';
+  String get loginSubtitle => 'Gunakan akun DRMS Anda. Halaman masuk dibuka di browser HP.';
 
   @override
   String get loginButton => 'Masuk';
@@ -76,8 +74,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get loginNeedsInternet => 'Login pertama kali butuh koneksi internet.';
 
   @override
-  String get sessionEnded =>
-      'Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.';
+  String get sessionEnded => 'Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.';
 
   @override
   String get stagingBadge => 'STAGING';
@@ -94,8 +91,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get updateDownloadHint => 'Unduh versi terbaru dari:';
 
   @override
-  String get updateContactAdmin =>
-      'Hubungi admin untuk mendapatkan APK terbaru.';
+  String get updateContactAdmin => 'Hubungi admin untuk mendapatkan APK terbaru.';
 
   @override
   String updateAvailable(String version) {
@@ -141,8 +137,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionAllRequests => 'Semua Pengajuan';
 
   @override
-  String get financeHint =>
-      'Antrian transfer, verifikasi nota, dan kas dikerjakan di web admin.';
+  String get financeHint => 'Antrian transfer, verifikasi nota, dan kas dikerjakan di web admin.';
 
   @override
   String inboxCount(int count) {
@@ -321,8 +316,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get deleteDraftConfirm => 'Hapus draft ini dari HP?';
 
   @override
-  String get mastersMissing =>
-      'Data master belum tersedia. Buka aplikasi saat online sekali untuk mengunduhnya.';
+  String get mastersMissing => 'Data master belum tersedia. Buka aplikasi saat online sekali untuk mengunduhnya.';
 
   @override
   String lineTitle(int no) {
@@ -392,8 +386,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get cameraUnavailable => 'Kamera belakang tidak tersedia.';
 
   @override
-  String get cameraPermission =>
-      'Izin kamera ditolak. Aktifkan di Pengaturan HP.';
+  String get cameraPermission => 'Izin kamera ditolak. Aktifkan di Pengaturan HP.';
 
   @override
   String get takePhoto => 'Ambil foto';
@@ -463,8 +456,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get signatureEmpty => 'Tanda tangan belum dibuat.';
 
   @override
-  String get signatureTooLarge =>
-      'Tanda tangan terlalu besar. Ulangi dengan goresan lebih sederhana.';
+  String get signatureTooLarge => 'Tanda tangan terlalu besar. Ulangi dengan goresan lebih sederhana.';
 
   @override
   String get confirm => 'Konfirmasi';
@@ -485,8 +477,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get retryFailed => 'Coba lagi yang gagal';
 
   @override
-  String get syncServerUnsupported =>
-      'Server belum mendukung sinkron offline. Data tetap aman di HP.';
+  String get syncServerUnsupported => 'Server belum mendukung sinkron offline. Data tetap aman di HP.';
 
   @override
   String get syncDone => 'Sinkron selesai.';

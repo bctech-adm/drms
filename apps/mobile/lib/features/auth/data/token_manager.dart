@@ -15,11 +15,9 @@ import 'oidc_client.dart';
 /// single-flight and the NEW refresh token is persisted before the new access token is used.
 class TokenManager implements TokenSource {
   TokenManager({required this.env, required this.store, Dio? tokenDio, this.onSessionEnded})
-      : _dio = tokenDio ??
-            Dio(BaseOptions(
-              connectTimeout: const Duration(seconds: 15),
-              receiveTimeout: const Duration(seconds: 20),
-            ));
+    : _dio =
+          tokenDio ??
+          Dio(BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 20)));
 
   final AppEnv env;
   final SecureStore store;

@@ -27,21 +27,23 @@ class AppAuthBrowserClient implements OidcBrowserClient {
   final FlutterAppAuth _appAuth;
 
   AuthorizationServiceConfiguration get _config => AuthorizationServiceConfiguration(
-        authorizationEndpoint: env.authorizationEndpoint,
-        tokenEndpoint: env.tokenEndpoint,
-        endSessionEndpoint: env.endSessionEndpoint,
-      );
+    authorizationEndpoint: env.authorizationEndpoint,
+    tokenEndpoint: env.tokenEndpoint,
+    endSessionEndpoint: env.endSessionEndpoint,
+  );
 
   @override
   Future<OidcTokens> login() async {
     try {
-      final res = await _appAuth.authorizeAndExchangeCode(AuthorizationTokenRequest(
-        env.oidcClientId,
-        env.oidcRedirectUri,
-        serviceConfiguration: _config,
-        scopes: AppEnv.scopes,
-        promptValues: const ['login'],
-      ));
+      final res = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          env.oidcClientId,
+          env.oidcRedirectUri,
+          serviceConfiguration: _config,
+          scopes: AppEnv.scopes,
+          promptValues: const ['login'],
+        ),
+      );
       final access = res.accessToken;
       final refresh = res.refreshToken;
       if (access == null || refresh == null) {
@@ -60,10 +62,12 @@ class AppAuthBrowserClient implements OidcBrowserClient {
 
   @override
   Future<void> endSession({required String? idTokenHint}) async {
-    await _appAuth.endSession(EndSessionRequest(
-      idTokenHint: idTokenHint,
-      postLogoutRedirectUrl: env.oidcRedirectUri,
-      serviceConfiguration: _config,
-    ));
+    await _appAuth.endSession(
+      EndSessionRequest(
+        idTokenHint: idTokenHint,
+        postLogoutRedirectUrl: env.oidcRedirectUri,
+        serviceConfiguration: _config,
+      ),
+    );
   }
 }

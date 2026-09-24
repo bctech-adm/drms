@@ -100,8 +100,12 @@ class AuthController extends Notifier<AuthState> {
     final device = ref.read(deviceIdentityProvider);
     final api = ref.read(profileApiProvider);
     final fcm = await ref.read(pushServiceProvider).token();
-    Future<void> attempt() =>
-        api.registerDevice(deviceId: device.deviceId, model: device.model, appVersion: device.appVersion, fcmToken: fcm);
+    Future<void> attempt() => api.registerDevice(
+      deviceId: device.deviceId,
+      model: device.model,
+      appVersion: device.appVersion,
+      fcmToken: fcm,
+    );
     try {
       await attempt();
     } on ProblemException catch (e) {

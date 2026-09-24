@@ -18,8 +18,6 @@ class Log {
   static final _bearer = RegExp(r'Bearer\s+\S+', caseSensitive: false);
   static final _longDigits = RegExp(r'\d{7,}');
 
-  static String redact(String s) => s
-      .replaceAll(_jwt, '<jwt>')
-      .replaceAll(_bearer, 'Bearer <redacted>')
-      .replaceAll(_longDigits, '<num>');
+  static String redact(String s) =>
+      s.replaceAll(_jwt, '<jwt>').replaceAll(_bearer, 'Bearer <redacted>').replaceAll(_longDigits, '<num>');
 }

@@ -11,23 +11,20 @@ class AppEnv {
   });
 
   factory AppEnv.fromEnvironment() => const AppEnv(
-        flavor: String.fromEnvironment('PK_FLAVOR', defaultValue: 'staging'),
-        apiBaseUrl: String.fromEnvironment(
-          'PK_API_BASE_URL',
-          defaultValue: 'https://drms-kas.staging.bimacreative.tech',
-        ),
-        oidcIssuer: String.fromEnvironment(
-          'PK_OIDC_ISSUER',
-          defaultValue: 'https://auth.bimacreative.tech/realms/drms-staging',
-        ),
-        oidcClientId: String.fromEnvironment('PK_OIDC_CLIENT_ID', defaultValue: 'proyekkas-mobile'),
-        oidcRedirectUri: String.fromEnvironment(
-          'PK_OIDC_REDIRECT_URI',
-          defaultValue: 'https://drms-kas.staging.bimacreative.tech/app/callback',
-        ),
-        // Push (FCM, ADR 0011) stays off until the Firebase project exists (Q-44).
-        pushEnabled: bool.fromEnvironment('PK_PUSH_ENABLED'),
-      );
+    flavor: String.fromEnvironment('PK_FLAVOR', defaultValue: 'staging'),
+    apiBaseUrl: String.fromEnvironment('PK_API_BASE_URL', defaultValue: 'https://drms-kas.staging.bimacreative.tech'),
+    oidcIssuer: String.fromEnvironment(
+      'PK_OIDC_ISSUER',
+      defaultValue: 'https://auth.bimacreative.tech/realms/drms-staging',
+    ),
+    oidcClientId: String.fromEnvironment('PK_OIDC_CLIENT_ID', defaultValue: 'proyekkas-mobile'),
+    oidcRedirectUri: String.fromEnvironment(
+      'PK_OIDC_REDIRECT_URI',
+      defaultValue: 'https://drms-kas.staging.bimacreative.tech/app/callback',
+    ),
+    // Push (FCM, ADR 0011) stays off until the Firebase project exists (Q-44).
+    pushEnabled: bool.fromEnvironment('PK_PUSH_ENABLED'),
+  );
 
   final String flavor;
   final String apiBaseUrl;

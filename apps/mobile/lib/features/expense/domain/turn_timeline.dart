@@ -1,12 +1,12 @@
 import 'expense_request.dart';
 import 'request_status.dart';
 
-enum StepState { done, current, pending, rejected, skipped }
+enum TurnState { done, current, pending, rejected, skipped }
 
 class TimelineStep {
   const TimelineStep({required this.title, required this.state, this.actor, this.at, this.note});
   final String title;
-  final StepState state;
+  final TurnState state;
   final String? actor;
   final String? at;
   final String? note;
@@ -30,9 +30,11 @@ List<TimelineStep> buildTimeline(ExpenseDetail d) {
   for (final pos in [SignPosition.diajukan, SignPosition.dibuat]) {
     final a = find(pos);
     final title = pos == SignPosition.diajukan ? 'Diajukan Oleh' : 'Dibuat Oleh';
-    steps.add(a != null
-        ? TimelineStep(title: title, state: StepState.done, actor: actorOf(a), at: a.decidedAt)
-        : TimelineStep(title: title, state: submitted ? StepState.skipped : StepState.current));
+    steps.add(
+      a != null
+          ? TimelineStep(title: title, state: TurnState.done, actor: actorOf(a), at: a.decidedAt)
+          : TimelineStep(title: title, state: submitted ? TurnState.skipped : TurnState.current),
+    );
   }
 
   final rule = d.approvalRule;
@@ -41,17 +43,19 @@ List<TimelineStep> buildTimeline(ExpenseDetail d) {
     final a = find(SignPosition.diketahui);
     final delegated = rule?.acknowledgeDelegatedTo != null ? 'dilimpahkan ke ${rule!.acknowledgeDelegatedTo}' : null;
     if (a != null) {
-      steps.add(TimelineStep(
-        title: 'Diketahui Oleh',
-        state: a.decision == 'rejected' ? StepState.rejected : StepState.done,
-        actor: actorOf(a),
-        at: a.decidedAt,
-        note: a.reason ?? delegated,
-      ));
+      steps.add(
+        TimelineStep(
+          title: 'Diketahui Oleh',
+          state: a.decision == 'rejected' ? TurnState.rejected : TurnState.done,
+          actor: actorOf(a),
+          at: a.decidedAt,
+          note: a.reason ?? delegated,
+        ),
+      );
     } else {
       final state = d.status == RequestStatus.pendingAck
-          ? StepState.current
-          : (!submitted || d.status.waitsForDecision ? StepState.pending : StepState.skipped);
+          ? TurnState.current
+          : (!submitted || d.status.waitsForDecision ? TurnState.pending : TurnState.skipped);
       steps.add(TimelineStep(title: 'Diketahui Oleh', state: state, note: delegated));
     }
   }
@@ -62,17 +66,24 @@ List<TimelineStep> buildTimeline(ExpenseDetail d) {
     final a = find(SignPosition.approval, level);
     final title = allLevels.length > 1 ? 'Approval level $level' : 'Approval';
     if (a != null) {
-      steps.add(TimelineStep(
-        title: title,
-        state: a.decision == 'rejected' ? StepState.rejected : StepState.done,
-        actor: actorOf(a),
-        at: a.decidedAt,
-        note: a.reason,
-      ));
+      steps.add(
+        TimelineStep(
+          title: title,
+          state: a.decision == 'rejected' ? TurnState.rejected : TurnState.done,
+          actor: actorOf(a),
+          at: a.decidedAt,
+          note: a.reason,
+        ),
+      );
     } else {
       final isCurrent = d.status == RequestStatus.pendingApproval && (d.currentLevel ?? allLevels.first) == level;
       final ended = d.status == RequestStatus.rejected || d.status == RequestStatus.cancelled;
-      steps.add(TimelineStep(title: title, state: isCurrent ? StepState.current : (ended ? StepState.skipped : StepState.pending)));
+      steps.add(
+        TimelineStep(
+          title: title,
+          state: isCurrent ? TurnState.current : (ended ? TurnState.skipped : TurnState.pending),
+        ),
+      );
     }
   }
   return steps;
@@ -80,20 +91,19 @@ List<TimelineStep> buildTimeline(ExpenseDetail d) {
 
 /// One-line "Giliran" text: who has to act next.
 String currentTurn(ExpenseDetail d) => switch (d.status) {
-      RequestStatus.draft => 'Pemohon — belum diajukan',
-      RequestStatus.pendingAck => 'Diketahui Oleh (PM / penanggung jawab)',
-      RequestStatus.pendingApproval =>
-        (d.approvalRule?.steps.length ?? 1) > 1 ? 'Approval level ${d.currentLevel ?? 1}' : 'Approval (Owner)',
-      RequestStatus.approved =>
-        d.type == RequestType.reimburse ? 'Finance — verifikasi nota' : 'Finance — antri transfer',
-      RequestStatus.receiptRevision => 'Pemohon — perbaiki nota',
-      RequestStatus.receiptsVerified => 'Finance — antri transfer',
-      RequestStatus.transferred =>
-        d.type == RequestType.advance ? 'Pemohon — lengkapi nota' : 'Pemohon/Finance — konfirmasi selesai',
-      RequestStatus.receiptsComplete => 'Pemohon — kirim LPJ',
-      RequestStatus.lpjSubmitted => 'Finance — verifikasi LPJ',
-      RequestStatus.lpjRevision => 'Pemohon — revisi LPJ',
-      RequestStatus.lpjVerified => 'Finance — penyelesaian selisih',
-      RequestStatus.completed || RequestStatus.rejected || RequestStatus.cancelled => 'Selesai — tidak ada giliran',
-      RequestStatus.unknown => '-',
-    };
+  RequestStatus.draft => 'Pemohon — belum diajukan',
+  RequestStatus.pendingAck => 'Diketahui Oleh (PM / penanggung jawab)',
+  RequestStatus.pendingApproval =>
+    (d.approvalRule?.steps.length ?? 1) > 1 ? 'Approval level ${d.currentLevel ?? 1}' : 'Approval (Owner)',
+  RequestStatus.approved => d.type == RequestType.reimburse ? 'Finance — verifikasi nota' : 'Finance — antri transfer',
+  RequestStatus.receiptRevision => 'Pemohon — perbaiki nota',
+  RequestStatus.receiptsVerified => 'Finance — antri transfer',
+  RequestStatus.transferred =>
+    d.type == RequestType.advance ? 'Pemohon — lengkapi nota' : 'Pemohon/Finance — konfirmasi selesai',
+  RequestStatus.receiptsComplete => 'Pemohon — kirim LPJ',
+  RequestStatus.lpjSubmitted => 'Finance — verifikasi LPJ',
+  RequestStatus.lpjRevision => 'Pemohon — revisi LPJ',
+  RequestStatus.lpjVerified => 'Finance — penyelesaian selisih',
+  RequestStatus.completed || RequestStatus.rejected || RequestStatus.cancelled => 'Selesai — tidak ada giliran',
+  RequestStatus.unknown => '-',
+};

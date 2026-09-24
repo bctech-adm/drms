@@ -37,14 +37,17 @@ class ApiClient {
     Dio? dio,
     this.onReachability,
     this.onUpgradeRequired,
-  }) : dio = dio ??
-            Dio(BaseOptions(
-              baseUrl: baseUrl,
-              connectTimeout: const Duration(seconds: 15),
-              receiveTimeout: const Duration(seconds: 30),
-              sendTimeout: const Duration(seconds: 60),
-              responseType: ResponseType.json,
-            )) {
+  }) : dio =
+           dio ??
+           Dio(
+             BaseOptions(
+               baseUrl: baseUrl,
+               connectTimeout: const Duration(seconds: 15),
+               receiveTimeout: const Duration(seconds: 30),
+               sendTimeout: const Duration(seconds: 60),
+               responseType: ResponseType.json,
+             ),
+           ) {
     this.dio.interceptors.add(_AuthInterceptor(this));
   }
 

@@ -14,9 +14,9 @@ class DraftIssue {
 
 /// Minimum to store a draft locally/offline: a title and a type.
 List<DraftIssue> validateForSave(DraftRequest d) => [
-      if (d.title.trim().isEmpty) const DraftIssue('title', 'Judul wajib diisi.'),
-      if (d.title.length > 200) const DraftIssue('title', 'Judul maksimal 200 karakter.'),
-    ];
+  if (d.title.trim().isEmpty) const DraftIssue('title', 'Judul wajib diisi.'),
+  if (d.title.length > 200) const DraftIssue('title', 'Judul maksimal 200 karakter.'),
+];
 
 /// Everything required before "Ajukan" (online submit).
 List<DraftIssue> validateForSubmit(DraftRequest d) {
@@ -61,8 +61,9 @@ List<DraftIssue> validateForSubmit(DraftRequest d) {
 }
 
 /// Renumbers lines 1..n after add/remove (the "No" column is automatic, US-37).
-List<DraftLine> renumber(List<DraftLine> lines) =>
-    [for (var i = 0; i < lines.length; i++) lines[i].copyWith(no: i + 1)];
+List<DraftLine> renumber(List<DraftLine> lines) => [
+  for (var i = 0; i < lines.length; i++) lines[i].copyWith(no: i + 1),
+];
 
 /// Line total vs. Σ receipts (US-47 preview; the server computes the real flag with its tolerance).
 int receiptDifference(DraftLine l) => (l.total ?? 0) - l.receipts.fold(0, (s, r) => s + r.amount);

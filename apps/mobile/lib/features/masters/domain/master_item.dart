@@ -27,16 +27,17 @@ MasterItem masterFromJson(String type, Map<String, dynamic> j, {Map<int, String>
   final id = (j['id'] as num?)?.toInt() ?? 0;
   String s(String k) => j[k] == null ? '' : '${j[k]}';
   final label = switch (type) {
-    MasterTypes.vehicles => [s('plateDisplay').isNotEmpty ? s('plateDisplay') : s('plateNo'), s('type')]
-        .where((e) => e.isNotEmpty)
-        .join(' · '),
+    MasterTypes.vehicles => [
+      s('plateDisplay').isNotEmpty ? s('plateDisplay') : s('plateNo'),
+      s('type'),
+    ].where((e) => e.isNotEmpty).join(' · '),
     MasterTypes.bankAccounts => () {
-        final acc = s('accountNo');
-        final masked = acc.length > 4 ? '•••${acc.substring(acc.length - 4)}' : acc;
-        final bankId = (j['bank'] as num?)?.toInt();
-        final bank = bankId == null ? '' : (bankNames[bankId] ?? '');
-        return [bank, s('accountHolder'), masked].where((e) => e.isNotEmpty).join(' · ');
-      }(),
+      final acc = s('accountNo');
+      final masked = acc.length > 4 ? '•••${acc.substring(acc.length - 4)}' : acc;
+      final bankId = (j['bank'] as num?)?.toInt();
+      final bank = bankId == null ? '' : (bankNames[bankId] ?? '');
+      return [bank, s('accountHolder'), masked].where((e) => e.isNotEmpty).join(' · ');
+    }(),
     MasterTypes.employees => s('nickname').isNotEmpty ? '${s('name')} (${s('nickname')})' : s('name'),
     _ => s('code').isNotEmpty ? '${s('code')} — ${s('name')}' : s('name'),
   };

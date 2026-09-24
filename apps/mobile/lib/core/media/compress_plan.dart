@@ -39,9 +39,9 @@ const maxRawBytes = 15 * 1024 * 1024;
 /// Successive attempts when the output is still above [PhotoTarget.maxBytes]: lower quality first,
 /// then shrink the longest side (keeps receipts legible as long as possible).
 List<({int maxSide, int quality})> compressionLadder(PhotoTarget t) => [
-      (maxSide: t.maxSide, quality: t.quality),
-      (maxSide: t.maxSide, quality: t.quality - 10),
-      (maxSide: t.maxSide, quality: t.quality - 20),
-      (maxSide: (t.maxSide * 0.85).round(), quality: t.quality - 20),
-      (maxSide: (t.maxSide * 0.7).round(), quality: t.quality - 25),
-    ];
+  (maxSide: t.maxSide, quality: t.quality),
+  (maxSide: t.maxSide, quality: t.quality - 10),
+  (maxSide: t.maxSide, quality: t.quality - 20),
+  (maxSide: (t.maxSide * 0.85).round(), quality: t.quality - 20),
+  (maxSide: (t.maxSide * 0.7).round(), quality: t.quality - 25),
+];

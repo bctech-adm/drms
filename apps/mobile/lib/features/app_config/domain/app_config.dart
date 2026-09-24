@@ -19,8 +19,7 @@ class AppConfig {
 
 /// Compares dotted numeric versions (`0.1.10` > `0.1.9`); build suffixes (`+12`) are ignored.
 int compareVersions(String a, String b) {
-  List<int> parts(String v) =>
-      v.split('+').first.split('-').first.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+  List<int> parts(String v) => v.split('+').first.split('-').first.split('.').map((p) => int.tryParse(p) ?? 0).toList();
   final pa = parts(a);
   final pb = parts(b);
   for (var i = 0; i < (pa.length > pb.length ? pa.length : pb.length); i++) {

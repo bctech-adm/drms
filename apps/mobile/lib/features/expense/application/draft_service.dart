@@ -10,6 +10,7 @@ import '../data/expense_api.dart';
 import '../data/expense_mappers.dart';
 import '../domain/draft.dart';
 import '../domain/draft_validation.dart';
+import '../domain/request_status.dart';
 import '../domain/expense_request.dart';
 
 class DraftValidationException implements Exception {
@@ -45,7 +46,12 @@ class DraftService {
   String newId() => _uuid.v7();
 
   /// Stores the draft in the encrypted DB and queues `expense_request.draft_upsert`.
-  Future<DraftRequest> save(String sub, DraftRequest draft, {required bool online, String timezone = 'Asia/Makassar'}) async {
+  Future<DraftRequest> save(
+    String sub,
+    DraftRequest draft, {
+    required bool online,
+    String timezone = 'Asia/Makassar',
+  }) async {
     final issues = validateForSave(draft);
     if (issues.isNotEmpty) throw DraftValidationException(issues);
     final lines = renumber(draft.lines);
@@ -106,29 +112,31 @@ class DraftService {
             if (r.serverReceiptId != null) continue;
             final blob = await drafts.media(r.mediaUuid);
             if (blob == null) {
-              throw const ProblemException(status: 422, detail: 'Foto nota tidak ditemukan di HP. Ambil ulang foto nota.');
+              throw const ProblemException(
+                status: 422,
+                detail: 'Foto nota tidak ditemukan di HP. Ambil ulang foto nota.',
+              );
             }
             final imageId = await api.uploadMedia('receipts', blob.bytes, filename: '${r.mediaUuid}.jpg');
-            detail = await api.addReceipt(
-              detail.id,
-              {
-                'lineId': serverLine.id,
-                'receiptNo': (r.receiptNo == null || r.receiptNo!.trim().isEmpty) ? null : r.receiptNo!.trim(),
-                'vendorName': r.vendorName.trim(),
-                'receiptDate': r.receiptDate,
-                'receiptTime': r.receiptTime,
-                'amount': r.amount,
-                'imageId': imageId,
-              },
-              idempotencyKey: r.clientUuid,
-            );
+            detail = await api.addReceipt(detail.id, {
+              'lineId': serverLine.id,
+              'receiptNo': (r.receiptNo == null || r.receiptNo!.trim().isEmpty) ? null : r.receiptNo!.trim(),
+              'vendorName': r.vendorName.trim(),
+              'receiptDate': r.receiptDate,
+              'receiptTime': r.receiptTime,
+              'amount': r.amount,
+              'imageId': imageId,
+            }, idempotencyKey: r.clientUuid);
             final created = detail.receipts.where((x) => x.imageId == imageId).firstOrNull;
             if (created != null) await drafts.setServerReceiptId(r.clientUuid, created.id);
           }
         }
       }
 
-      final submitted = await api.submit(detail.id, idempotencyKey: _uuid.v5(Namespace.url.value, 'pk-submit:${draft.clientUuid}'));
+      final submitted = await api.submit(
+        detail.id,
+        idempotencyKey: _uuid.v5(Namespace.url.value, 'pk-submit:${draft.clientUuid}'),
+      );
       await drafts.setSyncState(draft.clientUuid, DraftSyncState.submitted, serverId: submitted.id, clearError: true);
       await outbox.supersede(sub, draft.clientUuid);
       await drafts.purgeMediaOf(draft);
