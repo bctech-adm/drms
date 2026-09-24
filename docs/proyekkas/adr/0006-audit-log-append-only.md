@@ -142,6 +142,18 @@ the domain service snapshots them into `expense_line_snapshots` (Class A) for th
   rows are cash-IN linked to the request, amount = verified LPJ surplus. `expense_requests` whitelist gains
   `verified_receipts_total`.
 
+**Implemented (F2e, `migrations/20260924_020344_f2e_security.ts`, `develop` `e9c07ab`) — self-involvement
+guards** (architecture §5.5 G17, same pattern as `pk_approvals_before_insert` for G1):
+- function **`pk_request_involves(request_id, user_id)`** (SQL, STABLE): true when the user created the request
+  or is linked to one of its requester employees (mirrors the domain `involvedUserIds`);
+- trigger **`receipts_self_verify_guard`** (BEFORE UPDATE on `receipts`, `pk_receipts_self_verify_guard`):
+  refuses setting a receipt `valid`/`rejected` with a `verified_by_id` involved in the request;
+- trigger **`receipt_flags_self_review_guard`** (BEFORE UPDATE on `receipt_flags`,
+  `pk_receipt_flags_self_review_guard`): refuses `reviewed` with an involved `reviewed_by_id`.
+Both raise SQLSTATE 42501 and only fire when the verifier/reviewer or the decision changes (existing rows are not
+re-checked). Additive and staging-safe; the down migration drops the triggers and functions. LPJ verification and
+settlement by an involved Finance user are refused in the service only.
+
 Enforcement per class (in migrations, owner role):
 ```sql
 -- pseudo-config, not final
@@ -173,7 +185,12 @@ numeric(9,6) · `lng` numeric(9,6) · `device_time` timestamptz (offline only, c
 `session_revoked`, `role_change`, `role_sync`, `device_register`, `device_revoke`, `number_issued`, `export`,
 `print`, `sign`, `acknowledge`, `flag_raised`, `flag_reviewed`, `sync_odoo`, `sync_offline`, `period_close`,
 `period_reopen`, `schema_maintenance` (a new value = a migration). Added since: `email_test` (F1 SMTP
-migration) and **`approve`, `reject`, `verify`** (F2a flow migration `20260923_133049_f2a_flow.ts`). `user_roles` is a Payload `text` field
+migration), **`approve`, `reject`, `verify`** (F2a flow migration `20260923_133049_f2a_flow.ts`) and
+**`acknowledge_delegated`, `access_denied`** (F2e migration `20260924_020343_f2e_uat_fixes.ts`, `ADD VALUE` only;
+its down migration is a deliberate no-op because Postgres cannot drop enum values and rows using them are
+append-only). `acknowledge_delegated` is written at submit when "Diketahui" is delegated to Owner/Admin
+(old = skipped user id, new = tier, delegate user ids, cycle; architecture §5.2); `access_denied` records a
+refused self-involvement attempt (G1 acknowledge/approve/reject, Finance G17), `field` = the action. `user_roles` is a Payload `text` field
 (`varchar`), written as `roles.join(',')` (`src/audit/writer.ts`). Payload column types differ from the sketch:
 `id` serial, `tx_id`/`user_id` numeric, `ip` varchar, `source` enum; `server_time` NOT NULL (security migration).
 Payload collection `audit-logs` exposes it read-only: `access.create/update/delete = () => false` (writes
@@ -192,6 +209,10 @@ only via system path), `read` = scope rule (own doc/team/all per requirements §
   deactivate, receipt reject, LPJ revision) when `reason` is missing.
 - **delete_attempt**: `beforeDelete` throws (deletes forbidden) — the log row must be written **outside**
   the failing transaction (new `payload.db.beginTransaction()` or no `req`) before throwing.
+  **As implemented (F2e):** shared helper `writeAuditDetached` (`src/audit/writer.ts`) writes such rows in their
+  own transaction (new local req + `withReqTransaction`) and never throws (a failed write is logged); used for
+  `delete_attempt` and **`access_denied`** (`domain/expense/common.ts` `requireActionAudited`: the business
+  operation rolls back with 403, the attempt stays recorded).
 - **view_sensitive**: `afterRead`/`afterOperation` (`findByID`) on sensitive collections
   (`employee-bank-accounts`, selfies, exports) — throttled (1 row per user/doc/10 min).
 - **Auth events**: login/logout in the auth routes (ADR 0003); role sync; device revoke.
@@ -282,3 +303,7 @@ the DB before first deploy is free; after deploy it needs dump/restore.
   cross-checks; notifications identity immutable, `read_at` sticky, no DELETE); `transfers`/`cash_entries`
   guards extended for `lpj_shortfall` / `settlement_refund`. Downloads of the PDF are audited `export`,
   transfer-proof file reads `view_sensitive` (ADR 0008, architecture §6.3). Status stays accepted.
+- **2026-09-24 (F2e):** verified against `develop` `e9c07ab`. §2: self-involvement DB guards
+  `receipts_self_verify_guard` / `receipt_flags_self_review_guard` with `pk_request_involves` (SQLSTATE 42501).
+  §3: audit enum values `acknowledge_delegated`, `access_denied` (down = no-op). §4: detached audit writer for
+  refused attempts (`delete_attempt`, `access_denied`). Status stays accepted.

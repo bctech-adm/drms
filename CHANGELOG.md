@@ -7,10 +7,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 F2a (expense request core, `c8c1af6`), F2b (LPJ/settlement, PDF, admin views, notifications, file endpoint,
-`4d952ba`) and F2c (requester actions in the web panel, `59ba0a4`) merged to `develop`; staging runs
-`0.1.0-stg-59ba0a4`. UAT seed run on staging 2026-09-24; UAT by the user in progress; F2 gate pending.
+`4d952ba`), F2c (requester actions in the web panel, `59ba0a4`), F2d (`c11907a`) and F2e (`e9c07ab`) UAT fixes
+merged to `develop`; staging runs `0.1.0-stg-e9c07ab`. UAT E2E run 4 on staging: 56 PASS, 2 FAIL (1 by design,
+1 wording), 1 not testable (`docs/proyekkas/uat/f2-uat-report.md`); **F2 ready for gate**.
 
 ### Added
+- **F2e acknowledge delegation** (user decision 2026-09-24, option a; Q-07/Q-08 edge case): when the project PM /
+  cost-center manager is a requester or the creator, or is missing, "Diketahui" is delegated at submit to an
+  eligible active Owner, else Admin (not a requester/creator; distinct-person matching so the acknowledger is
+  never also needed as approver). Delegates fixed in the approval snapshot (`acknowledgeDelegatedTo`,
+  `acknowledgeDelegateUserIds`, `acknowledgeDelegationReason`, `acknowledgeOriginalUserId`); audit action
+  `acknowledge_delegated`; PDF prints "(dilimpahkan)". Submit still returns 409 when nobody qualifies.
+- **F2e Finance self-involvement guard**: Finance cannot verify/reject receipts, review flags, verify all
+  receipts, request LPJ revision, verify the LPJ or settle on a request it requested or created → 403; DB
+  triggers `receipts_self_verify_guard` / `receipt_flags_self_review_guard` (function `pk_request_involves`).
+- **F2e audit action `access_denied`**: refused self-involvement attempts (G1 acknowledge/approve/reject and the
+  Finance guard) are recorded in their own transaction (`writeAuditDetached`, also used for `delete_attempt`).
+- **F2d Finance Reimburse receipt verification UI** in Antrian Transfer (per receipt Valid/Tolak, flags reviewed,
+  "Verifikasi semua nota"); nav badge counts Reimburse requests awaiting verification.
+- **F2 UAT report** `docs/proyekkas/uat/f2-uat-report.md` (Playwright E2E runs 1–4 on staging).
 - **F2c requester web panel** (`apps/web`): `pk-staff` may use the admin panel with a restricted nav (own
   requests, receipts, notifications, own profile); self-service profile signature; workflow panel with status
   timeline + next actor and the requester actions (Kirim pengajuan, Tarik kembali/Batalkan, Ajukan ulang, upload
@@ -45,6 +60,17 @@ F2a (expense request core, `c8c1af6`), F2b (LPJ/settlement, PDF, admin views, no
   live counter; audit actions `approve`, `reject`, `verify`.
 
 ### Changed
+- **F2e:** "Pengajuan ulang dari" shows the previous request's number and title (read-only link); office-only
+  fields hidden in the panel (`approvalRule`/`approvalSnapshot` for Staff/PM, `receipts.vendor` for Staff) —
+  removes the 403 noise on `POST /api/approval-rules`; operational 4xx (403/404/409) are logged at `warn`,
+  5xx stay `error`.
+- **F2d:** "Profil & tanda tangan" linked for every panel role incl. Owner; hint above "Baris item" for the
+  Payload 3.90.1 row race.
+- Docs: `architecture.md` §5.2/§5.5 (delegation, G1 extended, new G17, guard order, logging), ADR 0006 (F2e
+  triggers and audit actions), `open-questions-client.md` (Q-07/Q-08 edge case answered; main question open),
+  `phase-plan.md` (F2 ready for gate, gate evidence, carried-over items).
+- **Onboarding/staging:** the "submit 409 until PM / cost-center manager is set" prerequisite now applies only
+  when no Owner/Admin qualifies for the delegated "Diketahui".
 - ADR 0003, 0004, 0005, 0006, 0008, 0011, `architecture.md` (§5.1, §5.2, §6.3, §7.2, §9.2, §9.3, §11), `phase-plan.md`
   and `traceability-matrix.md` (F2 implementation status) updated with the F2b/F2c outcomes (Revision history in
   each; statuses stay accepted).
