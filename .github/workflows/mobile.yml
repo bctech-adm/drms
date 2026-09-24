@@ -148,14 +148,14 @@ jobs:
           tool/build_with_retry.sh flutter build apk --release --flavor staging \
             --dart-define-from-file=config/staging.json \
             --build-number="${GITHUB_RUN_NUMBER}" \
-            --obfuscate --split-debug-info=build/symbols
+            --obfuscate --split-debug-info=build/symbols --split-per-abi
           ls -l build/app/outputs/flutter-apk/
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: env.HAS_STAGING_KEY == 'true'
         with:
           name: proyekkas-staging-release-apk
           path: |
-            apps/mobile/build/app/outputs/flutter-apk/app-staging-release.apk
+            apps/mobile/build/app/outputs/flutter-apk/app-*-staging-release.apk
             apps/mobile/build/symbols/
           retention-days: 90
           if-no-files-found: error
