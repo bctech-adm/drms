@@ -8,24 +8,30 @@ import { isStaffOnly, rolesOf } from '@/access/roles'
  * admin.components.afterNavLinks: entries of the F2 work views with badge counts (US-19 "badge
  * jumlah antrian"). Counts respect the user's read access (overrideAccess:false).
  * F2c: staff-only users get the requester shortcuts instead (own requests, new request, profile
- * signature); the approval/finance views are not linked for them.
+ * signature); the approval/finance views are not linked for them. F2d: "Profil & tanda tangan" for
+ * every panel role (Owner signs approvals); the Antrian Transfer badge also counts Reimburse
+ * receipts waiting for Finance verification (same view).
  */
 export async function F2NavLinks({ payload, user }: { payload: Payload; user?: TypedUser }) {
   if (!user) return null
   const roles = rolesOf(user)
   const box: React.CSSProperties = { margin: '12px 0', paddingTop: 8, borderTop: '1px solid var(--theme-elevation-100)' }
   const plain: React.CSSProperties = { display: 'block', padding: '4px 0', textDecoration: 'none' }
-  const requester = roles.some((r) => r === 'pk-staff' || r === 'pk-pm' || r === 'pk-admin' || r === 'pk-finance')
-  const requesterLinks = requester ? (
+  // Creating requests: Staff/PM/Admin/Finance (collection create access, Q-09). The profile (own
+  // signature, US-43) is linked for EVERY panel role — Owner approves and needs a signature too.
+  const creator = roles.some((r) => r === 'pk-staff' || r === 'pk-pm' || r === 'pk-admin' || r === 'pk-finance')
+  const requesterLinks = (
     <>
-      <Link href="/admin/collections/expense-requests/create" style={plain}>
-        + Buat pengajuan
-      </Link>
-      <Link href={`/admin/collections/users/${user.id}`} style={plain}>
+      {creator ? (
+        <Link href="/admin/collections/expense-requests/create" style={plain}>
+          + Buat pengajuan
+        </Link>
+      ) : null}
+      <Link href={`/admin/collections/users/${user.id}`} style={plain} data-pk-nav-link="profile">
         Profil &amp; tanda tangan
       </Link>
     </>
-  ) : null
+  )
   if (isStaffOnly(user)) {
     return (
       <div style={box} data-pk-nav="staff">
@@ -47,7 +53,7 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
         where: {
           or: [
             { and: [{ type: { equals: 'advance' } }, { status: { equals: 'approved' } }] },
-            { and: [{ type: { equals: 'reimburse' } }, { status: { equals: 'receipts_verified' } }] },
+            { and: [{ type: { equals: 'reimburse' } }, { status: { in: ['approved', 'receipts_verified'] } }] },
           ],
         },
         user,
