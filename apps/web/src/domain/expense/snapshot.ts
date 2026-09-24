@@ -1,17 +1,18 @@
 import { sql } from '@payloadcms/db-postgres'
 import type { PayloadRequest } from 'payload'
 
-import { relId } from '@/access/roles'
+import { relId, type Role } from '@/access/roles'
 import { getRequestTx } from '@/lib/tx'
 
 import { fail, ids, type RequestDoc } from './common'
 import { displayUnitPrice } from './lines'
-import { buildSnapshot, selectRule, type ApprovalSnapshot, type RuleInput } from './rules'
+import { buildSnapshot, resolveAckDelegation, selectRule, type AckDelegation, type ApprovalSnapshot, type RuleInput } from './rules'
 
 /**
  * Rule resolution at submit / re-approval (US-34, G2) + acknowledger resolution (Q-07 default:
  * PM of the project or manager of the cost center; Q-08 default: a requester or the creator can
- * never be "Diketahui Oleh" nor approver).
+ * never be "Diketahui Oleh" nor approver). F2e: when that person is a requester/creator or missing,
+ * "Diketahui" is delegated to an Owner / Admin (rules.ts resolveAckDelegation) instead of a 409.
  */
 export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): Promise<{ rule: RuleInput; snapshot: ApprovalSnapshot }> {
   const res = await req.payload.find({
@@ -58,7 +59,11 @@ export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): P
   if (!rule) fail(409, 'Tidak ada aturan approval yang berlaku untuk pengajuan ini (US-34). Hubungi Admin.')
 
   const excluded = await involvedUserIds(req, doc)
+  for (const s of rule.steps) {
+    if (s.approverUser && excluded.has(s.approverUser)) fail(409, 'Approver pada aturan approval adalah pemohon/pembuat pengajuan ini (G1). Hubungi Admin.')
+  }
   let ackUser: number | null = null
+  let delegation: AckDelegation | null = null
   if (rule.acknowledge !== 'none') {
     if (rule.acknowledgeBy === 'user') ackUser = rule.acknowledgeUser ?? null
     else if ((rule.acknowledgeBy ?? 'scope_manager') === 'scope_manager') {
@@ -70,18 +75,53 @@ export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): P
         ackUser = relId(c.manager) ?? null
       }
     }
+    const original = ackUser
     if (ackUser !== null && excluded.has(ackUser)) ackUser = null // Q-08: never self-acknowledge
     if (rule.acknowledge === 'required' && rule.acknowledgeBy !== 'role' && ackUser === null) {
-      fail(
-        409,
-        'Pihak "Diketahui Oleh" tidak dapat ditentukan: PM project / penanggung jawab pusat biaya belum diatur atau termasuk pemohon/pembuat (Q-07, Q-08). Hubungi Admin.',
-      )
+      // F2e (user decision option a): delegate "Diketahui" to an Owner, else an Admin — exact rule
+      // in rules.ts resolveAckDelegation (never a requester/creator, never the person who would
+      // have to approve as well). Only when nobody qualifies does the submit stay blocked (409).
+      delegation = resolveAckDelegation({
+        excluded,
+        owners: await activeUsersWithRole(req, 'pk-owner'),
+        admins: await activeUsersWithRole(req, 'pk-admin'),
+        approverPools: await approverPools(req, rule, excluded),
+        originalUserId: original,
+      })
+      if (!delegation) {
+        fail(
+          409,
+          'Pihak "Diketahui Oleh" tidak dapat ditentukan: PM project / penanggung jawab pusat biaya belum diatur atau termasuk pemohon/pembuat, dan tidak ada Owner/Admin lain yang dapat menggantikan (bukan pemohon/pembuat dan bukan satu-satunya approver) (Q-07, Q-08, G1). Hubungi Admin.',
+        )
+      }
     }
   }
-  for (const s of rule.steps) {
-    if (s.approverUser && excluded.has(s.approverUser)) fail(409, 'Approver pada aturan approval adalah pemohon/pembuat pengajuan ini (G1). Hubungi Admin.')
+  return { rule, snapshot: buildSnapshot(rule, ackUser, delegation) }
+}
+
+/** Active users holding `role` (SYSTEM-READ for the acknowledger fallback, F2e). */
+async function activeUsersWithRole(req: PayloadRequest, role: Role): Promise<number[]> {
+  const res = await req.payload.find({
+    collection: 'users',
+    where: { and: [{ roles: { in: [role] } }, { active: { equals: true } }] },
+    depth: 0,
+    pagination: false,
+    select: { email: true },
+    sort: 'id',
+    overrideAccess: true, // SYSTEM-READ: acknowledger fallback candidates (F2e)
+    req,
+  })
+  return res.docs.map((d) => d.id as number)
+}
+
+/** Eligible approvers per level of `rule` (named user or active role holders), requesters/creator removed. */
+async function approverPools(req: PayloadRequest, rule: RuleInput, excluded: ReadonlySet<number>): Promise<number[][]> {
+  const pools: number[][] = []
+  for (const s of [...rule.steps].sort((a, b) => a.level - b.level)) {
+    const users = s.approverUser ? [s.approverUser] : s.approverRole ? await activeUsersWithRole(req, s.approverRole) : []
+    pools.push(users.filter((u) => !excluded.has(u)))
   }
-  return { rule, snapshot: buildSnapshot(rule, ackUser) }
+  return pools
 }
 
 /** User ids of the creator and of every requester employee that has an account (G1, Q-08). */

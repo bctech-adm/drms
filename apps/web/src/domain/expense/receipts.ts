@@ -5,7 +5,7 @@ import { relId, userId } from '@/access/roles'
 import { writeAudit } from '@/audit/writer'
 import { getRequestTx } from '@/lib/tx'
 
-import { actorContext, fail, ids, loadRaw, loadVisible, requireAction, settings, today, updateRequest, type RequestDoc } from './common'
+import { actorContext, fail, ids, loadRaw, loadVisible, requireAction, requireActionAudited, settings, today, updateRequest, type RequestDoc } from './common'
 import { computeFlags, normalizeReceiptNo, normalizeVendor, type DuplicateHit, type FlagCategory, type FlagSpec } from './flags'
 import { grandTotal } from './lines'
 import { selectAndSnapshot, writeSnapshot } from './snapshot'
@@ -207,7 +207,7 @@ export async function removeReceipt(req: PayloadRequest, requestId: number, rece
 /** US-39: Finance marks a receipt valid (Reimburse, after approval). */
 export async function verifyReceipt(req: PayloadRequest, requestId: number, receiptId: number) {
   const doc = await loadVisible(req, requestId, { lock: true })
-  requireAction(await actorContext(req, doc), 'receipt_verify')
+  await requireActionAudited(req, await actorContext(req, doc), 'receipt_verify', doc)
   const r = await loadReceipt(req, requestId, receiptId)
   if (r.status !== 'pending' && r.status !== 'rejected') fail(409, 'Nota tidak dalam status menunggu verifikasi.')
   return req.payload.update({
@@ -228,7 +228,7 @@ export async function verifyReceipt(req: PayloadRequest, requestId: number, rece
 export async function rejectReceipt(req: PayloadRequest, requestId: number, receiptId: number, reason: string) {
   const doc = await loadVisible(req, requestId, { lock: true })
   const ctx = await actorContext(req, doc)
-  requireAction(ctx, doc.type === 'advance' ? 'receipt_verify' : 'receipt_reject')
+  await requireActionAudited(req, ctx, doc.type === 'advance' ? 'receipt_verify' : 'receipt_reject', doc)
   const r = await loadReceipt(req, requestId, receiptId)
   if (r.status === 'removed' || r.status === 'rejected') fail(409, 'Nota sudah ditolak/dihapus.')
   req.context.auditReason = reason
@@ -288,7 +288,7 @@ export async function assertEveryLineHasReceipt(req: PayloadRequest, doc: Reques
 /** US-39: all receipts valid + all open warnings reviewed → "Nota Terverifikasi (Antri Transfer)". */
 export async function verifyAllReceipts(req: PayloadRequest, requestId: number) {
   const doc = await loadVisible(req, requestId, { lock: true })
-  requireAction(await actorContext(req, doc), 'verify_receipts')
+  await requireActionAudited(req, await actorContext(req, doc), 'verify_receipts', doc)
   const raw = await loadRaw(req, requestId)
   const receipts = await receiptsOf(req, requestId, true)
   const pending = receipts.filter((r) => r.status !== 'valid')
@@ -307,7 +307,7 @@ export async function verifyAllReceipts(req: PayloadRequest, requestId: number) 
 /** Finance marks a flag "sudah diperiksa" with an optional note (requirements §4, US-39). */
 export async function reviewFlag(req: PayloadRequest, requestId: number, flagId: number, note?: string) {
   const doc = await loadVisible(req, requestId, { lock: true })
-  requireAction(await actorContext(req, doc), 'review_flag')
+  await requireActionAudited(req, await actorContext(req, doc), 'review_flag', doc)
   const f = (await req.payload
     .findByID({ collection: 'receipt-flags', id: flagId, depth: 0, overrideAccess: true /* SYSTEM-READ: belongs-to check below */, req })
     .catch(() => null)) as (FlagDoc & { request: unknown }) | null

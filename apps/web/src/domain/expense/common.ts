@@ -2,10 +2,11 @@ import { sql } from '@payloadcms/db-postgres'
 import { APIError, type PayloadRequest } from 'payload'
 
 import { relId, userId, userRoles } from '@/access/roles'
+import { writeAuditDetached } from '@/audit/writer'
 import { DEFAULT_TZ, localDateInTz } from '@/lib/time'
 import { getRequestTx } from '@/lib/tx'
 
-import { allowedActions, targets, type Action, type ActorContext } from './state'
+import { allowedActions, FINANCE_SELF_GUARDED, targets, type Action, type ActorContext } from './state'
 import { matchesAcknowledger, matchesStep, type ApprovalSnapshot } from './rules'
 import { BUDGET_COMMITTED, type RequestStatus, type RequestType } from './types'
 
@@ -176,6 +177,35 @@ export function requireAction(ctx: ActorContext, action: Action): void {
     if (own && action === 'add_receipt') fail(409, 'Nota tidak dapat diubah pada status pengajuan saat ini.')
     if (own && action === 'resubmit') fail(409, 'Hanya pengajuan yang ditolak yang dapat diajukan ulang.')
     fail(403, 'Anda tidak berhak melakukan aksi ini pada pengajuan ini.')
+  }
+}
+
+/** Decision actions a requester/creator may never take (G1, Q-08). */
+const G1_DECISIONS: ReadonlySet<Action> = new Set<Action>(['acknowledge', 'approve', 'reject'])
+
+/**
+ * `requireAction` + audit of SELF-INVOLVEMENT denials (F2e): a requester/creator attempting a
+ * decision (G1) or a Finance user attempting a receipt/flag/LPJ verification on a request it
+ * requested or created (FINANCE_SELF_GUARDED) → 403 and an `access_denied` audit row written in its
+ * own transaction (the failing operation rolls back, the attempt stays recorded).
+ */
+export async function requireActionAudited(req: PayloadRequest, ctx: ActorContext, action: Action, doc: Pick<RequestDoc, 'id' | 'docNo'>): Promise<void> {
+  try {
+    requireAction(ctx, action)
+  } catch (err) {
+    const selfInvolved = ctx.isCreator || ctx.isRequester
+    const financeSelf = FINANCE_SELF_GUARDED.has(action) && ctx.roles.includes('pk-finance')
+    if ((err as { status?: number }).status !== 403 || !selfInvolved || !(financeSelf || G1_DECISIONS.has(action))) throw err
+    const guard = financeSelf ? 'Finance adalah pemohon/pembuat pengajuan ini (G1)' : 'pemohon/pembuat tidak boleh memutuskan pengajuannya sendiri (G1, Q-08)'
+    await writeAuditDetached(req, [
+      { action: 'access_denied', docType: 'expense_request', docId: String(doc.id), docNo: doc.docNo ?? undefined, field: action, newValue: { action, status: ctx.status }, reason: guard },
+    ])
+    fail(
+      403,
+      financeSelf
+        ? 'Finance tidak dapat memverifikasi nota, meninjau flag atau memverifikasi LPJ pada pengajuan di mana ia pemohon atau pembuat (G1). Minta Finance lain.'
+        : 'Pemohon/pembuat tidak dapat memberi keputusan pada pengajuannya sendiri (G1).',
+    )
   }
 }
 

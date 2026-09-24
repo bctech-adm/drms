@@ -121,6 +121,9 @@ export type ActorContext = {
 /** Actions that do not move the status (their own status preconditions are checked in allowedActions). */
 const NON_TRANSITION: ReadonlySet<Action> = new Set<Action>(['edit', 'resubmit', 'review_flag', 'add_receipt', 'receipt_verify'])
 
+/** Finance actions refused on a request where the Finance user is requester or creator (F2e). */
+export const FINANCE_SELF_GUARDED: ReadonlySet<Action> = new Set<Action>(['receipt_verify', 'receipt_reject', 'verify_receipts', 'review_flag', 'lpj_request_revision', 'lpj_verify', 'settle'])
+
 const has = (ctx: ActorContext, ...roles: Role[]) => ctx.roles.some((r) => roles.includes(r))
 const office = (ctx: ActorContext) => has(ctx, 'pk-finance', 'pk-owner')
 
@@ -151,17 +154,20 @@ export function allowedActions(ctx: ActorContext): Action[] {
     'reject',
     !selfInvolved && !ctx.alreadyDecided && (ctx.status === 'pending_ack' ? ctx.isAcknowledger : ctx.matchesCurrentStep),
   )
+  // F2e: Finance never verifies receipts / reviews flags of a request it requested or created
+  // (G1 spirit, like the LPJ actions below) — FINANCE_SELF_GUARDED, denied attempts are audited.
+  const finance = has(ctx, 'pk-finance') && !selfInvolved
   add(
     'receipt_verify',
-    has(ctx, 'pk-finance') &&
+    finance &&
       ((ctx.type === 'reimburse' && (ctx.status === 'approved' || ctx.status === 'receipts_verified')) ||
-        // LPJ review (Uang Muka): valid/rejected per receipt, no status change; not on one's own LPJ.
-        (ctx.type === 'advance' && ctx.status === 'lpj_submitted' && !selfInvolved)),
+        // LPJ review (Uang Muka): valid/rejected per receipt, no status change.
+        (ctx.type === 'advance' && ctx.status === 'lpj_submitted')),
   )
-  add('receipt_reject', has(ctx, 'pk-finance'))
+  add('receipt_reject', finance)
   add('receipts_resubmit', own)
-  add('verify_receipts', has(ctx, 'pk-finance'))
-  add('review_flag', has(ctx, 'pk-finance') && ctx.status !== 'draft' && ctx.status !== 'cancelled' && ctx.status !== 'rejected')
+  add('verify_receipts', finance)
+  add('review_flag', finance && ctx.status !== 'draft' && ctx.status !== 'cancelled' && ctx.status !== 'rejected')
   add('transfer', has(ctx, 'pk-finance'))
   add('transfer_void', has(ctx, 'pk-finance'))
   add('complete', own || has(ctx, 'pk-finance'))

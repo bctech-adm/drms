@@ -6,7 +6,7 @@
  */
 import { ROLE_LABELS, type Role } from '@/access/roles'
 
-import type { ApprovalSnapshot } from './rules'
+import { ACK_DELEGATE_ROLE, type ApprovalSnapshot } from './rules'
 import { statusLabel, type RequestStatus, type RequestType } from './types'
 
 /** Happy-path order per type (branches — rejected/cancelled/revisions — are shown as the current step). */
@@ -45,7 +45,7 @@ export function timeline(type: RequestType, status: RequestStatus, opts: { skipA
 
 export type NextActor = { who: string; what: string }
 
-type SnapshotLike = Pick<ApprovalSnapshot, 'acknowledge' | 'acknowledgeBy' | 'acknowledgerUserId' | 'acknowledgeRole' | 'steps'>
+type SnapshotLike = Pick<ApprovalSnapshot, 'acknowledge' | 'acknowledgeBy' | 'acknowledgerUserId' | 'acknowledgeRole' | 'steps' | 'acknowledgeDelegatedTo'>
 
 const roleLabel = (r: Role | null | undefined) => (r ? ROLE_LABELS[r] : 'approver')
 
@@ -68,6 +68,10 @@ export function nextActor(input: {
     case 'draft':
       return { who: requester, what: type === 'reimburse' ? 'lengkapi baris item, upload nota per baris, lalu Kirim pengajuan' : 'lengkapi baris item lalu Kirim pengajuan' }
     case 'pending_ack': {
+      if (snapshot?.acknowledgeDelegatedTo) {
+        // F2e: PM / penanggung jawab is a requester/creator (or missing) → delegated step.
+        return { who: ROLE_LABELS[ACK_DELEGATE_ROLE[snapshot.acknowledgeDelegatedTo]], what: 'Diketahui (dilimpahkan): tandai "Diketahui" (atau tolak)' }
+      }
       const who =
         user(snapshot?.acknowledgerUserId) ??
         (snapshot?.acknowledgeBy === 'role' ? roleLabel(snapshot.acknowledgeRole) : 'Manajer project / pusat biaya')

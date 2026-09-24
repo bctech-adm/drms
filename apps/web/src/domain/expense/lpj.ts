@@ -5,7 +5,7 @@ import { assertAccount, currentLockDate, postEntry } from '@/domain/cash/ledger'
 import { allocateDocNo } from '@/domain/numbering-db'
 import { parseBusinessDate } from '@/domain/numbering'
 
-import { actorContext, fail, loadRaw, loadVisible, requireAction, today, updateRequest, type RequestDoc } from './common'
+import { actorContext, fail, loadRaw, loadVisible, requireAction, requireActionAudited, today, updateRequest, type RequestDoc } from './common'
 import { claimMedia, receiptsOf, recomputeFlags } from './receipts'
 import { settlementOf, type SettlementStatus, type SettlementType } from './settlement-rules'
 import { isBusinessDate } from './types'
@@ -131,7 +131,7 @@ export async function submitLpj(req: PayloadRequest, id: number, input: { usageN
 /** POST …/lpj/request-revision — Finance, note required (US-21, G7) → "LPJ Revisi". */
 export async function requestLpjRevision(req: PayloadRequest, id: number, note: string) {
   const doc = await loadVisible(req, id, { lock: true })
-  requireAction(await actorContext(req, doc), 'lpj_request_revision')
+  await requireActionAudited(req, await actorContext(req, doc), 'lpj_request_revision', doc)
   const s = await requireSettlement(req, id, ['submitted'])
   await updateSettlement(req, s.id, { status: 'revision', financeNotes: note }, note)
   return updateRequest(req, id, { status: 'lpj_revision' }, note)
@@ -144,7 +144,7 @@ export async function requestLpjRevision(req: PayloadRequest, id: number, note: 
  */
 export async function verifyLpj(req: PayloadRequest, id: number) {
   const doc = await loadVisible(req, id, { lock: true })
-  requireAction(await actorContext(req, doc), 'lpj_verify')
+  await requireActionAudited(req, await actorContext(req, doc), 'lpj_verify', doc)
   const s = await requireSettlement(req, id, ['submitted'])
   const receipts = await receiptsOf(req, id)
   const pending = receipts.filter((r) => r.status === 'pending')
@@ -192,7 +192,7 @@ export type SettleInput = {
  */
 export async function settle(req: PayloadRequest, id: number, input: SettleInput) {
   const doc = await loadVisible(req, id, { lock: true })
-  requireAction(await actorContext(req, doc), 'settle')
+  await requireActionAudited(req, await actorContext(req, doc), 'settle', doc)
   const s = await requireSettlement(req, id, ['verified'])
   const raw = await loadRaw(req, id)
   const st = settlementOf(s.transferredTotal ?? 0, s.verifiedReceiptsTotal ?? 0)

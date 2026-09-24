@@ -51,7 +51,26 @@ export type ApprovalSnapshot = {
   signDiajukan: SignMode
   signDibuat: SignMode
   steps: Array<{ level: number; approverRole: Role | null; approverUserId: number | null }>
+  /**
+   * F2e (user decision, option a): the resolved "Diketahui Oleh" person was a requester/creator or
+   * missing → the acknowledge step is DELEGATED to an Owner (else an Admin). Absent on snapshots
+   * taken before F2e (= not delegated).
+   */
+  acknowledgeDelegatedTo?: AckDelegate | null
+  /** Human-readable reason of the delegation (printed/audited). */
+  acknowledgeDelegationReason?: string | null
+  /** Users who may give the delegated "Diketahui" (fixed at submit, like the rest of the snapshot). */
+  acknowledgeDelegateUserIds?: number[]
+  /** The originally resolved person (PM / cost-center manager / rule user) that was skipped, if any. */
+  acknowledgeOriginalUserId?: number | null
 }
+
+export type AckDelegate = 'owner' | 'admin'
+
+export const ACK_DELEGATE_ROLE: Record<AckDelegate, Role> = { owner: 'pk-owner', admin: 'pk-admin' }
+
+export const ACK_DELEGATION_REASON = 'PM/penanggung jawab adalah pemohon/pembuat (Q-07/Q-08)'
+export const ACK_DELEGATION_REASON_MISSING = 'PM/penanggung jawab belum diatur (Q-07)'
 
 function specificity(r: RuleInput): number {
   return (r.category ? 1 : 0) + (r.project ? 1 : 0) + (r.costCenter ? 1 : 0) + (r.requestType !== 'any' ? 1 : 0)
@@ -94,9 +113,19 @@ export function stepsError(steps: RuleInput['steps']): string | null {
   return null
 }
 
-export function buildSnapshot(r: RuleInput, acknowledgerUserId: number | null): ApprovalSnapshot {
+export type AckDelegation = { to: AckDelegate; userIds: number[]; reason: string; originalUserId: number | null }
+
+export function buildSnapshot(r: RuleInput, acknowledgerUserId: number | null, delegation?: AckDelegation | null): ApprovalSnapshot {
   const err = stepsError(r.steps)
   if (err) throw new Error(err)
+  const delegated = delegation
+    ? {
+        acknowledgeDelegatedTo: delegation.to,
+        acknowledgeDelegationReason: delegation.reason,
+        acknowledgeDelegateUserIds: [...delegation.userIds].sort((a, b) => a - b),
+        acknowledgeOriginalUserId: delegation.originalUserId,
+      }
+    : {}
   return {
     ruleId: r.id,
     ruleName: r.name,
@@ -109,7 +138,65 @@ export function buildSnapshot(r: RuleInput, acknowledgerUserId: number | null): 
     steps: [...r.steps]
       .sort((a, b) => a.level - b.level)
       .map((s) => ({ level: s.level, approverRole: s.approverRole ?? null, approverUserId: s.approverUser ?? null })),
+    ...delegated,
   }
+}
+
+/**
+ * Whether every approval level can still be decided by DISTINCT eligible people (G1 + DB unique
+ * index `approvals_one_position_per_person`: one decision position per person per cycle) once
+ * `without` has taken the "Diketahui" position. `pools[i]` = eligible approvers of level i
+ * (requesters/creator already removed). Small exact matching (levels are few).
+ */
+export function approversAssignable(pools: ReadonlyArray<readonly number[]>, without: number): boolean {
+  const lists = pools.map((p) => p.filter((u) => u !== without))
+  const used = new Set<number>()
+  const assign = (i: number): boolean => {
+    if (i === lists.length) return true
+    for (const u of lists[i]!) {
+      if (used.has(u)) continue
+      used.add(u)
+      if (assign(i + 1)) return true
+      used.delete(u)
+    }
+    return false
+  }
+  return assign(0)
+}
+
+/**
+ * F2e acknowledger FALLBACK (user decision "option a", Q-07/Q-08, G1). Called only when the rule
+ * requires "Diketahui Oleh" by a resolved person (scope_manager / user) and that person is a
+ * requester or the creator of the request, or is missing. The EXACT rule:
+ *
+ *  1. Candidates tier 1 = every ACTIVE `pk-owner` user who is not a requester/creator.
+ *     Candidates tier 2 = every ACTIVE `pk-admin` user who is not a requester/creator.
+ *  2. A candidate X is eligible only if, after X takes "Diketahui", every approval level can still
+ *     be decided by a DIFFERENT eligible person (`approversAssignable`) — acknowledge and approve
+ *     are never the same person (e.g. the only non-requester Owner, when the approver is the Owner
+ *     role or that Owner by name, is NOT eligible to acknowledge).
+ *  3. The first tier with ≥ 1 eligible candidate wins: delegatedTo = 'owner' | 'admin', and ANY
+ *     of that tier's eligible candidates may acknowledge (fixed in the snapshot at submit).
+ *  4. No eligible candidate in either tier → null (the caller keeps the 409).
+ */
+export function resolveAckDelegation(input: {
+  excluded: ReadonlySet<number>
+  owners: readonly number[]
+  admins: readonly number[]
+  /** Eligible approvers per level, requesters/creator already removed. */
+  approverPools: ReadonlyArray<readonly number[]>
+  originalUserId: number | null
+}): AckDelegation | null {
+  const reason = input.originalUserId === null ? ACK_DELEGATION_REASON_MISSING : ACK_DELEGATION_REASON
+  const tiers: Array<[AckDelegate, readonly number[]]> = [
+    ['owner', input.owners],
+    ['admin', input.admins],
+  ]
+  for (const [to, users] of tiers) {
+    const eligible = [...new Set(users)].filter((u) => !input.excluded.has(u) && approversAssignable(input.approverPools, u))
+    if (eligible.length > 0) return { to, userIds: eligible, reason, originalUserId: input.originalUserId }
+  }
+  return null
 }
 
 export type Caller = { id: number; roles: readonly Role[] }
@@ -124,6 +211,10 @@ export function matchesStep(step: ApprovalSnapshot['steps'][number] | undefined,
 /** Caller may give "Diketahui" (US-42): the resolved user, or any holder of the role. */
 export function matchesAcknowledger(s: ApprovalSnapshot, caller: Caller): boolean {
   if (s.acknowledge === 'none') return false
+  if (s.acknowledgeDelegatedTo) {
+    // F2e delegation: one of the eligible users fixed at submit who still holds the tier's role.
+    return (s.acknowledgeDelegateUserIds ?? []).includes(caller.id) && caller.roles.includes(ACK_DELEGATE_ROLE[s.acknowledgeDelegatedTo])
+  }
   if (s.acknowledgerUserId !== null) return s.acknowledgerUserId === caller.id
   return s.acknowledgeBy === 'role' && s.acknowledgeRole !== null && caller.roles.includes(s.acknowledgeRole)
 }

@@ -84,7 +84,8 @@ export async function buildPdfData(req: PayloadRequest, requestId: number, opts:
     { label: 'Dibuat Oleh', names: pdfSafe(creatorName), images: await sig(dibuat), time: formatServerTime(dibuat?.decidedAt, tz) },
     {
       label: 'Diketahui Oleh',
-      names: pdfSafe(diketahui?.actorName ?? ''),
+      // F2e: delegated "Diketahui" (PM/penanggung jawab is a requester/creator) → the actual person + "(dilimpahkan)".
+      names: pdfSafe(diketahui?.actorName ? `${diketahui.actorName}${doc.approvalSnapshot?.acknowledgeDelegatedTo ? ' (dilimpahkan)' : ''}` : ''),
       images: diketahui?.decision === 'acknowledged' ? await sig(diketahui) : [],
       time: formatServerTime(diketahui?.decidedAt, tz),
       note: diketahui?.decision === 'rejected' ? 'DITOLAK' : undefined,
