@@ -56,13 +56,12 @@ class DraftService {
     if (issues.isNotEmpty) throw DraftValidationException(issues);
     final lines = renumber(draft.lines);
     final toSave = draft.copyWith(lines: lines, syncState: DraftSyncState.queued, lastError: null);
-    final offset = offsetString(offsetForZone(timezone));
     await lock.run(() async {
       await drafts.save(sub, toSave);
       await outbox.enqueueDraftUpsert(
         sub: sub,
         draftUuid: toSave.clientUuid,
-        payload: (includeId) => draftToSyncPayload(toSave, zoneOffset: offset, includeDraftId: includeId),
+        payload: (includeId) => draftToSyncPayload(toSave, includeDraftId: includeId),
         dependsOn: toSave.mediaUuids.toList(),
         deviceTime: isoWithOffset(clock.now()),
         elapsedMs: await clock.elapsedMs(),
@@ -74,9 +73,23 @@ class DraftService {
     return toSave;
   }
 
-  Future<void> delete(String sub, DraftRequest d) async {
+  /// Removes the draft locally; when the server already knows it, queues `draft_delete` (the
+  /// server cancels it — no hard delete, requirements §1.2 #6).
+  Future<void> delete(String sub, DraftRequest d, {required bool online}) async {
     await lock.run(() async {
+      final knownToServer = d.serverId != null || await outbox.wasApplied(sub, d.clientUuid);
       await outbox.supersede(sub, d.clientUuid);
+      if (knownToServer) {
+        await outbox.enqueueDraftDelete(
+          sub: sub,
+          draftUuid: d.clientUuid,
+          payload: draftDeletePayload(d),
+          deviceTime: isoWithOffset(clock.now()),
+          elapsedMs: await clock.elapsedMs(),
+          bootId: await clock.bootId(),
+          offline: !online,
+        );
+      }
       await drafts.softDelete(sub, d.clientUuid);
     });
   }

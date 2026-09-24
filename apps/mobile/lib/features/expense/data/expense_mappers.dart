@@ -245,16 +245,17 @@ Json lineToInput(DraftLine l) => {
   'vehicleId': l.vehicleId,
 };
 
-/// Local draft → sync item payload `expense_request.draft_upsert` (ADR 0010 "Example B").
-/// [zoneOffset] is the company display offset used to build `receipt_time` (e.g. `+08:00`).
-/// [includeDraftId] adds `draft_client_uuid` for edits queued after the first upsert (the item
-/// `client_uuid` is then a new operation id) — additive field, see the F4a report.
-Json draftToSyncPayload(DraftRequest d, {String zoneOffset = '+08:00', bool includeDraftId = false}) => {
+/// Local draft → `expense_request.draft_upsert` payload (openapi `SyncDraftUpsertPayload`, backend
+/// 0.2.1). Receipts carry the local photo id in [mediaPlaceholderKey]; the sync engine uploads the photo
+/// (`POST /media/receipts`) and replaces it with `media_id` just before sending.
+/// [includeDraftId]: edits queued after the first upsert use a new item `client_uuid`, so the draft is
+/// identified by `draft_client_uuid` (backend default = the item that created it).
+Json draftToSyncPayload(DraftRequest d, {bool includeDraftId = false}) => {
   if (includeDraftId) 'draft_client_uuid': d.clientUuid,
   'kind': d.type.code,
+  'title': d.title.trim(),
   'project_id': d.projectId,
   'cost_center_id': d.costCenterId,
-  'title': d.title.trim(),
   'needed_date': d.neededDate,
   'notes': (d.notes == null || d.notes!.trim().isEmpty) ? null : d.notes!.trim(),
   'requester_ids': d.requesterIds,
@@ -264,28 +265,69 @@ Json draftToSyncPayload(DraftRequest d, {String zoneOffset = '+08:00', bool incl
     for (final l in d.lines)
       {
         'client_uuid': l.clientUuid,
-        'no': l.no,
         'description': l.description.trim(),
         'qty': l.qty,
         'uom_id': l.uomId,
         'unit_price': l.unitPrice,
         'total': l.total,
+        'notes': (l.notes == null || l.notes!.trim().isEmpty) ? null : l.notes!.trim(),
         'category_id': l.categoryId,
         'vehicle_id': l.vehicleId,
-        'remark': (l.notes == null || l.notes!.trim().isEmpty) ? null : l.notes!.trim(),
-        'receipts': [
-          for (final r in l.receipts)
-            {
-              'client_uuid': r.clientUuid,
-              'receipt_no': r.receiptNo,
-              'vendor_name': r.vendorName.trim(),
-              'receipt_time': '${r.receiptDate}T${r.receiptTime ?? '00:00'}:00$zoneOffset',
-              'amount': r.amount,
-              'media_client_uuid': r.mediaUuid,
-            },
-        ],
+        if (d.type == RequestType.reimburse)
+          'receipts': [
+            for (final r in l.receipts)
+              {
+                'client_uuid': r.clientUuid,
+                'receipt_no': (r.receiptNo == null || r.receiptNo!.trim().isEmpty) ? null : r.receiptNo!.trim(),
+                'vendor_name': r.vendorName.trim(),
+                'receipt_date': r.receiptDate,
+                'receipt_time': r.receiptTime,
+                'amount': r.amount,
+                mediaPlaceholderKey: r.mediaUuid,
+              },
+          ],
       },
   ],
+};
+
+/// Local-only key inside a queued payload; never sent (replaced by `media_id`).
+const mediaPlaceholderKey = 'pk_media_uuid';
+
+/// Replaces [mediaPlaceholderKey] by `media_id` using [mediaIds] (local uuid → server id).
+/// Returns null when a photo has no server id yet.
+Json? resolveMediaIds(Json payload, Map<String, int> mediaIds) {
+  final lines = payload['lines'];
+  if (lines is! List) return payload;
+  final out = Map<String, dynamic>.of(payload);
+  final newLines = <Json>[];
+  for (final l in lines.cast<Json>()) {
+    final line = Map<String, dynamic>.of(l);
+    final rs = line['receipts'];
+    if (rs is List) {
+      final newRs = <Json>[];
+      for (final r in rs.cast<Json>()) {
+        final rr = Map<String, dynamic>.of(r);
+        final local = rr.remove(mediaPlaceholderKey);
+        if (local != null) {
+          final id = mediaIds[local];
+          if (id == null) return null;
+          rr['media_id'] = id;
+        }
+        newRs.add(rr);
+      }
+      line['receipts'] = newRs;
+    }
+    newLines.add(line);
+  }
+  out['lines'] = newLines;
+  return out;
+}
+
+/// `expense_request.draft_delete` payload (soft delete = cancel on the server).
+Json draftDeletePayload(DraftRequest d) => {
+  'draft_client_uuid': d.clientUuid,
+  if (d.serverId != null) 'request_id': d.serverId,
+  'reason': 'Draft dihapus dari aplikasi',
 };
 
 String offsetString(Duration d) {

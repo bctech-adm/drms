@@ -80,6 +80,9 @@ final syncEngineProvider = Provider((ref) {
     clock: ref.watch(deviceClockProvider),
     deviceId: () => device.deviceId,
     lock: ref.watch(syncLockProvider),
+    uploadMedia: (blob) => ref
+        .read(expenseApiProvider)
+        .uploadMedia('receipts', blob.bytes, filename: '${blob.clientUuid}.jpg', mime: blob.mimeType),
   );
 });
 

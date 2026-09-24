@@ -66,7 +66,7 @@ void main() {
     expect(b.containsKey('grandTotal'), isFalse, reason: 'server computes the grand total');
   });
 
-  test('draft → sync payload matches ADR 0010 Example B', () {
+  test('draft → sync payload (SyncDraftUpsertPayload, backend 0.2.1)', () {
     final p = draftToSyncPayload(seedDraft());
     expect(p['kind'], 'reimburse');
     expect(p['cost_center_id'], 7);
@@ -74,15 +74,41 @@ void main() {
     expect(p['client_grand_total'], 1447500);
     expect(p.containsKey('draft_client_uuid'), isFalse);
     final l2 = (p['lines'] as List)[1] as Map<String, dynamic>;
+    expect(l2.keys.toSet(), {
+      'client_uuid',
+      'description',
+      'qty',
+      'uom_id',
+      'unit_price',
+      'total',
+      'notes',
+      'category_id',
+      'vehicle_id',
+      'receipts',
+    });
     expect(l2['client_uuid'], '0192f6d0-aaaa-7bbb-8ccc-000000000012');
-    expect(l2['uom_id'], 4);
     final r = (l2['receipts'] as List).single as Map<String, dynamic>;
     expect(r['amount'], 676876);
-    expect(r['receipt_time'], '2026-09-20T00:00:00+08:00');
-    expect(r['media_client_uuid'], '0192f6d0-aaaa-7bbb-8ccc-000000000202');
-    final r1 = ((p['lines'] as List)[0] as Map)['receipts'] as List;
-    expect((r1.single as Map)['receipt_time'], '2026-09-21T11:42:00+08:00');
+    expect(r['receipt_date'], '2026-09-20');
+    expect(r['receipt_time'], isNull);
     expect(draftToSyncPayload(seedDraft(), includeDraftId: true)['draft_client_uuid'], seedDraft().clientUuid);
+    final adv = draftToSyncPayload(seedDraft(type: RequestType.advance));
+    expect(
+      ((adv['lines'] as List).first as Map).containsKey('receipts'),
+      isFalse,
+      reason: 'receipts only on reimburse drafts',
+    );
+  });
+
+  test('media placeholders are replaced by media_id before sending', () {
+    final p = draftToSyncPayload(seedDraft());
+    final ids = {for (final (i, m) in seedDraft().mediaUuids.indexed) m: 900 + i};
+    final resolved = resolveMediaIds(p, ids)!;
+    final r1 = (((resolved['lines'] as List).first as Map)['receipts'] as List).single as Map;
+    expect(r1['media_id'], 900);
+    expect(r1.containsKey(mediaPlaceholderKey), isFalse);
+    expect(r1['receipt_time'], '11:42');
+    expect(resolveMediaIds(p, const {}), isNull, reason: 'missing upload → cannot send');
   });
 
   test('offset string', () {

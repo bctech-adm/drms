@@ -81,6 +81,40 @@ class OutboxRepository {
     return opUuid;
   });
 
+  /// True when an operation for [target] was delivered (the server knows the draft).
+  Future<bool> wasApplied(String sub, String target) async => (await (db.select(
+    db.outbox,
+  )..where((t) => t.userSub.equals(sub) & t.targetUuid.equals(target) & t.status.equals('applied'))).get()).isNotEmpty;
+
+  Future<String> enqueueDraftDelete({
+    required String sub,
+    required String draftUuid,
+    required Map<String, dynamic> payload,
+    required String deviceTime,
+    required int elapsedMs,
+    required String bootId,
+    required bool offline,
+  }) async {
+    final opUuid = const Uuid().v7();
+    await db
+        .into(db.outbox)
+        .insert(
+          OutboxCompanion.insert(
+            opUuid: opUuid,
+            userSub: sub,
+            type: SyncItemType.expenseDraftDelete,
+            targetUuid: draftUuid,
+            payloadJson: jsonEncode(payload),
+            deviceTime: deviceTime,
+            elapsedMs: elapsedMs,
+            bootId: bootId,
+            offline: Value(offline),
+            createdAt: DateTime.now(),
+          ),
+        );
+    return opUuid;
+  }
+
   /// Items of [sub] that may be sent now, in creation order.
   Future<List<OutboxData>> due(String sub, DateTime now) =>
       (db.select(db.outbox)
@@ -142,14 +176,18 @@ class OutboxRepository {
     );
   }
 
-  static QueuedItem toQueued(OutboxData r) => QueuedItem(
+  /// Local photo ids this item needs uploaded first (kept local; the wire `depends_on` lists items).
+  static List<String> mediaDeps(OutboxData r) =>
+      (jsonDecode(r.dependsOnJson) as List<dynamic>).map((e) => '$e').toList();
+
+  static QueuedItem toQueued(OutboxData r, Map<String, dynamic> payload) => QueuedItem(
     clientUuid: r.opUuid,
     type: r.type,
-    payload: jsonDecode(r.payloadJson) as Map<String, dynamic>,
+    payload: payload,
     deviceTime: r.deviceTime,
     elapsedMs: r.elapsedMs,
+    bootId: r.bootId,
     offline: r.offline,
     baseRev: r.baseRev,
-    dependsOn: (jsonDecode(r.dependsOnJson) as List<dynamic>).map((e) => '$e').toList(),
   );
 }

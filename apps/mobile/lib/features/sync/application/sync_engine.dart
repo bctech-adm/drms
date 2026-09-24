@@ -11,6 +11,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/time/device_clock.dart';
 import '../../../core/util/async_lock.dart';
 import '../../expense/data/draft_repository.dart';
+import '../../expense/data/expense_mappers.dart';
 import '../../expense/domain/draft.dart';
 import '../data/outbox_repository.dart';
 import '../data/sync_api.dart';
@@ -40,6 +41,7 @@ class SyncEngine {
     required this.clock,
     required this.deviceId,
     required this.lock,
+    required this.uploadMedia,
     Random? random,
   }) : _random = random ?? Random();
 
@@ -50,6 +52,9 @@ class SyncEngine {
   final DeviceClock clock;
   final String Function() deviceId;
   final AsyncLock lock;
+
+  /// Uploads one receipt photo (`POST /api/v1/media/receipts`) and returns its media id.
+  final Future<int> Function(MediaBlob blob) uploadMedia;
   final Random _random;
 
   static const _lastServerKey = 'sync:last_server';
@@ -64,32 +69,30 @@ class SyncEngine {
     final due = await outbox.due(sub, now);
     if (due.isEmpty) return const SyncRunResult(SyncRunOutcome.nothingToDo);
 
-    // 1) media
+    // 1) receipt photos → POST /media/receipts (media_id), then resolve the payloads
     final ready = <OutboxData>[];
+    final payloads = <String, Map<String, dynamic>>{};
     for (final item in due) {
-      final deps = (jsonDecode(item.dependsOnJson) as List<dynamic>).map((e) => '$e').toList();
+      final mediaIds = <String, int>{};
       var ok = true;
-      for (final mediaUuid in deps) {
+      for (final mediaUuid in OutboxRepository.mediaDeps(item)) {
         final m = await drafts.media(mediaUuid);
-        if (m == null || m.uploaded) continue;
+        if (m == null) continue;
+        final known = int.tryParse(m.serverMediaId ?? '');
+        if (known != null) {
+          mediaIds[mediaUuid] = known;
+          continue;
+        }
         try {
-          await api.putMedia(m.clientUuid, m.bytes, kind: m.kind, sha256: m.sha256, mime: m.mimeType);
-          await drafts.markMediaUploaded(m.clientUuid);
+          final id = await uploadMedia(m);
+          await drafts.markMediaUploaded(m.clientUuid, serverMediaId: '$id');
+          mediaIds[mediaUuid] = id;
         } on NetworkException {
           return const SyncRunResult(SyncRunOutcome.offline);
         } on ProblemException catch (e) {
-          if (e.status == 404 || e.status == 405 || e.status == 501) {
-            await _deferAll(due, 'SYNC_UNAVAILABLE', 'Server belum mendukung sinkron offline.');
-            return const SyncRunResult(SyncRunOutcome.serverUnsupported);
-          }
-          if (e.status == 409) {
-            await outbox.setStatus(
-              item.opUuid,
-              'rejected',
-              code: 'MEDIA_CONFLICT',
-              message: 'Foto nota bentrok dengan data server.',
-            );
-            await _markDraft(item, DraftSyncState.rejected, error: 'Foto nota bentrok dengan data server.');
+          if (e.status == 413 || e.status == 400) {
+            await outbox.setStatus(item.opUuid, 'rejected', code: 'MEDIA_${e.status}', message: e.message);
+            await _markDraft(item, DraftSyncState.rejected, error: e.message);
           } else {
             await _deferOne(item, 'MEDIA_${e.status}', e.message);
           }
@@ -97,12 +100,21 @@ class SyncEngine {
           break;
         }
       }
-      if (ok) ready.add(item);
+      if (!ok) continue;
+      final resolved = resolveMediaIds(jsonDecode(item.payloadJson) as Map<String, dynamic>, mediaIds);
+      if (resolved == null) {
+        const msg = 'Foto nota tidak ditemukan di HP. Ambil ulang foto nota.';
+        await outbox.setStatus(item.opUuid, 'rejected', code: 'MEDIA_MISSING', message: msg);
+        await _markDraft(item, DraftSyncState.rejected, error: msg);
+        continue;
+      }
+      payloads[item.opUuid] = resolved;
+      ready.add(item);
     }
     if (ready.isEmpty) return const SyncRunResult(SyncRunOutcome.partial);
 
     // 2) batches
-    final plan = planBatches(ready.map(OutboxRepository.toQueued).toList());
+    final plan = planBatches([for (final r in ready) OutboxRepository.toQueued(r, payloads[r.opUuid]!)]);
     for (final o in plan.oversized) {
       await outbox.setStatus(o.clientUuid, 'rejected', code: 'TOO_LARGE', message: 'Data terlalu besar untuk dikirim.');
     }
@@ -166,6 +178,16 @@ class SyncEngine {
               serverRev: r.rev,
               error: 'Draft ini diubah di web. Versi server dipakai; versi HP disimpan sebagai salinan konflik.',
               conflictCopyJson: r.serverCopy == null ? null : jsonEncode(r.serverCopy),
+            );
+          case SyncItemStatus.unsupported:
+            // Item type not enabled on this server yet: keep queued, not counted as an attempt.
+            deferred++;
+            await outbox.defer(
+              row.opUuid,
+              row.attempts,
+              clock.now().add(const Duration(minutes: 30)),
+              code: 'UNSUPPORTED',
+              message: 'Server belum menerima jenis data ini.',
             );
           case SyncItemStatus.deferred || SyncItemStatus.unknown:
             deferred++;

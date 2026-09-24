@@ -36,7 +36,9 @@ void main() {
     clock = FakeDeviceClock(now: DateTime(2026, 9, 21, 12, 50), elapsed: 89200000, boot: 'b-7');
     final client = testClient(server.base, StaticTokens());
     final lock = AsyncLock();
+    final expenseApi = ExpenseApi(client);
     engine = SyncEngine(
+      uploadMedia: (b) => expenseApi.uploadMedia('receipts', b.bytes, filename: '${b.clientUuid}.jpg'),
       outbox: outbox,
       drafts: drafts,
       api: SyncApi(client),
@@ -95,7 +97,7 @@ void main() {
 
   test('media first, then batch; applied → synced with server id/rev; clock pair sent', () async {
     await saveSeed();
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {'status': 'stored'}));
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 900 + server.calls.length}));
     server.on(
       'POST',
       '/api/v1/sync/batch',
@@ -104,14 +106,19 @@ void main() {
     final r = await engine.run(sub);
     expect(r.outcome, SyncRunOutcome.done);
     final paths = server.pathsCalled().toList();
-    expect(paths.where((p) => p.startsWith('PUT /api/v1/sync/media/')), hasLength(3));
+    expect(paths.where((p) => p == 'POST /api/v1/media/receipts'), hasLength(3));
     expect(paths.last, 'POST /api/v1/sync/batch');
     final batchCall = server.calls.last;
     expect(batchCall.$3['idempotency-key'], isNotEmpty);
     expect(batchCall.$3['x-device-id'], '5b0c2f7e-2d1a-4e0b-8f5e-7a9d3c1b2e44');
     final sent = jsonDecode(batchCall.$4) as Map<String, dynamic>;
     expect((sent['clock'] as Map)['boot_id'], 'b-7');
-    expect((sent['items'] as List).single['depends_on'], hasLength(3));
+    final item = (sent['items'] as List).single as Map<String, dynamic>;
+    expect(item['depends_on'], isEmpty, reason: 'photos are not sync items');
+    expect(item['boot_id'], 'b-7');
+    final rec = (((item['payload'] as Map)['lines'] as List).first as Map)['receipts'] as List;
+    expect((rec.single as Map)['media_id'], greaterThan(900));
+    expect((rec.single as Map).containsKey('pk_media_uuid'), isFalse);
     final d = await drafts.load(sub, seedDraft().clientUuid);
     expect(d!.syncState, DraftSyncState.synced);
     expect(d.serverId, 77);
@@ -134,7 +141,7 @@ void main() {
 
   test('duplicate counts as delivered (replayed client_uuid)', () async {
     await saveSeed();
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 900 + server.calls.length}));
     server.on(
       'POST',
       '/api/v1/sync/batch',
@@ -146,7 +153,7 @@ void main() {
 
   test('rejected is never retried and the message is shown', () async {
     await saveSeed();
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 900 + server.calls.length}));
     server.on(
       'POST',
       '/api/v1/sync/batch',
@@ -174,7 +181,7 @@ void main() {
 
   test('deferred is retried later with back-off', () async {
     await saveSeed();
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 900 + server.calls.length}));
     server.on('POST', '/api/v1/sync/batch', (req, body) => (200, resultFor(body, 'deferred')));
     expect((await engine.run(sub)).deferred, 1);
     expect(await outbox.due(sub, clock.now()), isEmpty, reason: 'not due before the back-off');
@@ -185,7 +192,7 @@ void main() {
 
   test('conflict: server wins, local copy kept as "Salinan konflik"', () async {
     await saveSeed();
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) => (200, {}));
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 900 + server.calls.length}));
     server.on(
       'POST',
       '/api/v1/sync/batch',
@@ -209,8 +216,9 @@ void main() {
     expect(row.title, seedDraft().title, reason: 'local version is kept');
   });
 
-  test('endpoint not deployed (404) → items stay queued, outcome serverUnsupported', () async {
+  test('older server without /sync/batch (404) → items stay queued, outcome serverUnsupported', () async {
     await saveSeed();
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 901}));
     final r = await engine.run(sub);
     expect(r.outcome, SyncRunOutcome.serverUnsupported);
     final row = await (db.select(db.outbox)).getSingle();
@@ -225,19 +233,6 @@ void main() {
     expect(r.outcome, SyncRunOutcome.offline);
     final row = await (db.select(db.outbox)).getSingle();
     expect(row.attempts, 0);
-  });
-
-  test('media 409 (same uuid, other bytes) rejects the item', () async {
-    await saveSeed();
-    server.on(
-      'PUT',
-      '/api/v1/sync/media/*',
-      (req, body) => (409, {'type': 'about:blank', 'title': 'Conflict', 'status': 409}),
-    );
-    await engine.run(sub);
-    final row = await (db.select(db.outbox)).getSingle();
-    expect(row.status, 'rejected');
-    expect(row.lastErrorCode, 'MEDIA_CONFLICT');
   });
 
   test('after 20 failed attempts the item shows "Gagal dikirim" and can be retried manually', () async {
@@ -256,5 +251,74 @@ void main() {
       () => drafts.addMedia(sub, uuid: 'm2', kind: 'receipt', bytes: big, sha256: 'b'),
       throwsA(isA<QueueFullException>()),
     );
+  });
+
+  test('photo refused by the server (413) rejects the item', () async {
+    await saveSeed();
+    server.on(
+      'POST',
+      '/api/v1/media/receipts',
+      (req, body) => (413, {'type': 'about:blank', 'title': 'Too large', 'status': 413}),
+    );
+    await engine.run(sub);
+    final row = await (db.select(db.outbox)).getSingle();
+    expect(row.status, 'rejected');
+    expect(row.lastErrorCode, 'MEDIA_413');
+  });
+
+  test('unsupported: stays queued without counting an attempt', () async {
+    await saveSeed();
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 901}));
+    server.on('POST', '/api/v1/sync/batch', (req, body) => (200, resultFor(body, 'unsupported')));
+    await engine.run(sub);
+    final row = await (db.select(db.outbox)).getSingle();
+    expect(row.status, 'pending');
+    expect(row.attempts, 0);
+  });
+
+  test('replayed rejection (duplicate + original_status rejected) stays rejected', () async {
+    await saveSeed();
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 901}));
+    server.on(
+      'POST',
+      '/api/v1/sync/batch',
+      (req, body) => (
+        200,
+        resultFor(
+          body,
+          'duplicate',
+          extra: {
+            'original_status': 'rejected',
+            'errors': [
+              {'code': 'VALIDATION', 'message': 'Judul wajib.'},
+            ],
+          },
+        ),
+      ),
+    );
+    await engine.run(sub);
+    expect((await (db.select(db.outbox)).getSingle()).status, 'rejected');
+  });
+
+  test('deleting a synced draft queues draft_delete', () async {
+    await saveSeed();
+    server.on('POST', '/api/v1/media/receipts', (req, body) => (201, {'id': 901}));
+    server.on(
+      'POST',
+      '/api/v1/sync/batch',
+      (req, body) => (200, resultFor(body, 'applied', extra: {'server_id': '77', 'rev': 1})),
+    );
+    await engine.run(sub);
+    final d = (await drafts.load(sub, seedDraft().clientUuid))!;
+    await service.delete(sub, d, online: true);
+    await engine.run(sub);
+    final sent = jsonDecode(server.calls.last.$4) as Map<String, dynamic>;
+    final item = (sent['items'] as List).single as Map<String, dynamic>;
+    expect(item['type'], 'expense_request.draft_delete');
+    expect(item['payload'], {
+      'draft_client_uuid': seedDraft().clientUuid,
+      'request_id': 77,
+      'reason': 'Draft dihapus dari aplikasi',
+    });
   });
 }

@@ -1,18 +1,34 @@
 /// `GET /api/v1/app/config` (F4 backend, parsed defensively: every field optional).
 class AppConfig {
-  const AppConfig({this.minAppVersion, this.latestAppVersion, this.appDownloadUrl, this.serverTime});
+  const AppConfig({
+    this.minAppVersion,
+    this.latestAppVersion,
+    this.appDownloadUrl,
+    this.serverTime,
+    this.timezone,
+    this.pushEnabled = false,
+    this.syncExpenseDrafts = true,
+  });
   final String? minAppVersion;
   final String? latestAppVersion;
   final String? appDownloadUrl;
   final String? serverTime;
+  final String? timezone;
+  final bool pushEnabled;
+  final bool syncExpenseDrafts;
 
   factory AppConfig.fromJson(Map<String, dynamic> j) {
     String? s(String k) => j[k] is String && (j[k] as String).isNotEmpty ? j[k] as String : null;
+    final features = j['features'] is Map<String, dynamic> ? j['features'] as Map<String, dynamic> : const {};
+    // Backend 0.2.1 names (minSupportedVersion/latestVersion/downloadUrl); older names kept as fallback.
     return AppConfig(
-      minAppVersion: s('minAppVersion'),
-      latestAppVersion: s('latestAppVersion'),
-      appDownloadUrl: s('appDownloadUrl'),
+      minAppVersion: s('minSupportedVersion') ?? s('minAppVersion'),
+      latestAppVersion: s('latestVersion') ?? s('latestAppVersion'),
+      appDownloadUrl: s('downloadUrl') ?? s('appDownloadUrl'),
       serverTime: s('serverTime'),
+      timezone: s('timezone'),
+      pushEnabled: features['pushEnabled'] == true,
+      syncExpenseDrafts: features['syncExpenseDrafts'] != false,
     );
   }
 }

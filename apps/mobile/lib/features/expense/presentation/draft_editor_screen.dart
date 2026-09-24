@@ -192,7 +192,8 @@ class _DraftEditorScreenState extends ConsumerState<DraftEditorScreen> {
       ),
     );
     if (ok != true || sub == null) return;
-    await ref.read(draftServiceProvider).delete(sub, _d);
+    await ref.read(draftServiceProvider).delete(sub, _d, online: ref.read(connectivityProvider));
+    ref.read(syncCoordinatorProvider.notifier).requestSync();
     if (mounted) context.pop();
   }
 

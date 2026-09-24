@@ -4,7 +4,9 @@ import '../../../app/providers.dart';
 import '../domain/app_config.dart';
 
 /// Fetched once at start (before login). Null = endpoint missing/unreachable → app continues.
-final appConfigProvider = FutureProvider<AppConfig?>((ref) => ref.watch(appConfigApiProvider).fetch());
+final appConfigProvider = FutureProvider<AppConfig?>(
+  (ref) => ref.watch(appConfigApiProvider).fetch(version: ref.watch(deviceIdentityProvider).appVersion),
+);
 
 final versionGateProvider = Provider<VersionGate>((ref) {
   if (ref.watch(upgradeRequiredProvider) != null) return VersionGate.updateRequired;

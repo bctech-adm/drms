@@ -14,6 +14,7 @@ enum SyncItemStatus {
   rejected,
   conflict,
   deferred,
+  unsupported,
   unknown;
 
   static SyncItemStatus fromCode(String? c) =>
@@ -48,9 +49,15 @@ class SyncItemResult {
   final List<SyncError> errors;
   final Map<String, dynamic>? serverCopy;
 
+  /// A `duplicate` replays the first result; a replayed rejection/conflict keeps that meaning.
   factory SyncItemResult.fromJson(Map<String, dynamic> j) => SyncItemResult(
     clientUuid: '${j['client_uuid']}',
-    status: SyncItemStatus.fromCode(j['status'] as String?),
+    status: switch ((j['status'], j['original_status'])) {
+      ('duplicate', 'rejected') => SyncItemStatus.rejected,
+      ('duplicate', 'conflict') => SyncItemStatus.conflict,
+      (final String s, _) => SyncItemStatus.fromCode(s),
+      _ => SyncItemStatus.unknown,
+    },
     serverId: j['server_id']?.toString(),
     rev: (j['rev'] as num?)?.toInt(),
     receivedAt: j['received_at'] as String?,
@@ -88,6 +95,7 @@ class QueuedItem {
     required this.payload,
     required this.deviceTime,
     required this.elapsedMs,
+    this.bootId,
     this.offline = true,
     this.baseRev,
     this.dependsOn = const [],
@@ -98,6 +106,7 @@ class QueuedItem {
   final Map<String, dynamic> payload;
   final String deviceTime;
   final int elapsedMs;
+  final String? bootId;
   final bool offline;
   final int? baseRev;
   final List<String> dependsOn;
@@ -109,6 +118,7 @@ class QueuedItem {
     'offline': offline,
     'device_time': deviceTime,
     'elapsed_ms': elapsedMs,
+    'boot_id': ?bootId,
     'base_rev': baseRev,
     'depends_on': dependsOn,
     'payload': payload,
@@ -195,6 +205,9 @@ String rejectionMessage(List<SyncError> errors) {
     'NOT_EDITABLE' => 'Draft sudah tidak bisa diubah (sudah diajukan atau bukan milik Anda).',
     'MEDIA_MISSING' => 'Foto nota belum diterima server.',
     'VALIDATION' => null,
+    'FORBIDDEN' => 'Anda tidak berhak mengubah draft ini.',
+    'NOT_FOUND' => 'Draft tidak ditemukan di server.',
+    'CLIENT_UUID_CONFLICT' => 'ID data bentrok dengan data lain. Buat draft baru.',
     'NOT_ASSIGNED' => 'Anda tidak ditugaskan di project/pusat biaya ini.',
     'FEATURE_DISABLED' => 'Sinkronisasi offline sedang dinonaktifkan. Kirim saat online.',
     _ => null,

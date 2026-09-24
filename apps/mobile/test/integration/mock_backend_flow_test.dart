@@ -39,14 +39,21 @@ class FakeBackend {
   bool syncDown = false;
 
   void install() {
-    server.on('PUT', '/api/v1/sync/media/*', (req, body) {
-      final uuid = req.uri.pathSegments.last;
-      final sha = RegExp(r'name="sha256"\r\n\r\n([^\r]+)').firstMatch(body)?.group(1);
-      if (media.containsKey(uuid) && media[uuid] != sha) {
-        return (409, {'type': 'about:blank', 'title': 'Conflict', 'status': 409});
-      }
-      media[uuid] = sha ?? '';
-      return (200, {'client_uuid': uuid, 'media_id': 'm-$uuid', 'status': 'stored'});
+    server.on('POST', '/api/v1/media/receipts', (req, body) {
+      final id = 900 + media.length + 1;
+      media['$id'] = 'uploaded';
+      return (
+        201,
+        {
+          'id': id,
+          'kind': 'receipts',
+          'mimeType': 'image/jpeg',
+          'filesize': 10,
+          'width': 1,
+          'height': 1,
+          'sha256Original': null,
+        },
+      );
     });
     server.on('POST', '/api/v1/sync/batch', (req, body) {
       if (syncDown) return (503, {'type': 'about:blank', 'title': 'Unavailable', 'status': 503});
@@ -59,7 +66,11 @@ class FakeBackend {
           results.add({...stored, 'status': 'duplicate'});
           continue;
         }
-        final missing = (item['depends_on'] as List).where((m) => !media.containsKey(m));
+        final ids = [
+          for (final l in ((item['payload'] as Map)['lines'] as List? ?? const []))
+            for (final r in ((l as Map)['receipts'] as List? ?? const [])) '${(r as Map)['media_id']}',
+        ];
+        final missing = ids.where((m) => !media.containsKey(m));
         if (missing.isNotEmpty) {
           results.add({
             'client_uuid': id,
@@ -114,6 +125,7 @@ void main() {
     expenseApi = ExpenseApi(client);
     approvals = ApprovalsApi(client);
     engine = SyncEngine(
+      uploadMedia: (b) => expenseApi.uploadMedia('receipts', b.bytes, filename: '${b.clientUuid}.jpg'),
       outbox: outbox,
       drafts: drafts,
       api: syncApi,
@@ -161,9 +173,11 @@ void main() {
           {'minAppVersion': '0.2.0', 'latestAppVersion': '0.3.0', 'appDownloadUrl': 'https://example.test/apk'},
         ),
       );
-      final cfg = await AppConfigApi(testClient(server.base, StaticTokens())).fetch();
+      final cfg = await AppConfigApi(testClient(server.base, StaticTokens())).fetch(version: '0.1.0');
+      expect(server.calls.single.$2, '/api/v1/app/config');
       expect(evaluateVersion('0.1.0', cfg), VersionGate.updateRequired);
-      expect(cfg!.appDownloadUrl, 'https://example.test/apk');
+      expect(cfg!.pushEnabled, isFalse);
+      expect(cfg.appDownloadUrl, 'https://example.test/apk');
     });
   });
 
@@ -172,7 +186,7 @@ void main() {
     backend.syncDown = true;
     final r1 = await engine.run(sub);
     expect(r1.deferred, 1);
-    expect(backend.media, hasLength(3), reason: 'media uploaded before the batch');
+    expect(backend.media, hasLength(3), reason: 'photos uploaded (POST /media/receipts) before the batch');
 
     backend.syncDown = false;
     // Back-off not elapsed → nothing due yet; force due by retrying the "failed" path manually.
@@ -196,7 +210,6 @@ void main() {
           payload: const {},
           deviceTime: '2026-09-21T12:50:00+08:00',
           elapsedMs: 1,
-          dependsOn: seedDraft().mediaUuids.toList(),
         ),
       ],
     );
