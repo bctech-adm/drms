@@ -188,7 +188,10 @@
   (today Payload renders a 200 shell that leaks only page titles, no data); settlement reversal (void of
   refund KM / shortfall transfer currently 409); signed/time-limited media URLs (ADR 0004 §4); prod compose
   + GHCR push/deploy jobs; container uid not mapped to a host user for prod secrets; `PUSH_FCM_ENABLED` in
-  the env schema (F4).
+  the env schema (F4); **self-involvement guard for Finance receipt verification** (today Finance could verify
+  receipts of a Reimburse where Finance is requester/creator — found in F2d review, 2026-09-24); Payload 3.90.1
+  admin form-state race (adding an array row while a form-state request is pending leaves a skeleton row —
+  file upstream issue; UI hint added in F2d).
 - **Dependencies:** F2–F5.
 - **Agents / estimate:** qa-security 6–9 pd · nextjs-developer 4–6 pd · flutter-developer 2–3 pd ·
   docs-versioning 4–6 pd · infra-engineer 1–2 pd · analyst 1–2 pd → **18–28 pd**.
