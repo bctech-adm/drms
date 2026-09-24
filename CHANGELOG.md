@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `expense_requests.sync_rev`, `receipts.client_uuid`, company-settings gate fields) and
   `20260924_025115_f4_security` (table `sync_receipts`, immutable `receipts.client_uuid`) — additive.
 
+## [0.2.1] - 2026-09-24
+
+### Fixed
+- OpenAPI documents regenerated for the release version (the 0.2.0 bump missed `gen:openapi`, which failed the
+  CI drift check). No code change.
+
 ## [0.2.0] - 2026-09-24
 
 F2 expense-request flow (F2a–F2e) — GATE F2 approved by the user 2026-09-24 after browser UAT on staging (run 4: 56 PASS, 2 FAIL non-blocking, 1 not testable; `docs/proyekkas/uat/f2-uat-report.md`).
