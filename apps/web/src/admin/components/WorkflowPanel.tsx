@@ -124,6 +124,14 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
         ) : (
           <div>Tidak ada aksi lanjutan (status akhir).</div>
         )}
+        {d.type === 'reimburse' && d.allowedActions.includes('verify_receipts') ? (
+          // F2d: Finance verifies Reimburse receipts in the Antrian Transfer view (US-39).
+          <div style={{ marginTop: 6 }}>
+            <a href={`/admin/antrian-transfer#reimburse-${d.id}`} data-pk-link="receipt-review">
+              Verifikasi nota Reimburse (Antrian Transfer) →
+            </a>
+          </div>
+        ) : null}
         {d.rejectReason ? <div style={{ marginTop: 6, color: 'var(--theme-error-500)' }}>Alasan ditolak: {d.rejectReason}</div> : null}
         {d.cancelReason ? <div style={{ marginTop: 6 }}>Alasan batal: {d.cancelReason}</div> : null}
         {d.approvals.length > 0 ? (

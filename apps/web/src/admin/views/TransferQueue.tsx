@@ -5,6 +5,7 @@ import { transferQueue } from '@/domain/expense/queues'
 import { withReqTransaction } from '@/lib/system-tx'
 
 import { MoneyForm } from '../components/MoneyForm'
+import { ReimburseReceiptReview, loadReimburseReview } from '../components/ReimburseReceiptReview'
 import { Empty, Forbidden, Shell, allowed, badge, docLink, num, rp, table, td, th } from './shared'
 
 /**
@@ -15,7 +16,7 @@ import { Empty, Forbidden, Shell, allowed, badge, docLink, num, rp, table, td, t
 export async function TransferQueue(props: AdminViewServerProps) {
   const req = props.initPageResult.req
   if (!allowed(req, ['pk-finance', 'pk-owner'])) return <Forbidden props={props} title="Antrian Transfer" roles={['pk-finance', 'pk-owner']} />
-  const items = await withReqTransaction(req, () => transferQueue(req))
+  const { items, review } = await withReqTransaction(req, async () => ({ items: await transferQueue(req), review: await loadReimburseReview(req) }))
   const canTransfer = allowed(req, ['pk-finance'])
   const accounts = canTransfer
     ? (
@@ -24,6 +25,8 @@ export async function TransferQueue(props: AdminViewServerProps) {
     : []
   return (
     <Shell props={props} title={`Antrian Transfer (${items.length})`}>
+      <ReimburseReceiptReview data={review} />
+      <h2>Siap ditransfer ({items.length})</h2>
       {items.length === 0 ? (
         <Empty text="Antrian transfer kosong." />
       ) : (
