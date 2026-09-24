@@ -102,7 +102,7 @@ export const DeviceRegister = z
     platform: z.literal('android'),
     model: z.string().max(128).optional(),
     appVersion: z.string().regex(/^[0-9A-Za-z.+-]{1,32}$/).optional(),
-    fcmToken: z.string().max(4096).optional(),
+    fcmToken: z.string().min(1).max(4096).nullable().optional().meta({ description: 'FCM token (ADR 0011); null clears it, omitted keeps it. Push is not enabled yet (GET /app/config features.pushEnabled).' }),
   })
   .strict()
   .meta({ id: 'DeviceRegister' })

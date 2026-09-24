@@ -927,13 +927,35 @@ per request, audit source `job` (`domain/expense/auto-close.ts`). `complete` sta
 implements the same submit / acknowledge / withdraw / approve / reject / cancel front part and
 `Disetujui (Antri Transfer) → Ditransfer` with void back; the receipt/LPJ part is F2b.
 
-**Onboarding prerequisite (Q-07 default).** The seeded default approval rule ("Default — Owner (semua
-nominal)", `apps/web/src/seed/data.ts`) has `acknowledge: 'required'`, `acknowledgeBy: 'scope_manager'`.
-At submit the acknowledger is resolved from the project's PM or the cost center's manager
-(`domain/expense/snapshot.ts`); if none is set (or it is a requester/creator, Q-08) **submit returns 409**
-(`Pihak "Diketahui Oleh" tidak dapat ditentukan…`). Staging and every client onboarding must therefore set
-the PM on each project and the manager on each cost center (or change the rule) before requests can be
-submitted.
+**Acknowledger resolution and delegation (Q-07 default + F2e, user decision 2026-09-24 option a).** The seeded
+default approval rule ("Default — Owner (semua nominal)", `apps/web/src/seed/data.ts`) has
+`acknowledge: 'required'`, `acknowledgeBy: 'scope_manager'`. At submit (`domain/expense/snapshot.ts`) the
+acknowledger is resolved from the project's PM or the cost center's manager (or the rule's named user). If that
+person is a **requester or the creator** (Q-08), or is **missing**, "Diketahui" is **delegated** instead of
+refusing the submit (`rules.ts` `resolveAckDelegation`):
+1. tier 1 = every active `pk-owner` who is not a requester/creator; tier 2 = every active `pk-admin` likewise;
+2. a candidate is eligible only if every approval level can still be decided by a **different** eligible
+   person once the candidate holds "Diketahui" (`approversAssignable`, exact distinct-person matching;
+   acknowledge ≠ approve — e.g. the only Owner who must also approve is not eligible);
+3. the first tier with ≥ 1 eligible candidate wins; **any** of its eligible users may acknowledge — the set is
+   **fixed at submit** in the snapshot (`acknowledgeDelegatedTo` `owner|admin`, `acknowledgeDelegateUserIds`,
+   `acknowledgeDelegationReason`, `acknowledgeOriginalUserId`; absent on pre-F2e snapshots = not delegated).
+   At acknowledge time the caller must be in that set **and** still hold the tier's role (`matchesAcknowledger`);
+4. nobody eligible → submit still returns **409** (`Pihak "Diketahui Oleh" tidak dapat ditentukan…`).
+
+The submit writes an audit row **`acknowledge_delegated`** (old = skipped user id, new = tier, delegate ids,
+cycle; reason printed); the "Diketahui" approval row and its audit carry `delegatedTo` and the reason
+`dilimpahkan ke <role>: …`; the PDF prints the actual acknowledger followed by **"(dilimpahkan)"**
+(`pdf/data.ts`). A rule step whose named approver is a requester/creator is still a 409 (G1), checked before
+the acknowledger. Onboarding should still set PM/cost-center managers so that delegation stays the exception.
+
+**Finance receipt verification in the panel (F2d).** Reimburse requests in "Disetujui" (to verify) and
+"Revisi Nota" (waiting for the requester) are listed at the top of **Antrian Transfer**
+(`admin/components/ReimburseReceiptReview.tsx`): per receipt Valid / Tolak (reason), open flags "sudah
+diperiksa", then "Verifikasi semua nota" → "Nota Terverifikasi (Antri Transfer)"; the transfer table below
+lists only transfer-ready requests. Buttons follow the DTO `allowedActions`; the service guard is authoritative.
+The nav badge counts both. "Pengajuan ulang dari" shows the previous request's **number** and title (F2e,
+`admin/components/ResubmitOfField.tsx`, read with the viewer's own access).
 
 **Business dates** (`requestDate`, `neededDate`, `periodFrom/To`, `transferDate`, receipt dates,
 `entryDate`, …) are stored as **text `YYYY-MM-DD`** in the company TZ (`collections/fields-f2.ts`
@@ -988,7 +1010,7 @@ current budget + addition` (not the snapshot).
 
 | # | Guard | Where enforced |
 |---|---|---|
-| G1 | Requester (any listed requester employee's user) and creator **cannot approve** their own request; no user may hold two decision levels on one document | service + `approvals` beforeChange hook |
+| G1 | Requester (any listed requester employee's user) and creator **cannot acknowledge, approve or reject** their own request; no user may hold two decision positions on one document (DB unique index `approvals_one_position_per_person`). F2e: denied attempts → 403 + `access_denied` audit row written in its own transaction (`requireActionAudited`) | service + `approvals` hook/DB trigger + audit |
 | G2 | Approver must match the rule step (role/user) for the current level; rule chosen by amount/category/project at submit and snapshotted | service |
 | G3 | **Finance cannot change the approved amount**: transfer amount is copied from `approvedAmount` server-side; any change to lines/total after approval returns the request to Menunggu Approval (reimburse) or is rejected (advance) | service + field access (`approvedAmount`, `lines` update=false after approval) |
 | G4 | **No hard delete**: `access.delete = () => false` on all business collections; DB role has no DELETE on Class A/B tables; `beforeDelete` logs `delete_attempt` | Payload + DB (ADR 0006) |
@@ -1004,6 +1026,20 @@ current budget + addition` (not the snapshot).
 | G14 | Progress report editable ≤ 24 h by its reporter, reason required (§8 T11) | service + trigger |
 | G15 | Idempotency: every mutating `/api/v1` call with `Idempotency-Key` returns the first result on retry | API layer |
 | G16 | Inactive user / revoked device / revoked web session → 401 on every request | auth strategies |
+| G17 | **Finance self-involvement (F2e):** a Finance user who is requester or creator of a request cannot verify/reject its receipts, review its flags, verify all receipts, request LPJ revision, verify the LPJ or settle (`state.ts` `FINANCE_SELF_GUARDED`) → 403 + `access_denied` audit; another Finance user must act | service + DB triggers `receipts_self_verify_guard`, `receipt_flags_self_review_guard` (function `pk_request_involves`, SQLSTATE 42501; LPJ/settle: service only) |
+
+**Guard order (UAT run 4, F2e):** the state check runs before G1 — e.g. `approve` on a request still in
+"Menunggu Diketahui" returns **409** (wrong state) even when the caller is also a requester; the action is
+refused either way. Returning 403 first is a wording item in the F6 backlog.
+
+**Logging of refusals (F2e):** operational 4xx (403/404/409 from `APIError`/domain `fail()`) are logged at
+**warn**, real 5xx stay **error** (`lib/logger.ts` pino `hooks.logMethod`), so guard refusals do not raise
+error alerts.
+
+**Field visibility (F2e, UI only; access control unchanged):** `expense-requests.approvalRule` and
+`approvalSnapshot` are rendered only for Admin/Owner/Finance (roles that can read `approval-rules`);
+`receipts.vendor` (master relationship) is hidden for staff-only users — the inputs otherwise queried
+collections those users cannot read (403 noise).
 
 ### 5.6 Receipt validation flags (lead prompt #7 — flag, never block)
 `amount_diff` (|receipt − line total| > tolerance; per-line sum of receipts), `date_after_request` /
@@ -1069,7 +1105,8 @@ POST /api/v1/attendance/check-in | /check-out | /on-behalf (PM) | POST /api/v1/a
 GET  /api/v1/attendance/today?project= | GET /api/v1/attendance/me?month=
 POST /api/v1/progress-reports (multipart ≤5 photos) | PATCH /api/v1/progress-reports/{id}
 POST /api/v1/budget-addenda | /{id}/submit | /approve | /reject
-POST /api/v1/sync/batch                               (offline queue replay — contract in ADR 0010)
+POST /api/v1/sync/batch                               (offline queue replay — contract in ADR 0010; implemented F4: drafts + receipts)
+GET  /api/v1/app/config                               (PUBLIC app gate: versions, download URL, TZ, feature flags — F4)
 GET  /api/v1/notifications | GET /api/v1/notifications/{id|uuid} | POST /api/v1/notifications/{id}/read | POST /api/v1/notifications/read-all
 GET  /api/v1/media/{collection}/{id}/file[?variant=thumb]   (as implemented F2b; signed exp/sig NOT implemented — F6)
 GET  /api/v1/dashboard/{owner|finance|pm|staff}
@@ -1348,3 +1385,10 @@ measurement gate is F1 (idle) and F6 (load).
   `view_sensitive`), notifications endpoints, transfer-void path as implemented. §7.2: `pk-staff` panel access with
   restricted nav, self-service signature, admin requester actions via `/api/v1` + `Idempotency-Key`, admin REST
   create runs `validateContent` (security fix). §9.2 signed URLs still open; §9.3 PDF as implemented (ADR 0008).
+- **2026-09-24 (F2d/F2e, UAT fixes):** verified against `develop` `e9c07ab`. §5.2: acknowledger delegation to
+  Owner/Admin (user decision 2026-09-24, option a; replaces the "submit 409 until PM is set" prerequisite except
+  when nobody qualifies), snapshot fields, `acknowledge_delegated` audit, PDF "(dilimpahkan)"; Finance Reimburse
+  receipt verification in Antrian Transfer (F2d); resubmit shows the old number. §5.5: G1 extended to
+  acknowledge/reject with `access_denied` audit; new G17 Finance self-involvement (DB triggers
+  `pk_request_involves`); guard order 409-before-403 noted; operational 4xx logged at warn; office-only fields
+  hidden for Staff/PM. UAT evidence: `uat/f2-uat-report.md`.

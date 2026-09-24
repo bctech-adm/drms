@@ -62,6 +62,8 @@ export type AuditRow = {
   statusFrom?: string
   statusTo?: string
   reason?: string
+  /** Device wall clock of an offline action (comparison only; server_time stays authoritative). */
+  deviceTime?: string
 }
 
 type UserLike = { id?: unknown; roles?: unknown } | null | undefined
@@ -107,6 +109,7 @@ export async function writeAudit(req: PayloadRequest, rows: AuditRow[], user?: U
         appVersion: meta.appVersion,
         ip: meta.ip,
         deviceId: meta.deviceId,
+        deviceTime: row.deviceTime,
       },
       req,
       depth: 0,

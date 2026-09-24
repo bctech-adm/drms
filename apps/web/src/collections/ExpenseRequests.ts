@@ -70,6 +70,7 @@ const beforeChange: CollectionBeforeChangeHook = async ({ data, originalDoc, ope
       d.source = requestMeta(req).source
       d.approvalCycle = 0
       d.transferredTotal = 0
+      d.syncRev = 1
     }
     const reqs = Array.isArray(d.requesters) ? d.requesters : []
     const emp = relId((req.user as { employee?: unknown } | null)?.employee)
@@ -82,11 +83,17 @@ const beforeChange: CollectionBeforeChangeHook = async ({ data, originalDoc, ope
     if (!transition && prev.status && !isContentEditable(prev.status)) {
       throw new APIError(`Pengajuan berstatus "${STATUS_LABELS[prev.status]}" tidak dapat diubah.`, 409, null, true)
     }
+    // F4 (ADR 0010 sync contract): `syncRev` counts content edits of an editable request; the APK
+    // sends it back as `base_rev` and a stale offline edit becomes a `conflict` (server wins).
+    // Transitions never bump it (a locked row may not change outside the guard whitelist).
+    if (!transition && prev.status && isContentEditable(prev.status)) {
+      d.syncRev = (typeof prev.syncRev === 'number' ? prev.syncRev : 1) + 1
+    }
     if (!transition && prev.status === 'receipt_revision') {
       // "Revisi Nota": only line amounts/descriptions and notes may change (type, scope,
       // requesters and bank account were approved and stay).
       const changed = Object.keys(d).filter(
-        (k) => !['lines', 'notes', 'changeReason'].includes(k) && JSON.stringify(normalizeValue(d[k])) !== JSON.stringify(normalizeValue(prev[k])),
+        (k) => !['lines', 'notes', 'changeReason', 'syncRev'].includes(k) && JSON.stringify(normalizeValue(d[k])) !== JSON.stringify(normalizeValue(prev[k])),
       )
       if (changed.length > 0) throw new APIError(`Saat Revisi Nota hanya baris item yang dapat diubah (${changed.join(', ')}).`, 409, null, true)
     }
@@ -291,6 +298,14 @@ export const ExpenseRequests: CollectionConfig = withAudit(
       },
       { name: 'cancelReason', type: 'text', label: 'Alasan batal', access: system, admin: ro },
       { name: 'rejectReason', type: 'text', label: 'Alasan ditolak', access: system, admin: ro },
+      {
+        name: 'syncRev',
+        type: 'number',
+        label: 'Revisi isi (sinkronisasi APK)',
+        defaultValue: 1,
+        access: system,
+        admin: { ...ro, hidden: true },
+      },
       { name: 'clientUuid', type: 'text', label: 'Client UUID (APK offline)', unique: true, index: true, access: { update: fieldNever }, admin: { ...ro, hidden: true } },
       {
         name: 'source',
@@ -306,7 +321,7 @@ export const ExpenseRequests: CollectionConfig = withAudit(
   {
     docType: 'expense_request',
     // lines: per-line rows (auditLines); docNo: `number_issued` row written by allocateDocNo().
-    exclude: ['lines', 'docNo', 'contentHash', 'approvalSnapshot', 'currentLevel', 'approvalCycle', 'submittedAt'],
+    exclude: ['lines', 'docNo', 'contentHash', 'approvalSnapshot', 'currentLevel', 'approvalCycle', 'submittedAt', 'syncRev'],
     docNo: (doc) => (typeof doc.docNo === 'string' ? doc.docNo : undefined),
     reasonRules: [reasonOnChange(['cancelReason'], 'Alasan wajib diisi saat membatalkan.')],
     actionFor: (c) => (c.field === 'status' ? 'status_change' : undefined),

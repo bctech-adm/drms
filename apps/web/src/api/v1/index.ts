@@ -10,6 +10,8 @@ import { mediaFileEndpoint, uploadMediaEndpoint } from './endpoints/media'
 import { NOTIFICATION_ENDPOINTS } from './endpoints/notifications'
 import { meEndpoint } from './endpoints/me'
 import { openapiEndpoint } from './endpoints/openapi'
+import { appConfigEndpoint } from './endpoints/app'
+import { syncBatchEndpoint } from './endpoints/sync'
 
 /** Root custom endpoints served at /api/v1/* (architecture §6.1/§6.3). */
 export const v1Endpoints: Endpoint[] = [
@@ -30,4 +32,7 @@ export const v1Endpoints: Endpoint[] = [
   // F2b: scoped file download (APK), in-app notifications
   mediaFileEndpoint,
   ...NOTIFICATION_ENDPOINTS,
+  // F4: APK backend (ADR 0010): app version gate (public) + offline queue replay
+  appConfigEndpoint,
+  syncBatchEndpoint,
 ]

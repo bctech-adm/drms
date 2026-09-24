@@ -329,6 +329,14 @@ export const ExpenseRequestDetail = ExpenseRequestListItem.extend({
   rejectReason: z.string().nullable(),
   clientUuid: z.string().nullable(),
   createdAt: z.string().nullable(),
+  rev: z.number().int().meta({ description: 'Content revision (sync `base_rev` for offline edits of a draft, ADR 0010).' }),
+  timeline: z
+    .array(z.object({ status: RequestStatusEnum, label: z.string(), state: z.enum(['done', 'current', 'todo']) }))
+    .meta({ description: 'Status path of the request type with done / current / todo marks (US-05).' }),
+  nextActor: z
+    .object({ who: z.string(), what: z.string() })
+    .nullable()
+    .meta({ description: '"Giliran": who is expected to act next and what (display text, Bahasa Indonesia); null when finished.' }),
 }).meta({ id: 'ExpenseRequestDetail' })
 
 export const LpjSubmitBody = z

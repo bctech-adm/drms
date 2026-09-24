@@ -90,6 +90,20 @@ export function smtpConfigOf(env: SmtpFieldsOut & { APP_URL?: string }): SmtpCon
   }
 }
 
+/**
+ * Android App Links (ADR 0003 §1 redirect `https://<pk-host>/app/callback`, ADR 0010 decision 3):
+ * SHA-256 fingerprints of the APK signing certificate(s), comma separated, `AA:BB:…` (32 bytes).
+ * Normalised to upper case; empty = none (assetlinks.json then serves `[]`).
+ */
+const CERT_FP_RE = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/
+export function parseCertFingerprints(value: string | undefined): string[] | null {
+  const list = (value ?? '')
+    .split(',')
+    .map((v) => v.trim().toUpperCase())
+    .filter(Boolean)
+  return list.every((v) => CERT_FP_RE.test(v)) ? [...new Set(list)] : null
+}
+
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('production'),
@@ -118,6 +132,16 @@ export const envSchema = z
     AUTH_COOKIE_INSECURE: bool,
     MEDIA_DIR: z.string().startsWith('/').default('/data/media'),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+    /** Android application id of the APK (ADR 0010 decision 1 proposal; client to confirm the domain). */
+    ANDROID_APP_PACKAGE: z
+      .string()
+      .regex(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/, 'must be an Android application id')
+      .default('id.co.drms.proyekkas'),
+    ANDROID_APP_CERT_SHA256: z
+      .string()
+      .default('')
+      .refine((v) => parseCertFingerprints(v) !== null, 'comma separated SHA-256 fingerprints AA:BB:… (32 bytes)')
+      .transform((v) => parseCertFingerprints(v) ?? []),
     ...smtpFields,
   })
   .superRefine((env, ctx) => {
