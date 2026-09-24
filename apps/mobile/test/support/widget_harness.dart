@@ -1,0 +1,79 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:proyekkas/app/providers.dart';
+import 'package:proyekkas/core/connectivity/connectivity_controller.dart';
+import 'package:proyekkas/core/storage/secure_store.dart';
+import 'package:proyekkas/features/auth/application/auth_controller.dart';
+import 'package:proyekkas/features/auth/domain/user_profile.dart';
+import 'package:proyekkas/l10n/gen/app_localizations.dart';
+
+import 'harness.dart';
+
+class FakeConnectivity extends ConnectivityController {
+  FakeConnectivity(this.initial);
+  final bool initial;
+  @override
+  bool build() => initial;
+}
+
+class FakeAuth extends AuthController {
+  FakeAuth(this.initial);
+  final AuthState initial;
+  @override
+  AuthState build() => initial;
+}
+
+UserProfile profile(Set<Role> roles) => UserProfile(
+  id: 5,
+  email: 'doni@example.test',
+  name: 'Doni Pratama',
+  roles: roles,
+  employee: const Employee(id: 12, code: 'E12', name: 'Doni Pratama'),
+);
+
+Future<void> pumpScreen(
+  WidgetTester tester,
+  Widget child, {
+  bool online = true,
+  AuthState? auth,
+  List<Override> overrides = const [],
+}) async {
+  await initializeDateFormatting('id');
+  tester.view.physicalSize = const Size(1200, 3200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+  final db = memoryDb();
+  addTearDown(db.close);
+  await tester.pumpWidget(
+    ProviderScope(
+      retry: (_, _) => null,
+      overrides: [
+        appEnvProvider.overrideWithValue(testEnv('https://example.test')),
+        secureStoreProvider.overrideWithValue(MemorySecureStore()),
+        deviceIdentityProvider.overrideWithValue(testDevice()),
+        databaseProvider.overrideWithValue(db),
+        connectivityProvider.overrideWith(() => FakeConnectivity(online)),
+        authControllerProvider.overrideWith(
+          () => FakeAuth(auth ?? AuthSignedIn(profile: profile({Role.staff}), sub: 'user-sub-1')),
+        ),
+        ...overrides,
+      ],
+      child: MaterialApp(
+        locale: const Locale('id'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: child,
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
