@@ -1,7 +1,7 @@
 # ProyekKas F3: wireframe dashboard, laporan, dan audit log (low-fi)
 
-- **Status:** proposed. **Prototipe HTML klien tidak tersedia**, jadi seluruh tata letak ini adalah usulan Analyst dan
-  perlu disetujui user sebelum build (phase-plan F3).
+- **Status:** accepted (user 2026-09-24, semua default Q-F3-1…8), implemented di `feat/nextjs-f3-dashboards`.
+  Prototipe HTML klien tidak tersedia; tata letak ini adalah usulan Analyst yang disetujui user.
 - **Tanggal:** 2026-09-24 · **Penulis:** Analyst · **Basis:** `develop` `e9c07ab`
 - Angka di wireframe adalah **contoh fiktif** ("Proyek Uji" `UJI-PRJ`, pusat biaya "Ops Palangka Banjar", akun "Kas Kecil"/"Bank Operasional").
   Setiap angka mengikuti definisi di `kpi-definitions.md` (kode `K-xx`).

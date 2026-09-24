@@ -4,7 +4,7 @@ import type { PayloadRequest } from 'payload'
 import { AUDIT_ACTIONS, type AuditAction } from '@/audit/writer'
 import { addDays, isBusinessDate } from '@/domain/expense/types'
 
-import { num, reportContext, rows } from './kpi'
+import { inSequence, num, reportContext, rows } from './kpi'
 import { daysBetween } from './rules'
 import type { SQL } from './scope'
 
@@ -156,10 +156,10 @@ export async function auditLogCount(req: PayloadRequest, f: AuditFilter): Promis
 
 /** Filter dropdowns: users that appear in the log, document types in use. */
 export async function auditFilterOptions(req: PayloadRequest) {
-  const [users, types] = await Promise.all([
-    rows(req, sql`SELECT u.id, coalesce(e.name, u.name, u.email) AS name FROM users u LEFT JOIN employees e ON e.id = u.employee_id ORDER BY 2`),
-    rows(req, sql`SELECT DISTINCT doc_type FROM audit_logs ORDER BY 1`),
-  ])
+  const [users, types] = await inSequence(
+    () => rows(req, sql`SELECT u.id, coalesce(e.name, u.name, u.email) AS name FROM users u LEFT JOIN employees e ON e.id = u.employee_id ORDER BY 2`),
+    () => rows(req, sql`SELECT DISTINCT doc_type FROM audit_logs ORDER BY 1`),
+  )
   return {
     users: users.map((x) => ({ value: String(x.id), label: String(x.name) })),
     docTypes: types.map((x) => ({ value: String(x.doc_type), label: String(x.doc_type) })),

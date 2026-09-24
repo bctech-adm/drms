@@ -28,6 +28,16 @@ export async function rows<T extends Row = Row>(req: PayloadRequest, query: SQL)
   return ((await tx.execute(query)) as unknown as { rows: T[] }).rows
 }
 
+/**
+ * Runs the queries ONE AFTER ANOTHER. All of them use the same request-transaction connection; pg
+ * queues parallel queries on one client but warns (removed in pg@9), so no Promise.all here.
+ */
+export async function inSequence<T extends unknown[]>(...fns: { [K in keyof T]: () => Promise<T[K]> }): Promise<T> {
+  const out: unknown[] = []
+  for (const fn of fns) out.push(await fn())
+  return out as T
+}
+
 export const num = (v: unknown): number => (v === null || v === undefined ? 0 : Number(v))
 const numOrNull = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v))
 
@@ -479,18 +489,18 @@ export async function requestRows(req: PayloadRequest, scope: ReportScope, f: Re
 /** K-13 aggregates: per status, per type, per category (distinct requests, Σ line totals). */
 export async function requestSummary(req: PayloadRequest, scope: ReportScope, f: RequestFilter) {
   const base = sql`${requestScopeSql(scope)} AND ${requestFilterSql(f)}`
-  const [byStatus, byType, byCategory, total] = await Promise.all([
-    rows(req, sql`SELECT er.type::text AS type, er.status::text AS status, count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s FROM expense_requests er WHERE ${base} GROUP BY 1, 2 ORDER BY 1, 2`),
-    rows(req, sql`SELECT er.type::text AS type, count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s FROM expense_requests er WHERE ${base} GROUP BY 1 ORDER BY 1`),
-    rows(
+  const [byStatus, byType, byCategory, total] = await inSequence(
+    () => rows(req, sql`SELECT er.type::text AS type, er.status::text AS status, count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s FROM expense_requests er WHERE ${base} GROUP BY 1, 2 ORDER BY 1, 2`),
+    () => rows(req, sql`SELECT er.type::text AS type, count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s FROM expense_requests er WHERE ${base} GROUP BY 1 ORDER BY 1`),
+    () => rows(
       req,
       sql`SELECT l.category_id, c.code, c.name, count(DISTINCT er.id)::int AS n, coalesce(sum(l.total), 0)::text AS s
           FROM expense_requests er JOIN expense_requests_lines l ON l._parent_id = er.id LEFT JOIN expense_categories c ON c.id = l.category_id
           WHERE ${base} ${f.categoryId ? sql`AND l.category_id = ${f.categoryId}` : sql``}
           GROUP BY l.category_id, c.code, c.name ORDER BY sum(l.total) DESC NULLS LAST, c.code`,
     ),
-    rows(req, sql`SELECT count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s FROM expense_requests er WHERE ${base}`),
-  ])
+    () => rows(req, sql`SELECT count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s FROM expense_requests er WHERE ${base}`),
+  )
   return {
     byStatus: byStatus.map((x) => ({ type: x.type as RequestType, status: x.status as RequestStatus, count: num(x.n), sum: num(x.s) })),
     byType: byType.map((x) => ({ type: x.type as RequestType, count: num(x.n), sum: num(x.s) })),
@@ -671,11 +681,11 @@ export async function ownRequests(req: PayloadRequest, scope: ReportScope, opts:
 
 /** Admin home: onboarding gaps (approval prerequisites, F2). */
 export async function masterGaps(req: PayloadRequest) {
-  const [u, p, c] = await Promise.all([
-    rows(req, sql`SELECT count(*)::int AS n FROM users u WHERE coalesce(u.active, true) AND (u.employee_id IS NULL OR NOT EXISTS (SELECT 1 FROM users_roles r WHERE r.parent_id = u.id))`),
-    rows(req, sql`SELECT count(*)::int AS n FROM projects p WHERE p.pm_id IS NULL AND p.status <> 'arsip'`),
-    rows(req, sql`SELECT count(*)::int AS n FROM cost_centers cc WHERE cc.manager_id IS NULL AND coalesce(cc.active, true)`),
-  ])
+  const [u, p, c] = await inSequence(
+    () => rows(req, sql`SELECT count(*)::int AS n FROM users u WHERE coalesce(u.active, true) AND (u.employee_id IS NULL OR NOT EXISTS (SELECT 1 FROM users_roles r WHERE r.parent_id = u.id))`),
+    () => rows(req, sql`SELECT count(*)::int AS n FROM projects p WHERE p.pm_id IS NULL AND p.status <> 'arsip'`),
+    () => rows(req, sql`SELECT count(*)::int AS n FROM cost_centers cc WHERE cc.manager_id IS NULL AND coalesce(cc.active, true)`),
+  )
   return { usersIncomplete: num(u[0]?.n), projectsWithoutPm: num(p[0]?.n), costCentersWithoutManager: num(c[0]?.n) }
 }
 

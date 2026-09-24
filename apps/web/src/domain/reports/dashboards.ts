@@ -9,6 +9,7 @@ import {
   cashBalances,
   cashFlowMonthly,
   costCenterMonth,
+  inSequence,
   lastClosedPeriod,
   lpjSummary,
   masterGaps,
@@ -41,17 +42,17 @@ export async function ownerDashboard(req: PayloadRequest, opts: { months?: numbe
   const ctx = await reportContext(req)
   const months = opts.months === 6 ? 6 : 12
   const flowRange = { from: addMonths(ctx.month, -(months - 1)), to: ctx.month, accountId: opts.accountId }
-  const [balances, monthOps, pending, mine, lpj, flows, projects, costCenters, queue] = await Promise.all([
-    cashBalances(req, ctx.today),
-    accountMonthFlows(req, ctx.month, 'operational'),
-    pendingApprovals(req, ALL),
-    waitingForMe(req),
-    lpjSummary(req, ALL, firstDay(ctx.month), lastDay(ctx.month)),
-    cashFlowMonthly(req, flowRange, 'operational'),
-    projectBudgets(req, ALL),
-    costCenterMonth(req, ALL, ctx.month),
-    transferQueueSummary(req),
-  ])
+  const [balances, monthOps, pending, mine, lpj, flows, projects, costCenters, queue] = await inSequence(
+    () => cashBalances(req, ctx.today),
+    () => accountMonthFlows(req, ctx.month, 'operational'),
+    () => pendingApprovals(req, ALL),
+    () => waitingForMe(req),
+    () => lpjSummary(req, ALL, firstDay(ctx.month), lastDay(ctx.month)),
+    () => cashFlowMonthly(req, flowRange, 'operational'),
+    () => projectBudgets(req, ALL),
+    () => costCenterMonth(req, ALL, ctx.month),
+    () => transferQueueSummary(req),
+  )
   const running = projects.filter((p) => p.status === 'berjalan')
   const count = (t: string) => running.filter((p) => p.tone === t).length
   return {
@@ -82,14 +83,14 @@ export async function ownerDashboard(req: PayloadRequest, opts: { months?: numbe
 
 export async function financeDashboard(req: PayloadRequest) {
   const ctx = await reportContext(req)
-  const [queue, lpj, balances, monthBook, flows, lastClosed] = await Promise.all([
-    transferQueueSummary(req),
-    lpjSummary(req, ALL, firstDay(ctx.month), lastDay(ctx.month)),
-    cashBalances(req, ctx.today),
-    accountMonthFlows(req, ctx.month, 'book'),
-    cashFlowMonthly(req, { from: addMonths(ctx.month, -5), to: ctx.month }, 'book'),
-    lastClosedPeriod(req),
-  ])
+  const [queue, lpj, balances, monthBook, flows, lastClosed] = await inSequence(
+    () => transferQueueSummary(req),
+    () => lpjSummary(req, ALL, firstDay(ctx.month), lastDay(ctx.month)),
+    () => cashBalances(req, ctx.today),
+    () => accountMonthFlows(req, ctx.month, 'book'),
+    () => cashFlowMonthly(req, { from: addMonths(ctx.month, -5), to: ctx.month }, 'book'),
+    () => lastClosedPeriod(req),
+  )
   return {
     asOf: ctx.today,
     month: ctx.month,
@@ -110,14 +111,14 @@ export async function financeDashboard(req: PayloadRequest) {
 export async function pmDashboard(req: PayloadRequest) {
   const ctx = await reportContext(req)
   const scope = await teamScope(req)
-  const [mine, month, lpjRows, projects, costCenters, latest] = await Promise.all([
-    waitingForMe(req),
-    teamMonth(req, scope, ctx.month),
-    advancesWithoutLpj(req, scope),
-    projectBudgets(req, scope),
-    costCenterMonth(req, scope, ctx.month),
-    requestRows(req, scope, { from: '0000-01-01', to: '9999-12-31' }, { limit: 10 }),
-  ])
+  const [mine, month, lpjRows, projects, costCenters, latest] = await inSequence(
+    () => waitingForMe(req),
+    () => teamMonth(req, scope, ctx.month),
+    () => advancesWithoutLpj(req, scope),
+    () => projectBudgets(req, scope),
+    () => costCenterMonth(req, scope, ctx.month),
+    () => requestRows(req, scope, { from: '0000-01-01', to: '9999-12-31' }, { limit: 10 }),
+  )
   return {
     asOf: ctx.today,
     month: ctx.month,
@@ -135,13 +136,13 @@ export async function pmDashboard(req: PayloadRequest) {
 
 export async function staffDashboard(req: PayloadRequest) {
   const scope = await ownScope(req)
-  const [actions, latest] = await Promise.all([ownRequests(req, scope, { statuses: STAFF_ACTION_STATUSES, limit: 20 }), ownRequests(req, scope, { limit: 10 })])
+  const [actions, latest] = await inSequence(() => ownRequests(req, scope, { statuses: STAFF_ACTION_STATUSES, limit: 20 }), () => ownRequests(req, scope, { limit: 10 }))
   return { actions, latest }
 }
 
 export async function adminDashboard(req: PayloadRequest) {
   const ctx = await reportContext(req)
-  const [gaps, audit] = await Promise.all([masterGaps(req), auditLogPage(req, { from: addDaysSafe(ctx.today, -30), to: ctx.today }, { limit: 20 })])
+  const [gaps, audit] = await inSequence(() => masterGaps(req), () => auditLogPage(req, { from: addDaysSafe(ctx.today, -30), to: ctx.today }, { limit: 20 }))
   return { gaps, latestAudit: audit.rows }
 }
 

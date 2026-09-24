@@ -9,6 +9,7 @@ import {
   cashBalances,
   cashBreakdown,
   cashFlowMonthly,
+  inSequence,
   lpjSummary,
   num,
   projectBudgetByCategory,
@@ -836,7 +837,7 @@ const auditLog: ReportDef = {
   async run(req, _scope, sp, page) {
     const ctx = await reportContext(req)
     const f: AuditFilter = parseAuditFilter(sp, ctx.today)
-    const [p, count] = await Promise.all([auditLogPage(req, f, page), auditLogCount(req, f)])
+    const [p, count] = await inSequence(() => auditLogPage(req, f, page), () => auditLogCount(req, f))
     return {
       main: {
         key: 'audit',

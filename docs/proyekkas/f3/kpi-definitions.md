@@ -1,6 +1,7 @@
 # ProyekKas F3: definisi KPI dashboard & laporan
 
-- **Status:** proposed. Menunggu persetujuan user sebelum build F3.
+- **Status:** accepted (user 2026-09-24, semua default Q-F3-1…8). **Implemented** di `feat/nextjs-f3-dashboards`
+  (`apps/web/src/domain/reports/kpi.ts`, uji rekonsiliasi `apps/web/tests/integration/f3-kpi-reconciliation.int.test.ts`).
 - **Tanggal:** 2026-09-24 · **Penulis:** Analyst · **Basis kode:** `develop` `e9c07ab` (F2 selesai)
 - **Sumber yang dibaca di sesi ini:** `phase-plan.md` §F3, `requirements-v1.1.md` (US-12, US-13, US-19, US-25,
   US-26, US-27, US-28, US-31, US-52, M02, M13, §4, §8), `traceability-matrix.md`, `architecture.md` §4.1, §7, §9.4, §11,
@@ -235,17 +236,28 @@ Ini bukan query produksi, dan nama tabel/kolom sudah dicek terhadap migrasi.
 
 ---
 
-## 4. Pertanyaan terbuka untuk user (F3)
+## 4. Pertanyaan F3: dijawab (user 2026-09-24, semua default)
 
-Default di bawah dipakai bila tidak ada jawaban sebelum build.
+User menyetujui desain ini pada 2026-09-24 dengan **semua usulan default**. Tabel ini sekarang menjadi keputusan.
 
-| No | Pertanyaan | Usulan default |
-|---|---|---|
-| Q-F3-1 | Berapa hari setelah transfer sebuah Uang Muka dianggap **"LPJ terlambat"**? (Butuh setting baru `lpjDueDays`.) | 7 hari kalender |
-| Q-F3-2 | Warna anggaran project (85%/100%) memakai dasar apa: **Komitmen** (sudah disetujui, sama dengan layar approval), Dicairkan, atau Realisasi? | Komitmen. Dicairkan dan Realisasi tampil sebagai angka pendamping |
-| Q-F3-3 | Setuju memakai library Excel **`write-excel-file` 4.1.1 (MIT)** dengan batas 10.000 baris per file XLSX, plus CSV (pemisah `;`, UTF-8 BOM) untuk data lebih besar? | Ya (`export-library-decision.md`) |
-| Q-F3-4 | Apakah **Finance** juga boleh membuka halaman **Audit Log global**? (Requirements §4 memberi Finance "R all", tetapi §8 menyebut Owner dan Admin.) | Ya, hanya baca, karena akses koleksi sekarang sudah begitu |
-| Q-F3-5 | Laporan mana yang perlu **PDF**? | Rekap Kas, Pengeluaran per Kategori, Anggaran Project saja (ringkasan ≤ 500 baris). Lainnya Excel/CSV |
-| Q-F3-6 | Apakah **beranda Staff di web** perlu dibuat, mengingat Staff memakai APK? | Dibuat versi kecil ("Perlu tindakan saya" + pengajuan saya) |
-| Q-F3-7 | Grafik arus kas Owner: sembunyikan transaksi yang di-void beserta jurnal baliknya (**K-02b**, default), atau tampilkan persis seperti buku kas (K-02a)? | K-02b di grafik. Laporan Rekap Kas resmi memakai K-02a |
-| Q-F3-8 | Biaya per kendaraan (US-52): dihitung dari **total baris pengajuan yang sudah ditransfer** + kas keluar manual, atau hanya dari **nota yang sudah diverifikasi**? | Total baris yang sudah ditransfer + kas manual (dasar). Versi nota terverifikasi ada di F5 |
+| No | Pertanyaan | Keputusan (user 2026-09-24) | Implementasi |
+|---|---|---|---|
+| Q-F3-1 | Kapan Uang Muka dianggap **"LPJ terlambat"**? | **7 hari kalender** setelah transfer uang muka pertama; setting baru `lpjDueDays` (default 7, bisa diubah Admin/Owner) | `company-settings.lpjDueDays`, migrasi `20260924_110138_f3_reports` (aditif) |
+| Q-F3-2 | Dasar warna anggaran (85%/100%)? | **Komitmen** (sama dengan layar approval); Dicairkan dan Realisasi sebagai angka pendamping; warna selalu dengan label teks | `budgetTone()` di `domain/reports/rules.ts` |
+| Q-F3-3 | Library Excel? | **`write-excel-file` 4.1.1 (MIT)**, maks. **10.000 baris** per XLSX, switch `EXPORT_XLSX_ENABLED`; CSV selalu ada (stream, UTF-8 BOM, `;`); batas bersamaan dibagi dengan PDF (2) | `lib/xlsx.ts`, `lib/csv.ts`, `lib/heavy-gate.ts` |
+| Q-F3-4 | Finance boleh membuka **Audit Log global**? | **Ya**, hanya baca (Owner/Admin juga) | `/admin/audit-log`, `/api/v1/reports/audit-log` |
+| Q-F3-5 | Laporan dengan **PDF**? | **Rekap Kas, Pengeluaran per Kategori, Anggaran Project** (≤ 500 baris); lainnya Excel/CSV | `@react-pdf/renderer` 4.9.0 yang sudah ada (`pdf/ReportPdf.tsx`) |
+| Q-F3-6 | **Beranda Staff** di web? | **Ya**, versi kecil ("Perlu tindakan saya" + pengajuan saya) | Beranda layout Staff, `/api/v1/dashboard/me` |
+| Q-F3-7 | Grafik arus kas Owner? | **K-02b** (tanpa pasangan void) di grafik; laporan Rekap Kas resmi tetap **K-02a** (persis buku kas) | `cashFlowMonthly(…, 'operational' \| 'book')` |
+| Q-F3-8 | Dasar biaya per kendaraan? | **Total baris pengajuan yang sudah ditransfer + kas keluar manual**; versi nota terverifikasi di F5 | `vehicleCosts()` |
+
+Widget kehadiran dan progress tetap placeholder berlabel **"F5"** (tanpa angka palsu).
+
+### 4.1 Catatan implementasi (dicek terhadap kode, 2026-09-24)
+- **K-13 periode:** filter `request_date` (tanggal pengajuan). Pengajuan yang dibatalkan saat masih Draft tidak punya
+  `request_date`, sehingga tidak masuk rentang tanggal mana pun (sama dengan Draft, C7).
+- **K-17 dicairkan:** pengajuan dihitung pada rentang yang memuat transfer `posted` (kind `advance`/`reimburse`) miliknya;
+  alokasi per kategori dari baris. Transfer yang di-void tidak dihitung (KK-nya juga `void`).
+- **Filter PM** di laporan diiriskan dengan scope tim: project/pusat biaya di luar tim menghasilkan laporan kosong (bukan 403),
+  export ikut kosong.
+- **Audit log:** membuka halaman `/admin/audit-log` dan setiap export ditulis sebagai baris `export` (baris baru).

@@ -1,7 +1,7 @@
 # ProyekKas F3: keputusan library export (CSV / XLSX / PDF)
 
-- **Status:** proposed (menunggu persetujuan user). Setelah disetujui, ringkasannya dimasukkan ke `architecture.md` §9.4
-  sebagai "As decided". Keputusan ini tidak mengganti stack §3, hanya menambah satu dependency app.
+- **Status:** accepted (user 2026-09-24, Q-F3-3 default). Ringkasan "As decided" ada di `architecture.md` §9.4.
+  Keputusan ini tidak mengganti stack §3, hanya menambah satu dependency app.
 - **Tanggal:** 2026-09-24 · **Penulis:** Analyst · **Basis:** `develop` `e9c07ab`, `architecture.md` §9.3–§9.4, ADR 0008 (PDF).
 - **Aturan yang berlaku:** `/opt/infra/CLAUDE.md` §0.10 (lisensi MIT/Apache/BSD/LGPL/AGPL, commit terakhir < 6 bulan, dipakai luas), §0.12 (pin versi).
 

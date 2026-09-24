@@ -7,6 +7,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **F3 dashboards, reports and exports** (`apps/web`; design `docs/proyekkas/f3/*`, approved by the user 2026-09-24 with
+  all defaults Q-F3-1…8): role home pages replacing the Payload dashboard (`admin.components.views.dashboard`) for
+  Owner, Finance, PM (team scope), Admin and Staff, server-rendered with inline SVG charts (no chart library,
+  `<title>` tooltips + data table), budget status always with a text label (Komitmen basis), attendance/progress as
+  "F5" placeholders; `/admin/laporan` with 7 reports (Rekap Kas, Buku Kas, Pengeluaran per Kategori, Anggaran Project,
+  Rekap Pengajuan, Kelengkapan Nota/LPJ, Biaya per Kendaraan) with plain GET filters and keyset paging; global
+  `/admin/audit-log` for Owner/Admin/Finance (read-only; opening it is audited). Every KPI follows
+  `kpi-definitions.md` (K-01…K-17) and is reconciled against its SQL rule on ≥ 500 generated requests
+  (`tests/integration/f3-kpi-reconciliation.int.test.ts`).
+- **API:** `GET /api/v1/dashboard/{owner,finance,pm,admin,me}`, `GET /api/v1/reports/{code}` (JSON, same filters/scope
+  as the web page) and `GET /api/v1/reports/{code}/{csv|xlsx|pdf}` (audited `export`, 10/min per user).
+- **Exports:** CSV always (streamed in 1 000-row keyset pages, UTF-8 BOM, `;`, CRLF, formula-injection guard, ≤ 100 000
+  rows); XLSX via `write-excel-file` 4.1.1 (MIT, lazy import, ≤ 10 000 rows → else 413, amounts `#,##0`, real dates,
+  no formula cells; env `EXPORT_XLSX_ENABLED=false` hides it / 404); PDF (A4 landscape, ≤ 500 rows) for Rekap Kas,
+  Pengeluaran per Kategori and Anggaran Project with the existing `@react-pdf/renderer`. XLSX and PDF share one
+  in-process semaphore (2 concurrent, 10 s → 503) with the F2 document PDF (`lib/heavy-gate.ts`).
+- **Company setting `lpjDueDays`** (default 7, Q-F3-1): Uang Muka without LPJ older than this since the first advance
+  transfer is "LPJ terlambat". Migration `20260924_110138_f3_reports` (one column with a constant default) — additive.
+- Nav links "Laporan" (Finance/Owner/PM) and "Audit Log" (Owner/Admin/Finance); `data-pk-*` selectors for UAT.
+
 - **F4 APK backend** (`apps/web`, ADR 0010): `POST /api/v1/sync/batch` (bearer + registered device; drafts
   create/edit/delete + receipts per line, per-item transactions, idempotent by `client_uuid` via `sync_receipts`,
   `rev`/`base_rev` conflicts — server wins, offline device time stored as comparison only, attendance/progress →
@@ -16,6 +36,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   registration accepts `fcmToken: null`. Migrations `20260924_025114_f4_mobile_sync` (columns
   `expense_requests.sync_rev`, `receipts.client_uuid`, company-settings gate fields) and
   `20260924_025115_f4_security` (table `sync_receipts`, immutable `receipts.client_uuid`) — additive.
+
+### Changed
+- The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
 ## [0.2.1] - 2026-09-24
 
