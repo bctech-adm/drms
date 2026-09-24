@@ -834,6 +834,9 @@ export interface ExpenseRequest {
     accountNo?: string | null;
     accountHolder?: string | null;
   };
+  /**
+   * Tunggu sebentar setelah mengisi field sebelum menekan Tambah Baris.
+   */
   lines?:
     | {
         description?: string | null;

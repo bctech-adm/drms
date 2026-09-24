@@ -107,7 +107,7 @@ export async function LpjVerification(props: AdminViewServerProps) {
                       {finance && d.allowedActions.includes('receipt_verify') ? (
                         <>
                           {r.status !== 'valid' ? <ActionButton url={`${base(d.id)}/receipts/${r.id}/verify`} label="Valid" /> : null}
-                          {r.status !== 'rejected' ? <ActionButton url={`${base(d.id)}/receipts/${r.id}/reject`} label="Tolak" prompt={{ field: 'reason', message: 'Alasan nota ditolak (wajib):' }} /> : null}
+                          {r.status !== 'rejected' ? <ActionButton url={`${base(d.id)}/receipts/${r.id}/reject`} label="Tolak" prompt={{ field: 'reason', message: 'Alasan nota ditolak (wajib):', minLength: 3 }} /> : null}
                         </>
                       ) : null}
                     </td>

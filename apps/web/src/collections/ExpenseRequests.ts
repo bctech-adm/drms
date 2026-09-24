@@ -240,6 +240,9 @@ export const ExpenseRequests: CollectionConfig = withAudit(
         type: 'array',
         label: 'Baris item',
         labels: { singular: 'Baris', plural: 'Baris' },
+        // F2d UAT: Payload 3.90.1 client race — a row added while the form-state server action of
+        // the previous edit is still pending stays a skeleton.
+        admin: { description: 'Tunggu sebentar setelah mengisi field sebelum menekan Tambah Baris.' },
         fields: [
           { name: 'description', type: 'text', label: 'Uraian', maxLength: 500 },
           {
