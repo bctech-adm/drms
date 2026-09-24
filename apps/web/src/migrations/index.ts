@@ -9,6 +9,7 @@ import * as migration_20260924_020343_f2e_uat_fixes from './20260924_020343_f2e_
 import * as migration_20260924_020344_f2e_security from './20260924_020344_f2e_security';
 import * as migration_20260924_025114_f4_mobile_sync from './20260924_025114_f4_mobile_sync';
 import * as migration_20260924_025115_f4_security from './20260924_025115_f4_security';
+import * as migration_20260924_110138_f3_reports from './20260924_110138_f3_reports';
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20260924_025115_f4_security.up,
     down: migration_20260924_025115_f4_security.down,
     name: '20260924_025115_f4_security',
+  },
+  {
+    up: migration_20260924_110138_f3_reports.up,
+    down: migration_20260924_110138_f3_reports.down,
+    name: '20260924_110138_f3_reports',
   },
 ];

@@ -142,6 +142,8 @@ export const envSchema = z
       .default('')
       .refine((v) => parseCertFingerprints(v) !== null, 'comma separated SHA-256 fingerprints AA:BB:… (32 bytes)')
       .transform((v) => parseCertFingerprints(v) ?? []),
+    /** F3 rollback switch (export-library-decision §7): 'false' hides Excel buttons, /reports/…/xlsx → 404. */
+    EXPORT_XLSX_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
     ...smtpFields,
   })
   .superRefine((env, ctx) => {

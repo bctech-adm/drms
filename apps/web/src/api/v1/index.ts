@@ -10,6 +10,7 @@ import { mediaFileEndpoint, uploadMediaEndpoint } from './endpoints/media'
 import { NOTIFICATION_ENDPOINTS } from './endpoints/notifications'
 import { meEndpoint } from './endpoints/me'
 import { openapiEndpoint } from './endpoints/openapi'
+import { REPORT_ENDPOINTS } from './endpoints/reports'
 import { appConfigEndpoint } from './endpoints/app'
 import { syncBatchEndpoint } from './endpoints/sync'
 
@@ -35,4 +36,6 @@ export const v1Endpoints: Endpoint[] = [
   // F4: APK backend (ADR 0010): app version gate (public) + offline queue replay
   appConfigEndpoint,
   syncBatchEndpoint,
+  // F3: role dashboards, reports + CSV/XLSX/PDF exports, global audit log (Q-F3-1…8)
+  ...REPORT_ENDPOINTS,
 ]
