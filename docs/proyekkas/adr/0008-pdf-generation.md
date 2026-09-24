@@ -1,6 +1,6 @@
 # ADR 0008 — PDF generation for "Pengajuan Biaya" (client form replica + receipt photos)
 
-- **Status:** accepted (user, GATE F0 2026-09-23) 
+- **Status:** accepted (user, GATE F0 2026-09-23); implementation recorded after F2b, layout approved by the user 2026-09-24 (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** lead prompt "Temuan tambahan" #3, #5, #6; `reference/contoh-form-pengajuan-biaya-drms.jpg`;
@@ -73,6 +73,43 @@ timeZone:'Asia/Makassar'})` → `20 September 2026` ✔ (full ICU present).
    rounding tolerance), BBM and Makan receipts dated 21/09 after request date 20/09, unit "bulan" for BBM.
    Measured peak RSS of one render with 3 receipt images must be reported (F2 gate).
 
+## As implemented (F2b, `develop` `59ba0a4`)
+
+Verified in `apps/web/src/pdf/{render.ts,data.ts,PengajuanBiaya.tsx}`,
+`src/api/v1/endpoints/expense-requests.ts` (`pdfEndpoint`), `next.config.ts`, `scripts/build-worker.mjs`,
+`package.json`, `tests/integration/form-228.int.test.ts`:
+- **Renderer:** `@react-pdf/renderer` **4.9.0** (MIT, pinned exact) with React 19.3.0, template
+  `src/pdf/PengajuanBiaya.tsx`. English hyphenation disabled (`Font.registerHyphenationCallback`) because it
+  splits Indonesian words wrongly.
+- **Font (decision §6 resolved):** built-in **Helvetica** / Helvetica-Bold (PDF standard fonts, WinAnsi) —
+  no font file is shipped, so there is **no font licensing** to track; the OFL TTF option was not taken.
+- **Images:** receipt JPEGs (and PNG signatures/logo) are **passed through as stored** (read from the media
+  volume, `media-*` JPEG/PNG only; WebP or PDF attachments are not embedded). There is **no separate `pdf`
+  image size**: the stored receipt (≤ 2000 px, ADR 0004) is used; a file > 3 MiB is skipped (RAM guard).
+  At most 12 receipt images per PDF (`MAX_RECEIPT_IMAGES`); further receipts are printed as caption only.
+- **Endpoint:** `GET /api/v1/expense-requests/{id}/pdf[?variant=internal]` — same read access as the request
+  (else 404), Draft/unnumbered → 409, internal variant Finance/Owner/Admin only (else 403), rate limit
+  10/min per user. Data load + one **`export` audit row per download** (`field=pdf`, variant, status) in one
+  transaction; the render runs **outside** it (no DB connection held). Response `attachment`,
+  `Cache-Control: private, no-store`.
+- **Concurrency:** in-process semaphore **2** concurrent renders; a further request waits ≤ **10 s**, then
+  **503** + `Retry-After: 10`.
+- **Web only; the worker never loads the renderer.** The `/api/v1` endpoints are part of the Payload config the
+  worker bundles, and esbuild hoists the external import → `scripts/build-worker.mjs` replaces `@/pdf/render`
+  with a throwing **stub** (plugin `no-pdf-in-worker`). Batch/period PDFs (§2 worker job) are **not built**.
+- **Standalone tracing:** pdfkit loads its standard fonts via `require('#standard-fonts/<Name>')`
+  (`js/standard-fonts/*.cjs`); Next's tracer only picked the `.mjs` variants and the first render in the
+  image failed (`Cannot find module …/Helvetica.cjs`). Fix: `outputFileTracingIncludes:
+  { '/api/*': ['../../node_modules/pdfkit/js/standard-fonts/**/*'] }` in `next.config.ts`.
+- **Layout:** as §4; receipts on **separate pages, 2 per page**. **Approved by the user 2026-09-24.**
+  Logo: `company-settings.logo` (`media-company`) when set, else a placeholder circle with the company code —
+  **real logo pending (Q-32)**.
+- **Measured RAM (F2 gate item):** isolated render of the form-228 fixture with 3 receipt photos in a child
+  process (`--max-old-space-size=256`, test `form-228.int`) → peak RSS **≈ 138 MiB**; staging web container
+  cgroup peak **149 MiB** after 3 renders (reported by the implementer/Lead 2026-09-24; figures not
+  re-measured by the docs agent).
+- **Not stored** (decision §3 unchanged): regenerated on every download; no "final archive" snapshot yet.
+
 ## Alternatives
 
 | Alternative | Rejected because |
@@ -103,3 +140,14 @@ Switch renderer behind the `PdfRenderer` port (pdfmake/pdfkit) — templates rew
 ## Proposed CLAUDE.md changes (need user approval; author does not edit)
 
 None.
+
+## Revision history
+
+- **2026-09-23 (F0 gate):** accepted by user.
+- **2026-09-24 (F2b):** "As implemented" section added, verified against `develop` `59ba0a4`:
+  `@react-pdf/renderer` 4.9.0 (MIT) with built-in Helvetica (no font licensing; §6 font choice closed),
+  receipt JPEGs passed through as stored (no `pdf` image size), `outputFileTracingIncludes` for the pdfkit
+  standard fonts, PDF renderer stubbed out of the worker bundle (no batch PDF yet), semaphore 2 / 10 s → 503,
+  every download audited `export`; measured peak RSS ≈ 138 MiB isolated / 149 MiB web cgroup after 3 renders.
+  Layout approved by the user 2026-09-24 (receipts on separate pages, 2 per page); logo pending (Q-32).
+  Status stays accepted.

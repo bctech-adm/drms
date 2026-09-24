@@ -1,6 +1,6 @@
 # ProyekKas — Phase plan F0–F7
 
-- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging); F2 status updated 2026-09-23 (F2a done, F2b in progress) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); F1 status updated 2026-09-23 (spike gate passed; foundation on staging); F2 status updated 2026-09-24 (F2a/F2b/F2c done and deployed to staging; UAT in progress; F2 gate pending) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Basis:** `architecture.md`, ADR 0001–0008 (this folder), ADR 0009–0011 (other agent), requirements v1.0
   (+ v1.1 in parallel), `/opt/infra/CLAUDE.md` §1 (workflow: stop and report at the end of every phase, wait
   for user approval), §5 (Definition of Done).
@@ -109,7 +109,7 @@
   manual cash in/out, void/reversal, period closing lock, PDF "Pengajuan Biaya" (ADR 0008), in-app
   notifications (push arrives in F4), admin custom views (approval inbox, transfer queue, LPJ verification,
   "Riwayat" tab).
-- **Status (2026-09-23):**
+- **Status (2026-09-24):**
   - **F2a — DONE** (merged to `develop` `c8c1af6`): expense requests (advance + reimburse) with lines,
     requesters, "Diketahui"/approval positions + signatures, approval rules (US-34; default Owner-only,
     Q-31; "Diketahui" required, Q-07), receipts + validation flags, Reimburse receipt verification
@@ -117,10 +117,23 @@
     period close/re-open, DB guards (ADR 0005/0006), `Idempotency-Key`, `/api/v1` endpoints + OpenAPI, form
     228 fixture in the integration tests. Onboarding prerequisite: PM per project / manager per cost center
     (architecture §5.2). Also fixed the F1 WebP-thumbnail upload defect (architecture §9.1).
-  - **F2b — IN PROGRESS:** LPJ/settlement (submit/revision/verify, refund KM / shortfall transfer), PDF
-    "Pengajuan Biaya" (ADR 0008), admin custom views (approval inbox, transfer queue, LPJ verification,
-    "Riwayat"), in-app notifications, authenticated file endpoint.
-  - F2 acceptance gate below still open (PDF review, full §7.4 suite, PDF RSS measurement).
+  - **F2b — DONE** (merged `4d952ba`): LPJ/settlement (submit/revision/verify; exact amount settles at
+    verification, refund KM / shortfall transfer + KK; ADR 0005), Class B `settlements`/`notifications` DB guards
+    (ADR 0006), PDF "Pengajuan Biaya" (ADR 0008 "As implemented"), admin custom views (approval inbox, transfer
+    queue, LPJ verification, "Riwayat" tab), in-app notifications (`pushStatus`, push gated off — ADR 0011),
+    file endpoint `GET /api/v1/media/{collection}/{id}/file` (ADR 0004 §4a), Reimburse auto-close job (01:15 WITA).
+  - **F2c — DONE** (merged `59ba0a4`): requester actions in the web panel — `pk-staff` panel access with
+    restricted nav, self-service profile signature, submit/withdraw/cancel/resubmit/receipts/LPJ/confirm via
+    `/api/v1` + `Idempotency-Key`, status timeline; admin REST create/edit runs `validateContent` (security fix;
+    ADR 0003 §3a).
+  - **Deployed:** staging runs image `proyekkas-web:0.1.0-stg-59ba0a4` (web + worker). **UAT seed**
+    (`apps/web/src/seed/uat.ts`, env `UAT_USERS`, fictional `*.uji@proyekkas.test` accounts, project `UJI-PRJ`)
+    run on staging 2026-09-24. **UAT by the user in progress.**
+  - Gate evidence so far: PDF layout **approved by the user 2026-09-24** (receipts on separate pages, 2 per page;
+    logo pending Q-32); PDF peak RSS measured (≈ 138 MiB isolated, 149 MiB web cgroup after 3 renders — ADR 0008);
+    form-228 fixture, §7.4 negative-authz and DB-guard suites in `apps/web/tests/integration/`
+    (`form-228`, `f2-authz-db`, `lpj`, `files`, `f2c-requester-web`).
+  - **F2 acceptance gate: PENDING** (user UAT + gate approval).
 - **Dependencies:** F1 gate.
 - **Agents / estimate:** nextjs-developer 26–36 pd · qa-security 7–9 pd · analyst 1–2 pd · docs 1–2 pd →
   **35–49 pd**.

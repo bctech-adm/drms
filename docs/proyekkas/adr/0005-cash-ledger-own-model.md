@@ -1,6 +1,6 @@
 # ADR 0005 — Cash & bank: own append-only ledger (not Odoo `account`), Odoo-mappable
 
-- **Status:** accepted (user, GATE F0 2026-09-23); implementation recorded after F2a (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); implementation recorded after F2a and F2b (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** requirements v1.0 §4 (Kas & bank), §7 T3/T5–T8, §8, §9 ("Tutup buku bulanan");
@@ -88,6 +88,26 @@ Verified in `apps/web/src/domain/cash/{ledger,periods}.ts`, `domain/expense/tran
 - Manual entry edits (§5) implemented as specified: manual + posted + open period only, descriptive fields
   only, reason stored as the audit reason.
 
+### As implemented (F2b, `develop` `59ba0a4`) — LPJ settlement postings
+
+Verified in `apps/web/src/domain/expense/{lpj.ts,settlement-rules.ts,transfers.ts}`, `domain/cash/ledger.ts`,
+`migrations/20260923_161854_f2b_security.ts`, `tests/integration/lpj.int.test.ts`:
+- `difference = transferredTotal − verifiedReceiptsTotal` (Σ **valid** receipts), computed at LPJ verification.
+  **0 → settled at verification** (request "Selesai", no cash posting); otherwise "LPJ Terverifikasi" and
+  Finance runs `POST …/settle` (amount computed server-side; an optional echo must match, else 409).
+- **Surplus → refund KM:** one `in` entry, `sourceType=settlement_refund`, cash-in source code `LPJ`
+  ("Pengembalian LPJ"), amount = difference, linked to the request (project/cost center copied); proof
+  (`media-attachments`) optional. DB: such a row must be cash-IN, amount = verified surplus, request in
+  "LPJ Terverifikasi".
+- **Shortfall → transfer + KK:** a T3 transfer of kind `lpj_shortfall` (own transfer number) of −difference to
+  the request's bank snapshot, bank reference + proof required, posting its automatic KK like any transfer;
+  `transferredTotal` increases by that amount. DB: only for a shortfall-verified LPJ, one posted per request.
+- Settlement date defaults to today, not in the future, and the period lock applies (409, DB-enforced).
+- **Void rule:** the refund KM cannot be voided on its own (`POST /cash-entries/{id}/void` → 409 "tidak dapat
+  di-void terpisah dari LPJ"), and the shortfall transfer cannot be voided once the request is "Selesai"
+  (transfer void → 409, state machine). **Settlement reversal is not implemented** — F6 backlog
+  (`phase-plan.md`).
+
 ### Odoo mapping hints (for ADR 0009, not binding here)
 
 | ProyekKas | Odoo 19 |
@@ -143,3 +163,7 @@ None.
   `cash-reversals` collection, `reversal` sequence unused); lock = last day of the latest closed period
   (`pk_cash_lock_date()`); only the latest closed period can be re-opened, Owner only, reason required.
   Status stays accepted.
+- **2026-09-24 (F2b):** "As implemented (F2b)" section added, verified against `develop` `59ba0a4`: settlement
+  refund KM (`settlement_refund`, source `LPJ`) / shortfall `lpj_shortfall` transfer + KK, exact amount settles
+  at verification, DB cross-checks; void of a refund KM or of a shortfall transfer → 409, settlement reversal
+  not implemented (F6 backlog). Status stays accepted.

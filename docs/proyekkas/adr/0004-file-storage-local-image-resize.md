@@ -1,6 +1,6 @@
 # ADR 0004 — File storage: local volume now, S3-compatible later; server-side image resize
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 in F1 foundation (see Revision history)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 in F1 foundation and 2026-09-24 after F2b (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst/Architect — Phase 0
 - **Related:** brief §2 #4; requirements v1.0 §9 ("File"); `/opt/infra/docs/adr/0006-backup.md`;
@@ -152,6 +152,20 @@ plugin. Backup change is additive.
 
 None (backup script change goes to platform ADR 0006 revision by infra-engineer).
 
+### 4a. As implemented (F2b, `develop` `59ba0a4`)
+
+Verified in `apps/web/src/api/v1/endpoints/media.ts`, `tests/integration/files.int.test.ts`:
+- The APK/file path is **`GET /api/v1/media/{collection}/{id}/file[?variant=thumb]`** (not `/api/v1/files/…`),
+  `{collection}` ∈ `receipts | transfer-proofs | signatures | attachments | company`. Access = the media
+  collection's own `read` access with `overrideAccess: false`; anything the caller may not read, unknown
+  collection, non-numeric id or missing file → **404** (no existence leak; unknown `variant` → 400). A
+  signature is additionally readable when referenced by an approval row of a request the caller may read.
+  The stored filename comes from the DB and must resolve inside the collection's `staticDir`.
+- Headers: `Cache-Control: private, no-store`, `nosniff`, `Content-Security-Policy: default-src 'none'; sandbox`,
+  `Content-Disposition` `inline` (PDF `attachment`). Transfer-proof reads audited **`view_sensitive`**
+  (at most one row per user/file/10 min, in-process). Rate limit 240/min per user.
+- **Signed, time-limited URLs are still open** (not implemented; F6 backlog in `phase-plan.md`).
+
 ## Revision history
 
 - **2026-09-23 (F0 gate):** accepted by user.
@@ -159,3 +173,6 @@ None (backup script change goes to platform ADR 0006 revision by infra-engineer)
   **`media-company`** (`apps/web/src/collections/media/index.ts`; referenced by `company-settings.logo` and
   the seed), **not** `media-company-logo`; the old slug was also corrected in `requirements-v1.1.md` §9 and
   `traceability-matrix.md` (US-57). Status stays accepted.
+- **2026-09-24 (F2b):** §4a added, verified against `develop` `59ba0a4`: file endpoint
+  `GET /api/v1/media/{collection}/{id}/file[?variant=thumb]` (other users' files → 404, transfer proofs audited
+  `view_sensitive`); §4 signed URLs still open (F6). Status stays accepted.

@@ -1,6 +1,6 @@
 # ADR 0011 — Push notifications via Firebase Cloud Messaging (HTTP v1)
 
-- **Status:** accepted (user, GATE F0 2026-09-23) 
+- **Status:** accepted (user, GATE F0 2026-09-23); F2b groundwork recorded 2026-09-24 (see Revision history)
 - **Date:** 2026-09-23
 - **Author:** Analyst (mobile & integration), Phase 0
 - **Related:** `docs/proyekkas/f0-brief.md` §3 ("Push: FCM (needs ADR — third-party Google service)"); requirements
@@ -79,6 +79,19 @@ wake-up/alert channel on top.
    the token in full (first 8 chars) and never payload text.
 7. **No topics / no broadcast** (everything per-device, recipients computed server-side by role + scope).
 
+### Implemented so far (F2b, `develop` `59ba0a4`) — in-app only, push gated off
+
+Verified in `apps/web/src/collections/Notifications.ts`, `src/domain/notifications.ts`,
+`src/api/v1/endpoints/notifications.ts`, `migrations/20260923_161853_f2b_lpj_notifications.ts`:
+- `notifications` rows are written by the domain service in the same transaction as the status change
+  (§5 step 1); each user reads only their own rows: `GET /api/v1/notifications`, `GET /api/v1/notifications/{id}`
+  (`{id}` = numeric id **or uuid**, as §3 requires), `POST …/{id}/read`, `POST …/read-all`. DB: Class B
+  (ADR 0006 §2).
+- Column **`pushStatus`** (`push_status`, enum `skipped | pending | sent | failed`, default `skipped`). Rows are
+  written `pending` only when env **`PUSH_FCM_ENABLED=true`**, else `skipped`. **No FCM dispatcher exists yet**
+  and `PUSH_FCM_ENABLED` is **not yet in the env schema** (`src/lib/env.ts`) or `deploy/staging/.env.example`
+  — both F4 (F6 backlog item in `phase-plan.md`). Nothing in §2–§7 beyond the in-app row is implemented.
+
 ## Alternatives
 
 | Alternative | Decision / reason |
@@ -130,3 +143,10 @@ installations deletion API if required by the client (endpoint **UNVERIFIED**), 
 ## Proposed CLAUDE.md changes (need user approval; the ADR author does not edit)
 
 None.
+
+## Revision history
+
+- **2026-09-23 (F0 gate):** accepted by user.
+- **2026-09-24 (F2b):** in-app `notifications` implemented (API incl. fetch by uuid, Class B in the DB);
+  `pushStatus` column (`skipped` default, `pending` only with `PUSH_FCM_ENABLED=true`); the gate is not yet in
+  the env schema and there is no FCM dispatcher (F4). Decisions unchanged; status stays accepted.

@@ -1,6 +1,6 @@
 # ProyekKas — Architecture (Phase 0)
 
-- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) the F1 foundation / staging deploy and F2a (see §17 Revision history) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
+- **Status:** accepted (user, GATE F0 2026-09-23); revised 2026-09-23 after the F1 spike (user-approved) the F1 foundation / staging deploy and F2a; 2026-09-24 after F2b/F2c (see §17 Revision history) · **Date:** 2026-09-23 · **Author:** Analyst/Architect (Phase 0)
 - **Inputs:** `f0-brief.md` (binding decisions §2, direction §3; updated 2026-09-23 with the line-total
   decision), `reference/proyekkas-kebutuhan-pengembangan.md` (requirements v1.0), `reference/prompt-lead-proyekkas.md`
   ("Temuan tambahan" 1–10), `reference/contoh-form-pengajuan-biaya-drms.jpg`, `/opt/infra/CLAUDE.md`,
@@ -862,6 +862,15 @@ stateDiagram-v2
 `difference = transferredTotal − verifiedReceiptsTotal`. Refund cash-in requires proof of the staff's
 return transfer (proof optional per US-23 — client question).
 
+**As implemented (F2b, `develop` `59ba0a4`;** `domain/expense/{state.ts,lpj.ts}`**):**
+- **Exact amount auto-settles:** when `difference = 0` the `lpj_verify` transition goes straight to "Selesai"
+  (LPJ `verified` → `settled` in the same call, no cash posting); `settle` is only needed for a refund or a
+  shortfall (ADR 0005 "As implemented (F2b)").
+- The **`NL --> DT` arrow ("add/remove receipt before LPJ") is not implemented**: there is no transition from
+  "Nota Lengkap" back to "Ditransfer".
+- **Settlement reversal is not implemented:** voiding the refund KM or the shortfall transfer of a settled LPJ
+  returns 409 (F6 backlog, `phase-plan.md`).
+
 ### 5.2 T1 — Reimburse
 
 As implemented in F2a (`apps/web/src/domain/expense/state.ts`, table `TRANSITIONS`; labels `types.ts`
@@ -911,7 +920,10 @@ stateDiagram-v2
 ```
 Finance receipt verification happens **before** transfer (lead prompt #1); receipt flags (§5.6) are shown
 but do not block. Finance cannot change `approvedAmount` (G3). The "auto-complete after N days" setting of
-the F0 draft is **not implemented in F2a** (`complete` is a manual action). For Uang Muka (§5.1) F2a
+the F0 draft was not in F2a; **F2b adds it**: worker job `reimburseAutoClose` runs daily at **01:15 WITA**
+(cron `15 1 * * *`, worker TZ Asia/Makassar) and closes "Ditransfer" Reimburse requests whose latest posted
+transfer is ≥ `company-settings.reimburseAutoCloseDays` (default 30) days old — idempotent, one transaction
+per request, audit source `job` (`domain/expense/auto-close.ts`). `complete` stays available manually. For Uang Muka (§5.1) F2a
 implements the same submit / acknowledge / withdraw / approve / reject / cancel front part and
 `Disetujui (Antri Transfer) → Ditransfer` with void back; the receipt/LPJ part is F2b.
 
@@ -1043,7 +1055,7 @@ POST /api/v1/expense-requests                         (draft; clientUuid)
 PATCH /api/v1/expense-requests/{id}                   (draft/pending edit, G8)
 POST /api/v1/expense-requests/{id}/submit | /approve | /reject | /cancel | /resubmit
 POST /api/v1/expense-requests/{id}/transfer           (Finance; multipart proof)
-POST /api/v1/expense-requests/{id}/transfer/{tid}/void
+POST /api/v1/expense-requests/{id}/transfers/{tid}/void   (path as implemented, F2a)
 POST /api/v1/expense-requests/{id}/receipts           (multipart image + fields)
 POST /api/v1/expense-requests/{id}/receipts/{rid}/verify | /reject
 POST /api/v1/expense-requests/{id}/receipts-complete
@@ -1058,13 +1070,18 @@ GET  /api/v1/attendance/today?project= | GET /api/v1/attendance/me?month=
 POST /api/v1/progress-reports (multipart ≤5 photos) | PATCH /api/v1/progress-reports/{id}
 POST /api/v1/budget-addenda | /{id}/submit | /approve | /reject
 POST /api/v1/sync/batch                               (offline queue replay — contract in ADR 0010)
-GET  /api/v1/notifications | POST /api/v1/notifications/{id}/read
-GET  /api/v1/files/{collection}/{id}[?variant=thumb&exp&sig]
+GET  /api/v1/notifications | GET /api/v1/notifications/{id|uuid} | POST /api/v1/notifications/{id}/read | POST /api/v1/notifications/read-all
+GET  /api/v1/media/{collection}/{id}/file[?variant=thumb]   (as implemented F2b; signed exp/sig NOT implemented — F6)
 GET  /api/v1/dashboard/{owner|finance|pm|staff}
 GET  /api/v1/reports/{cash-recap|budget-vs-actual|attendance|requests|vehicle-costs}?format=json|xlsx|pdf
 POST /api/v1/auth/backchannel-logout                  (NOT USED: back-channel logout disabled, ADR 0003 §1 rev. 2026-09-23)
 GET  /api/v1/openapi.json                             (auth required outside dev)
 ```
+**File endpoint (F2b, `api/v1/endpoints/media.ts`):** `{collection}` ∈ `receipts | transfer-proofs | signatures |
+attachments | company`; read = the media collection's access (`overrideAccess: false`) — **other users' files →
+404** (also unknown collection / bad id / missing file); a signature referenced by an approval of a readable
+request is also visible; `private, no-store`, `nosniff`, sandbox CSP; **transfer-proof reads audited
+`view_sensitive`** (≤ 1 row per user/file/10 min). Details ADR 0004 §4a.
 
 ### 6.4 OpenAPI
 Payload 3 has no OpenAPI generator (S-PL grep; `@payloadcms/plugin-openapi` 404 on npm). Third-party
@@ -1128,6 +1145,13 @@ Field-level: `approvedAmount`, `docNo`, `status`, `grandTotal`, `transferredTota
 own + Finance/Owner/Admin and reads audited (`view_sensitive`).
 `access.admin` (panel entry): Admin, Finance, Owner, PM (PM sees only custom views + permitted
 collections); Staff uses the APK (optional web access = client question).
+**F2c (`develop` `59ba0a4`, ADR 0003 §3a):** `pk-staff` is now in `PANEL_ROLES`. Staff-only users get a
+**restricted nav** — only expense requests, receipts, notifications and their own profile; all other collections
+and globals are `admin.hidden` (UI only; the access functions above still decide the data). Every user may update
+their **own** `users` row, limited to the `signature` field (self-service signature). Requester actions in the
+admin call the `/api/v1` endpoints with an `Idempotency-Key`. The admin form (generic REST create/edit of
+expense requests) runs the **same `validateContent`** as `/api/v1` (G9, G10, Q-09, project XOR cost center) —
+security fix; before F2c that path skipped these rules.
 
 ### 7.3 Enforcement layers
 Traefik (header strip, rate limit) → strategy (session/device/active) → collection/field access (Where)
@@ -1168,12 +1192,14 @@ Invalid file type 'image/webp'`) on collections that do not accept `image/webp` 
 thumbnail (`thumbJpeg`); `media-receipts` (accepts WebP) keeps the WebP thumbnail.
 
 ### 9.2 Access
-Via collection `read` access derived from owner document; APK via `/api/v1/files/...`; HMAC signed
-URLs (5 min) for deep links. ADR 0004 §4.
+Via collection `read` access derived from owner document; APK via `/api/v1/media/{collection}/{id}/file`
+(F2b, §6.3); HMAC signed URLs (5 min) for deep links — **not implemented yet (F6)**. ADR 0004 §4/§4a.
 
 ### 9.3 PDF
-`@react-pdf/renderer@4.9.0` in web (single doc, semaphore 2) and worker (batch). Layout replicates the
-client form; receipts 2 per page; internal variant shows validation flags. ADR 0008.
+`@react-pdf/renderer@4.9.0` in web (single doc, semaphore 2 / 10 s → 503, each download audited `export`).
+The worker bundle stubs the renderer out (no batch PDF yet). Built-in Helvetica; receipt JPEGs embedded as
+stored. Layout replicates the client form; receipts on separate pages, 2 per page; internal variant shows
+validation flags. Layout approved by the user 2026-09-24; logo pending (Q-32). ADR 0008 "As implemented".
 
 ### 9.4 Excel export (M13)
 Library **not decided**: `exceljs@4.4.0` (MIT) last published 2023-10-19, repo pushed 2025-01-21 → fails
@@ -1198,7 +1224,8 @@ Payload Jobs Queue (ADR 0002 §4). Worker loop: `handleSchedules()` + `run({ que
 and staging — staging no longer uses `autoRun`, ADR 0002 §7). Tasks: reminders (late progress report N days, missing receipts after transfer +N days,
 budget ≥ 85 %/100 %), attendance auto-close at midnight WITA, notifications fan-out (in-app + FCM),
 report exports, Odoo outbox dispatch (F7), media orphan sweep, idempotency/web-session purge, daily
-audit hash anchor (optional). Jobs are idempotent (dedupe key per business event, Payload task
+audit hash anchor (optional). **Implemented so far:** `auditDailyAnchor` (00:05 WITA), `sendEmail` (queued)
+and `reimburseAutoClose` (01:15 WITA, F2b, §5.2). Jobs are idempotent (dedupe key per business event, Payload task
 `concurrency` keys — S-PL `queues/localAPI.ts`). Failures after retries → admin notification + log alert.
 
 ---
@@ -1314,3 +1341,10 @@ measurement gate is F1 (idle) and F6 (load).
   the DB enforces content/amounts/locks, not transitions (G6 row updated). Onboarding prerequisite: default
   rule requires "Diketahui" (Q-07) → submit 409 until the project PM / cost-center manager is set. §9.1 webp
   thumbnail fix recorded.
+- **2026-09-24 (F2b/F2c):** verified against `develop` `59ba0a4`. §5.1: exact-amount LPJ settles at
+  verification; `NL → DT` arrow not implemented; settlement reversal not implemented (void of refund KM /
+  shortfall transfer → 409, F6 backlog). §5.2/§11: Reimburse auto-close job 01:15 WITA. §6.3: file endpoint
+  `GET /api/v1/media/{collection}/{id}/file[?variant=thumb]` (other users' files → 404, transfer proofs audited
+  `view_sensitive`), notifications endpoints, transfer-void path as implemented. §7.2: `pk-staff` panel access with
+  restricted nav, self-service signature, admin requester actions via `/api/v1` + `Idempotency-Key`, admin REST
+  create runs `validateContent` (security fix). §9.2 signed URLs still open; §9.3 PDF as implemented (ADR 0008).
