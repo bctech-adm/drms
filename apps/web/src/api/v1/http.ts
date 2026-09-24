@@ -78,6 +78,8 @@ export type V1Options<B extends z.ZodType | undefined> = {
   idempotent?: boolean
   /** multipart/form-data upload (file in field `file`, JSON fields in `_payload`); no zod body. */
   multipart?: boolean
+  /** Upper bound of the JSON body in bytes (413 above it). */
+  maxBodyBytes?: number
   handler: (ctx: {
     req: PayloadRequest
     body: B extends z.ZodType ? z.infer<B> : undefined
@@ -121,6 +123,9 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
           let raw: unknown
           try {
             rawText = (await req.text?.()) ?? ''
+            if (opts.maxBodyBytes !== undefined && Buffer.byteLength(rawText, 'utf8') > opts.maxBodyBytes) {
+              return problem(413, 'Content Too Large', { detail: `Body maksimal ${opts.maxBodyBytes} byte.` })
+            }
             raw = rawText ? JSON.parse(rawText) : {}
           } catch {
             return problem(400, 'Bad Request', { detail: 'Body harus JSON.' })

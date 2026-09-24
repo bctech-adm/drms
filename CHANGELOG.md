@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- **F4 APK backend** (`apps/web`, ADR 0010): `POST /api/v1/sync/batch` (bearer + registered device; drafts
+  create/edit/delete + receipts per line, per-item transactions, idempotent by `client_uuid` via `sync_receipts`,
+  `rev`/`base_rev` conflicts — server wins, offline device time stored as comparison only, attendance/progress →
+  `unsupported` until F5); public `GET /api/v1/app/config` (min/latest APK version, download URL, company TZ,
+  feature flags incl. `pushEnabled:false`); `/.well-known/assetlinks.json` (env `ANDROID_APP_PACKAGE`,
+  `ANDROID_APP_CERT_SHA256`); request detail gains `rev`, `timeline` and `nextActor` ("Giliran"); device
+  registration accepts `fcmToken: null`. Migrations `20260924_025114_f4_mobile_sync` (columns
+  `expense_requests.sync_rev`, `receipts.client_uuid`, company-settings gate fields) and
+  `20260924_025115_f4_security` (table `sync_receipts`, immutable `receipts.client_uuid`) — additive.
+
 ## [0.2.0] - 2026-09-24
 
 F2 expense-request flow (F2a–F2e) — GATE F2 approved by the user 2026-09-24 after browser UAT on staging (run 4: 56 PASS, 2 FAIL non-blocking, 1 not testable; `docs/proyekkas/uat/f2-uat-report.md`).

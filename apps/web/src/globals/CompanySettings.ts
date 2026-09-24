@@ -78,6 +78,30 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         maxLength: 32,
         validate: (v: unknown) => (v === null || v === undefined || v === '' || (typeof v === 'string' && /^\d+\.\d+\.\d+$/.test(v)) ? true : 'Format x.y.z'),
       },
+      // F4 app version gate (GET /api/v1/app/config, ADR 0010 decision 13): shown by the APK
+      // before login; minAppVersion is also enforced on every authenticated call (426).
+      {
+        name: 'latestAppVersion',
+        type: 'text',
+        label: 'Versi APK terbaru',
+        maxLength: 32,
+        validate: (v: unknown) => (v === null || v === undefined || v === '' || (typeof v === 'string' && /^\d+\.\d+\.\d+$/.test(v)) ? true : 'Format x.y.z'),
+      },
+      {
+        name: 'appDownloadUrl',
+        type: 'text',
+        label: 'URL unduh APK',
+        maxLength: 500,
+        admin: { description: 'https://… (APK side-load). Kosong = aplikasi menampilkan "hubungi admin".' },
+        validate: (v: unknown) => (v === null || v === undefined || v === '' || (typeof v === 'string' && /^https:\/\/[^\s"'<>]+$/.test(v)) ? true : 'Harus URL https://'),
+      },
+      {
+        name: 'syncExpenseDraftsEnabled',
+        type: 'checkbox',
+        label: 'Sinkronisasi draft pengajuan dari APK (offline) aktif',
+        defaultValue: true,
+        admin: { description: 'Nonaktif → item offline ditolak FEATURE_DISABLED (ADR 0010 rollback).' },
+      },
       intField('offlineMaxAgeDays', 'Umur maksimal sesi offline APK (hari)', 30, 1, 30),
       {
         name: 'imageTargets',

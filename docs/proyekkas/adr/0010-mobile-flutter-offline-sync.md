@@ -439,6 +439,64 @@ Notes: grand total 1 447 500 assumes line totals are accepted as entered; if Q-0
 unit price", line 2 becomes 678 000 and grand total 1 448 500 (requirements v1.1 US-37). The request **number**
 (`228/PB-DRMS/20/IX/2026` style) is assigned only at online submit (US-45), never offline.
 
+### Implemented server side (F4 backend, branch `feat/nextjs-f4-mobile-backend`)
+
+Verified in `apps/web/src/api/v1/{schemas-sync.ts,endpoints/sync.ts,endpoints/app.ts}`,
+`src/domain/sync/{service.ts,clock.ts}`, `src/app/.well-known/assetlinks.json/route.ts`,
+`tests/integration/f4-mobile.int.test.ts`. Contract for the Dart client: `packages/api-contract/openapi.json`
+(`SyncBatch`, `SyncItem`, `SyncDraftUpsertPayload`, `SyncDraftDeletePayload`, `SyncBatchResponse`, `SyncResult`,
+`SyncDraftCopy`, `AppConfig`). Differences from / precisions of the contract above:
+- **Media:** receipt images are uploaded first with the existing `POST /api/v1/media/receipts` (server resize,
+  ADR 0004) and referenced by numeric `media_id`; `PUT /api/v1/sync/media/{client_uuid}` is **not** built.
+  Missing media → `rejected MEDIA_MISSING`, another user's upload → `rejected FORBIDDEN`; the image of a synced
+  receipt cannot change (remove + add online).
+- **Draft payload** (snake_case like the envelope, numeric server ids): `kind`, `title` (both required for a new
+  draft), `project_id` | `cost_center_id`, `needed_date`, `period_from/_to`, `notes`, `requester_ids`,
+  `bank_account_id`, `client_grand_total`, `lines[]` (`id` = server line id or `client_uuid` = becomes the server
+  line id; `receipts[]` per line with `client_uuid`, `receipt_no`, `vendor_name`, `receipt_date` YYYY-MM-DD,
+  `receipt_time` HH:MM, `amount`, `tax_amount`, `media_id`). Target draft = `request_id` (created online) or
+  `draft_client_uuid` (default: the item's own `client_uuid`). Omitted fields stay; `lines` replaces all lines;
+  receipts are upserted by `client_uuid` and never removed by sync; a line that still has a receipt cannot be
+  dropped (`VALIDATION`). Receipts only on Reimburse drafts (Uang Muka receipts come after transfer, online).
+- **`rev`:** new column `expense_requests.sync_rev` — 1 at create, +1 on every content edit of an editable
+  request (web or APK), never on transitions. Exposed as `rev` in `SyncResult`, `SyncDraftCopy` and
+  `GET /expense-requests/{id}`. Edit of an existing draft needs `base_rev` = server `rev`; missing or lower →
+  `conflict` + `server_copy` (code `STALE_REV`, nothing changes). Queued edits of a draft created offline predict
+  `base_rev` 1, 2, … in queue order (each applied edit adds exactly 1).
+- **Statuses:** `applied | duplicate (+ original_status) | rejected | conflict | deferred | unsupported`.
+  `unsupported` (addition) = item type accepted by the schema but not enabled yet (attendance.*,
+  progress_report.draft_upsert until F5): keep it queued, not an attempt, not stored. `deferred`:
+  `DEPENDENCY_PENDING` (a `depends_on` item not yet received) or `INTERNAL` (unexpected server error).
+  Error codes: `VALIDATION`, `NOT_EDITABLE`, `NOT_FOUND`, `FORBIDDEN`, `MEDIA_MISSING`, `CLIENT_UUID_CONFLICT`,
+  `FEATURE_DISABLED`, `DEPENDENCY_FAILED`, `STATE_CONFLICT`, `INTEGRITY`, `STALE_REV`.
+- **Authz:** bearer (`mobileBearer`) only, `device_id` = the verified `X-Device-Id`; the draft's creator only
+  (a readable foreign draft → `NOT_EDITABLE` without `server_copy`, an unreadable one → `NOT_FOUND`). Delete =
+  cancel with reason (default "Draft dihapus dari aplikasi"). Domain validation (G9, G10, Q-09, masters, US-37)
+  is the same code as `POST/PATCH /api/v1/expense-requests`.
+- **Idempotency / storage:** raw table `sync_receipts` (not a Payload collection; app role SELECT/INSERT/DELETE,
+  no UPDATE; 30-day retention with opportunistic purge) keeps `client_uuid`, user, device, batch, status,
+  result JSON and the comparison clock facts (`device_time`, `elapsed_ms`, `estimated_time`, `offline`,
+  `time_trust`; `received_at` = DB clock). Applied/conflict results are stored in the item's transaction,
+  rejections in a new transaction after the rollback. `Idempotency-Key` (= `batch_id`) is accepted but not needed.
+  Every stored result writes audit `sync_offline` (with `device_time`).
+- **Time:** `time_trust` = `server` for `offline=false`; `estimated` when the item's boot (`boot_id`, default
+  `clock.boot_id`) matches and `clock.last_server_time/_elapsed_ms` exist and the estimate is not in the future;
+  else `device_only`. `CLOCK_SKEW` when |device − estimate| > 5 min (or, without an estimate, device clock > 5 min
+  ahead of the server).
+- **Limits:** ≤ 50 items (400), ≤ 256 KiB body (413), 12 batches/min per user (429). Server flag
+  `company-settings.syncExpenseDraftsEnabled` (default on) → `rejected FEATURE_DISABLED` when off.
+- **App gate:** `GET /api/v1/app/config` is **public** (the APK must learn it is too old before login):
+  `minSupportedVersion` (= `company-settings.minAppVersion`, also enforced as 426), `latestVersion`,
+  `downloadUrl` (null until published), `updateRequired/updateAvailable` for `?version=x.y.z`, company
+  `timezone`, `android.packageName`, `features` (`pushEnabled: false` until FCM — ADR 0011 —, `syncExpenseDrafts`,
+  `syncAttendance: false`, `syncProgressReports: false`) and the sync limits. Admin/Owner edit the values in
+  "Setting perusahaan".
+- **App Links:** `GET /.well-known/assetlinks.json` (Next route, public, `Cache-Control: public, max-age=3600`)
+  from env `ANDROID_APP_PACKAGE` (default `id.co.drms.proyekkas`, still pending client confirmation) and
+  `ANDROID_APP_CERT_SHA256` (comma-separated `AA:BB:…` fingerprints, validated at boot). No fingerprint → `[]`
+  (verification fails closed → APK uses the private-use scheme fallback). Traefik: served by the host's
+  catch-all web router (`drms-pk-stg-web`, priority 1), no infra change.
+
 ## Alternatives
 
 | Alternative | Rejected because |

@@ -58,6 +58,8 @@ export type RequestDoc = {
   cancelReason?: string | null
   rejectReason?: string | null
   clientUuid?: string | null
+  /** F4: content revision of an editable request (sync `rev` / `base_rev`). */
+  syncRev?: number | null
   source?: string | null
   attachments?: unknown[] | null
   createdAt?: string

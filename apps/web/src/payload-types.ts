@@ -872,6 +872,7 @@ export interface ExpenseRequest {
   resubmitOf?: (number | null) | ExpenseRequest;
   cancelReason?: string | null;
   rejectReason?: string | null;
+  syncRev?: number | null;
   clientUuid?: string | null;
   source?: ('web' | 'apk' | 'system' | 'job') | null;
   uuid?: string | null;
@@ -1003,6 +1004,7 @@ export interface Receipt {
   verifiedAt?: string | null;
   entrySource?: ('manual' | 'ocr') | null;
   createdBy?: (number | null) | User;
+  clientUuid?: string | null;
   uuid?: string | null;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
@@ -2199,6 +2201,7 @@ export interface ExpenseRequestsSelect<T extends boolean = true> {
   resubmitOf?: T;
   cancelReason?: T;
   rejectReason?: T;
+  syncRev?: T;
   clientUuid?: T;
   source?: T;
   uuid?: T;
@@ -2275,6 +2278,7 @@ export interface ReceiptsSelect<T extends boolean = true> {
   verifiedAt?: T;
   entrySource?: T;
   createdBy?: T;
+  clientUuid?: T;
   uuid?: T;
   changeReason?: T;
   updatedAt?: T;
@@ -2843,6 +2847,15 @@ export interface CompanySetting {
   receiptMaxAgeDays: number;
   reimburseAutoCloseDays: number;
   minAppVersion?: string | null;
+  latestAppVersion?: string | null;
+  /**
+   * https://… (APK side-load). Kosong = aplikasi menampilkan "hubungi admin".
+   */
+  appDownloadUrl?: string | null;
+  /**
+   * Nonaktif → item offline ditolak FEATURE_DISABLED (ADR 0010 rollback).
+   */
+  syncExpenseDraftsEnabled?: boolean | null;
   offlineMaxAgeDays: number;
   imageTargets: {
     receiptsMaxPx: number;
@@ -2898,6 +2911,9 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   receiptMaxAgeDays?: T;
   reimburseAutoCloseDays?: T;
   minAppVersion?: T;
+  latestAppVersion?: T;
+  appDownloadUrl?: T;
+  syncExpenseDraftsEnabled?: T;
   offlineMaxAgeDays?: T;
   imageTargets?:
     | T

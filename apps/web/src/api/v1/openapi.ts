@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready, TestEmailQueued } from './schemas'
 import * as F from './schemas-flow'
+import * as S from './schemas-sync'
 
 /**
  * Builds the /api/v1 OpenAPI 3.1 document from the zod schemas (architecture §6.4). Pure module
@@ -347,6 +348,33 @@ export function buildOpenApiDocument(version: string) {
       200: { description: 'File bytes (image/jpeg, image/png, image/webp thumb, application/pdf)', content: { 'application/octet-stream': { schema: z.string().meta({ format: 'binary' }) } } },
       ...problemResponses(400, 401, 404, 426, 429),
     },
+  })
+
+  // ---- F4: APK backend (ADR 0010) ----
+  registry.registerPath({
+    method: 'get',
+    path: '/app/config',
+    summary: 'PUBLIC app gate: min/latest APK version, download URL, company timezone, feature flags, sync limits (call before login and on start)',
+    request: { query: S.AppConfigQuery },
+    responses: res(200, 'Config (Cache-Control: public, max-age=60)', S.AppConfig, [400]),
+  })
+  registry.registerPath({
+    method: 'post',
+    path: '/sync/batch',
+    summary:
+      'APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.',
+    description:
+      'Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload); attendance.* and progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).',
+    security: [{ [bearer.name]: [] }],
+    request: {
+      headers: z.object({
+        'X-Device-Id': z.uuid().meta({ description: 'Registered install id; must equal body.device_id.' }),
+        'X-App-Version': z.string().optional().meta({ description: 'APK version; below company minimum → 426.' }),
+        'Idempotency-Key': z.uuid().optional().meta({ description: 'Optional (= batch_id); items are idempotent by client_uuid.' }),
+      }),
+      body: jsonBody(S.SyncBatch),
+    },
+    responses: res(200, 'Per-item results', S.SyncBatchResponse, [400, 401, 403, 413, 426, 429]),
   })
 
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({

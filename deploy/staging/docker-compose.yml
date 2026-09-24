@@ -41,6 +41,10 @@ x-app-env: &app-env
   KC_ADMIN_CLIENT_ID: ${KC_ADMIN_CLIENT_ID:-proyekkas-admin-api}
   MEDIA_DIR: /data/media
   LOG_LEVEL: ${LOG_LEVEL:-info}
+  # F4 Android App Links (/.well-known/assetlinks.json, ADR 0010): APK application id and the SHA-256
+  # fingerprint(s) of its signing certificate, comma separated `AA:BB:…`. Empty → `[]` (no App Link).
+  ANDROID_APP_PACKAGE: ${ANDROID_APP_PACKAGE:-id.co.drms.proyekkas}
+  ANDROID_APP_CERT_SHA256: ${ANDROID_APP_CERT_SHA256:-}
   DATABASE_URL_FILE: /run/secrets/database_url_app
   PAYLOAD_SECRET_FILE: /run/secrets/payload_secret
   OIDC_WEB_CLIENT_SECRET_FILE: /run/secrets/oidc_web_client_secret

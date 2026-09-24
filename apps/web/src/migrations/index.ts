@@ -7,6 +7,8 @@ import * as migration_20260923_161853_f2b_lpj_notifications from './20260923_161
 import * as migration_20260923_161854_f2b_security from './20260923_161854_f2b_security';
 import * as migration_20260924_020343_f2e_uat_fixes from './20260924_020343_f2e_uat_fixes';
 import * as migration_20260924_020344_f2e_security from './20260924_020344_f2e_security';
+import * as migration_20260924_025114_f4_mobile_sync from './20260924_025114_f4_mobile_sync';
+import * as migration_20260924_025115_f4_security from './20260924_025115_f4_security';
 
 export const migrations = [
   {
@@ -53,5 +55,15 @@ export const migrations = [
     up: migration_20260924_020344_f2e_security.up,
     down: migration_20260924_020344_f2e_security.down,
     name: '20260924_020344_f2e_security',
+  },
+  {
+    up: migration_20260924_025114_f4_mobile_sync.up,
+    down: migration_20260924_025114_f4_mobile_sync.down,
+    name: '20260924_025114_f4_mobile_sync',
+  },
+  {
+    up: migration_20260924_025115_f4_security.up,
+    down: migration_20260924_025115_f4_security.down,
+    name: '20260924_025115_f4_security',
   },
 ];
