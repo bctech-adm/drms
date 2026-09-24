@@ -1,10 +1,9 @@
-import { createLocalReq, type Access, type PayloadRequest, type Where } from 'payload'
+import type { Access, PayloadRequest, Where } from 'payload'
 
 import { hasRole, relId, userId } from '@/access/roles'
 import { anyOf, byRole, type Rule } from '@/access/policies'
 import { inIds } from '@/access/scope'
-import { writeAudit } from '@/audit/writer'
-import { withReqTransaction } from '@/lib/system-tx'
+import { writeAuditDetached } from '@/audit/writer'
 
 /**
  * Read scopes for T1 and its satellites (requirements v1.1 §4 "Pengajuan dana", architecture §7.2):
@@ -97,14 +96,7 @@ export function byVisibleRequest(field = 'request'): Access {
 export function denyDeleteLogged(docType: string): Access {
   return async ({ req, id }) => {
     if (req.method?.toUpperCase() === 'DELETE' && req.user) {
-      try {
-        const logReq = await createLocalReq({ req: { headers: req.headers }, user: req.user, context: {} }, req.payload)
-        await withReqTransaction(logReq, () =>
-          writeAudit(logReq, [{ action: 'delete_attempt', docType, docId: id === undefined ? undefined : String(id), reason: 'hard delete ditolak (G4)' }]),
-        )
-      } catch (err) {
-        req.payload.logger.error({ msg: 'delete_attempt audit failed', err: (err as Error).message })
-      }
+      await writeAuditDetached(req, [{ action: 'delete_attempt', docType, docId: id === undefined ? undefined : String(id), reason: 'hard delete ditolak (G4)' }])
     }
     return false
   }

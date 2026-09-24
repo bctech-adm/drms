@@ -1354,7 +1354,9 @@ export interface AuditLog {
     | 'email_test'
     | 'approve'
     | 'reject'
-    | 'verify';
+    | 'verify'
+    | 'acknowledge_delegated'
+    | 'access_denied';
   field?: string | null;
   lineNo?: number | null;
   oldValue?:

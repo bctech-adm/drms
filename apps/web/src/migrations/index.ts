@@ -5,6 +5,8 @@ import * as migration_20260923_133049_f2a_flow from './20260923_133049_f2a_flow'
 import * as migration_20260923_133050_f2a_security from './20260923_133050_f2a_security';
 import * as migration_20260923_161853_f2b_lpj_notifications from './20260923_161853_f2b_lpj_notifications';
 import * as migration_20260923_161854_f2b_security from './20260923_161854_f2b_security';
+import * as migration_20260924_020343_f2e_uat_fixes from './20260924_020343_f2e_uat_fixes';
+import * as migration_20260924_020344_f2e_security from './20260924_020344_f2e_security';
 
 export const migrations = [
   {
@@ -41,5 +43,15 @@ export const migrations = [
     up: migration_20260923_161854_f2b_security.up,
     down: migration_20260923_161854_f2b_security.down,
     name: '20260923_161854_f2b_security',
+  },
+  {
+    up: migration_20260924_020343_f2e_uat_fixes.up,
+    down: migration_20260924_020343_f2e_uat_fixes.down,
+    name: '20260924_020343_f2e_uat_fixes',
+  },
+  {
+    up: migration_20260924_020344_f2e_security.up,
+    down: migration_20260924_020344_f2e_security.down,
+    name: '20260924_020344_f2e_security',
   },
 ];
