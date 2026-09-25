@@ -144,6 +144,12 @@ export const envSchema = z
       .transform((v) => parseCertFingerprints(v) ?? []),
     /** F3 rollback switch (export-library-decision §7): 'false' hides Excel buttons, /reports/…/xlsx → 404. */
     EXPORT_XLSX_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+    /**
+     * FCM push (ADR 0011). Stays false: there is no Firebase project (Q-44) and no FCM dispatcher
+     * yet, so `true` is refused at boot (rows would stay push_status=pending forever). The APK reads
+     * the effective value from GET /api/v1/app/config `features.pushEnabled`.
+     */
+    PUSH_FCM_ENABLED: bool,
     ...smtpFields,
   })
   .superRefine((env, ctx) => {
@@ -160,6 +166,9 @@ export const envSchema = z
     }
     if (!/\/realms\/[^/]+$/.test(env.OIDC_ISSUER.replace(/\/$/, ''))) {
       ctx.addIssue({ code: 'custom', path: ['OIDC_ISSUER'], message: 'must look like <base>/realms/<realm>' })
+    }
+    if (env.PUSH_FCM_ENABLED) {
+      ctx.addIssue({ code: 'custom', path: ['PUSH_FCM_ENABLED'], message: 'not supported yet: no FCM dispatcher / Firebase project (ADR 0011, Q-44)' })
     }
     if (env.KC_ADMIN_BASE_URL && !env.KC_ADMIN_CLIENT_SECRET) {
       ctx.addIssue({ code: 'custom', path: ['KC_ADMIN_CLIENT_SECRET'], message: 'required when KC_ADMIN_BASE_URL is set' })

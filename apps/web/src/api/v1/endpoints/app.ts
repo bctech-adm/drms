@@ -67,8 +67,9 @@ export const appConfigEndpoint = v1({
       serverTime: new Date().toISOString(),
       android: { packageName: getEnv().ANDROID_APP_PACKAGE },
       features: {
-        // No FCM project/dispatcher yet (ADR 0011): the APK polls GET /notifications.
-        pushEnabled: false,
+        // Env PUSH_FCM_ENABLED (refused while there is no FCM project/dispatcher, ADR 0011):
+        // until then the APK polls GET /notifications.
+        pushEnabled: getEnv().PUSH_FCM_ENABLED,
         syncExpenseDrafts: s.syncExpenseDraftsEnabled,
         syncAttendance: false, // F5
         syncProgressReports: false, // F5
