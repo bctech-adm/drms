@@ -73,7 +73,8 @@ html[data-theme='dark'] .pk-f3 {
 .pk-f3 .pk-kpi a.pk-kpi-link { position: absolute; inset: 0; border-radius: inherit; }
 .pk-f3 .pk-kpi a.pk-kpi-link:focus-visible { outline: var(--accessibility-outline); outline-offset: 2px; }
 .pk-f3 .pk-kpi .pk-kpi-more { margin-top: auto; padding-top: 6px; font-size: 12px; font-weight: 600; color: var(--pk-primary); }
-.pk-f3 .pk-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--pk-muted-fg); }
+.pk-f3 .pk-delta { display: block; margin: 0; font-size: 12px; line-height: 1.45; font-weight: 600; color: var(--pk-muted-fg); }
+.pk-f3 .pk-delta > span:first-child { margin-right: 4px; font-size: 10px; }
 .pk-f3 .pk-delta.good { color: var(--pk-tone-ok-text); } .pk-f3 .pk-delta.bad { color: var(--pk-tone-bad-text); }
 .pk-f3 .pk-delta span { font-weight: 400; color: var(--pk-muted-fg); }
 .pk-f3 svg.pk-spark { width: 100%; height: 34px; display: block; margin: 6px 0 2px; }
