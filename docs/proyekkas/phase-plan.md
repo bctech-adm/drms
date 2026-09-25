@@ -184,7 +184,10 @@
 - **Acceptance gate:** E2E on physical Android device(s) against staging: create → approve (owner on
   phone) → transfer (web) → receipts → LPJ; offline check-in synced with "offline" flag and server time;
   revoked device blocked ≤ 1 request; APK signed; no secrets in APK (static scan).
-- **Status (2026-09-25, branch `feat/f4b-mobile-completion`, not merged):** gap analysis and remaining work in
+- **Update 2026-09-25 (Analyst):** F4b is merged to `develop` (`e7e997a`, phone-test fixes `8712964`); the physical-phone
+  gate is still pending. Go-live scope, sprints and the approval-flow change are planned in
+  `plans/fase1-golive.md` (DRAFT for GATE 1) and ADR 0013 (proposed).
+- **Status (2026-09-25, branch `feat/f4b-mobile-completion`, not merged — superseded by the update above):** gap analysis and remaining work in
   `docs/proyekkas/f4/f4-gap-analysis.md`; phone test script `docs/proyekkas/f4/f4-e2e-scenario.md`. Built in F4b:
   explicit 401 `DEVICE_REVOKED` + forced logout, device integrity flags, requester receipts/LPJ and transfer status on
   the phone, in-app notifications, minimal attendance check-in/out (offline, behind a company setting), APK secret
