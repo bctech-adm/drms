@@ -186,22 +186,13 @@
     --hover-color: var(--pk-fg);
   }
 
-  // "Buat Baru" in list headers = the page's primary action.
-  .list-header__create-new-button.btn--style-pill,
-  .list-header__create-new-button .btn--style-pill {
+  // "Buat Baru" in list headers (a.list-create-new-doc__create-new-button, Payload 3.90.1) = the
+  // page's primary action.
+  .list-create-new-doc__create-new-button.btn--style-pill {
     --bg-color: var(--pk-primary);
     --color: var(--pk-on-primary);
     --hover-bg: var(--pk-primary-hover);
     --hover-color: var(--pk-on-primary);
-  }
-
-  .list-header__create-new-button .pill {
-    background: var(--pk-primary);
-    color: var(--pk-on-primary);
-  }
-
-  .list-header__create-new-button:hover .pill {
-    background: var(--pk-primary-hover);
   }
 
   .pk-sso .btn--style-primary {
@@ -214,6 +205,7 @@
     justify-content: center;
     width: 100%;
     min-height: 48px;
+    margin: 0;
     text-decoration: none;
     box-shadow: 0 8px 20px -8px color-mix(in oklab, var(--pk-accent) 60%, transparent);
   }

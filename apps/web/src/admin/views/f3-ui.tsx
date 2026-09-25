@@ -23,11 +23,12 @@ export const F3_STYLE = `
 .pk-f3 .pk-tile p { margin: 2px 0; font-size: 13px; }
 .pk-f3 .pk-tile a.pk-more { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--pk-primary); }
 .pk-f3 section.pk-block { margin: 0 0 24px; }
-.pk-f3 section.pk-block > h2 { font-family: var(--pk-font-heading); font-size: 17px; margin: 0 0 10px; }
-.pk-f3 .pk-scroll { overflow-x: auto; }
+.pk-f3 section.pk-block > h2 { font-family: var(--pk-font-heading); font-size: 17px; line-height: 1.3; margin: 0 0 10px; }
+.pk-f3 .pk-scroll { overflow-x: auto; margin: 0 0 12px; background: var(--pk-card); border: 1px solid var(--pk-border); border-radius: var(--style-radius-l); box-shadow: var(--pk-shadow); }
 .pk-f3 table.pk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.pk-f3 .pk-table th { text-align: left; border-bottom: 2px solid var(--pk-border); padding: 6px 8px; white-space: nowrap; color: var(--pk-muted-fg); font-weight: 600; }
-.pk-f3 .pk-table td { border-bottom: 1px solid var(--pk-border); padding: 6px 8px; vertical-align: top; }
+.pk-f3 .pk-table th { text-align: left; border-bottom: 2px solid var(--pk-border); padding: 10px 12px; white-space: nowrap; color: var(--pk-muted-fg); font-weight: 600; }
+.pk-f3 .pk-table td { border-bottom: 1px solid var(--pk-border); padding: 8px 12px; vertical-align: top; }
+.pk-f3 .pk-table tbody tr:last-child td { border-bottom: 0; }
 .pk-f3 .pk-table .n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pk-f3 .pk-table tfoot td { font-weight: 700; border-top: 2px solid var(--pk-border); }
 .pk-f3 .pk-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 8px; font-size: 11px; font-weight: 600; border: 1px solid currentColor; }
