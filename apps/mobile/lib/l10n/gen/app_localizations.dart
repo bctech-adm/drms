@@ -1237,6 +1237,24 @@ abstract class AppLocalizations {
   /// **'Tersimpan.'**
   String get actionSaved;
 
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Notifikasi'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada notifikasi.'**
+  String get notificationsEmpty;
+
+  /// No description provided for @notificationsReadAll.
+  ///
+  /// In id, this message translates to:
+  /// **'Tandai semua dibaca'**
+  String get notificationsReadAll;
+
   /// No description provided for @queueTitle.
   ///
   /// In id, this message translates to:

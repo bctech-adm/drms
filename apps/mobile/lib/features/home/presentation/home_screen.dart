@@ -11,6 +11,8 @@ import '../../approvals/application/inbox_providers.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/user_profile.dart';
 import '../../expense/domain/request_status.dart';
+import '../../notifications/application/notifications_providers.dart';
+import '../../notifications/presentation/notifications_screen.dart';
 
 /// Role home (Staff / PM / Owner / Finance) with big action buttons.
 class HomeScreen extends ConsumerWidget {
@@ -67,6 +69,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(t.appTitle),
         actions: [
+          const NotificationBell(),
           if (!ref.watch(appEnvProvider).isProd)
             Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -78,6 +81,7 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(authControllerProvider.notifier).refreshProfile();
           ref.invalidate(inboxProvider);
+          ref.invalidate(notificationsProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),

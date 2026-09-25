@@ -16,6 +16,7 @@ import '../features/expense/presentation/request_detail_screen.dart';
 import '../features/expense/presentation/requests_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/home/presentation/home_shell.dart';
+import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
 import '../features/sync/presentation/queue_screen.dart';
 
@@ -78,6 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/requests/:id',
         builder: (_, s) => RequestDetailScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
       ),
+      GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
       GoRoute(
         path: '/drafts/new',
         builder: (_, s) => DraftEditorRoute(type: RequestType.fromCode(s.uri.queryParameters['type'])),

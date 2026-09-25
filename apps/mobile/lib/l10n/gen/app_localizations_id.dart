@@ -610,6 +610,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionSaved => 'Tersimpan.';
 
   @override
+  String get notificationsTitle => 'Notifikasi';
+
+  @override
+  String get notificationsEmpty => 'Belum ada notifikasi.';
+
+  @override
+  String get notificationsReadAll => 'Tandai semua dibaca';
+
+  @override
   String get queueTitle => 'Antrean kirim';
 
   @override

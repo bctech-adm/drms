@@ -214,6 +214,10 @@
   "actionCompleteConfirm": "Dana sudah diterima dan pengajuan ini selesai?",
   "actionSaved": "Tersimpan.",
 
+  "notificationsTitle": "Notifikasi",
+  "notificationsEmpty": "Belum ada notifikasi.",
+  "notificationsReadAll": "Tandai semua dibaca",
+
   "queueTitle": "Antrean kirim",
   "queueEmpty": "Tidak ada data yang menunggu dikirim.",
   "syncNow": "Kirim sekarang",
