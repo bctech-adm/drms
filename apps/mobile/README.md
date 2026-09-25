@@ -35,6 +35,17 @@ Until then the home screen bell polls `GET /api/v1/notifications` (every 2 minut
   `POST /devices/register` at every start/login, recorded on the server and **never block** (Q-43). Mock location is
   checked per GPS fix (`Position.isMocked`) at attendance. Both the phone and the server refuse a fake location.
 
+## Online state, logout, start-up (phone fixes, ADR 0010 "Phone test fixes")
+
+- **Online** = the server answered the last request (any HTTP status). No answer → red banner "Offline …" and a
+  `GET /api/v1/health` probe every 3–60 s until the server answers; tap the banner to check at once. Mobile data,
+  Wi-Fi, VPN and "other" all count as a network; a wrong "none" from Android no longer sticks.
+- **Logout** always returns to the login screen: device revoke + Keycloak logout get at most 5 s together, then the
+  local session is cleared even offline. Unsent data is **kept** (encrypted, locked to the same user); the dialog warns
+  and asks "Tetap keluar".
+- **Start-up**: home is shown from the cached profile at once; device registration, `/me`, `/app/config`, masters and
+  notifications load in the background. `flutter run` (debug) prints `[pk.startup] +… ms` marks.
+
 ## Attendance (F4 slice)
 
 `/attendance` (home button "Absensi", enabled when `/app/config` `features.syncAttendance` is true = company setting

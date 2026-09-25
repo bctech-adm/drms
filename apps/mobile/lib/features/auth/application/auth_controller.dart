@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/logging/log.dart';
+import '../../../core/logging/startup_trace.dart';
 import '../../../core/network/api_exception.dart';
 import '../../expense/data/expense_mappers.dart';
 import '../data/oidc_client.dart';
@@ -52,6 +53,18 @@ final currentProfileProvider = Provider<UserProfile?>((ref) {
 
 class AuthController extends Notifier<AuthState> {
   bool _busy = false;
+  Future<void>? _logout;
+
+  /// Upper bound for the network part of [logout] (device revoke + Keycloak logout). The local
+  /// session is cleared afterwards in every case (ADR 0010 "Phone test fixes").
+  Duration get logoutNetworkBudget => const Duration(seconds: 5);
+
+  /// Upper bound for each local clean-up step of [logout] (Keystore / secure storage calls).
+  Duration get logoutLocalStepBudget => const Duration(seconds: 3);
+
+  /// How long device registration waits for the integrity report / push token before sending
+  /// without them (both are optional fields of `POST /devices/register`).
+  Duration get registerExtrasBudget => const Duration(seconds: 2);
 
   @override
   AuthState build() {
@@ -63,31 +76,67 @@ class AuthController extends Notifier<AuthState> {
 
   static String _profileKey(String sub) => 'profile:$sub';
 
+  /// App start. With a cached profile the home screen is shown at once (tokens + profile known) and
+  /// device registration + `/me` run in the background; only a first start without a cached profile
+  /// waits for the network.
   Future<void> _restore() async {
+    StartupTrace.mark('auth restore start');
     final tokens = ref.read(tokenManagerProvider);
-    if (!await tokens.hasSession()) {
+    final (hasSession, sub) = await (tokens.hasSession(), tokens.sessionSub()).wait;
+    if (!hasSession) {
       state = const AuthSignedOut();
+      StartupTrace.mark('auth restore: signed out');
       return;
     }
-    final sub = await tokens.sessionSub();
     if (sub == null) {
       await tokens.clear();
       state = const AuthSignedOut();
       return;
     }
+    final cached = await _cachedProfile(sub);
+    if (cached != null) {
+      state = AuthSignedIn(profile: cached, sub: sub, fromCache: true);
+      StartupTrace.mark('auth restore: signed in from cache');
+      unawaited(_refreshInBackground(sub));
+      return;
+    }
     try {
       final profile = await _loadProfileOnline(sub, register: true);
       state = AuthSignedIn(profile: profile, sub: sub);
+      StartupTrace.mark('auth restore: signed in online');
     } on NetworkException {
-      final cached = await ref.read(databaseProvider).kvGetJson(_profileKey(sub));
-      state = cached == null
-          ? const AuthSignedOut(message: 'Butuh koneksi internet untuk memuat profil.')
-          : AuthSignedIn(profile: userProfileFromJson(cached), sub: sub, fromCache: true);
+      state = const AuthSignedOut(message: 'Butuh koneksi internet untuk memuat profil.');
     } on UnauthorizedException {
       // _onSessionEnded already switched the state.
     } on ApiException catch (e) {
       Log.w('auth: restore failed', e);
       state = AuthSignedOut(message: e.message);
+    }
+  }
+
+  Future<UserProfile?> _cachedProfile(String sub) async {
+    try {
+      final raw = await ref.read(databaseProvider).kvGetJson(_profileKey(sub));
+      return raw == null ? null : userProfileFromJson(raw);
+    } on Object catch (e) {
+      Log.w('auth: cached profile unreadable', e);
+      return null;
+    }
+  }
+
+  /// Background half of a cached start: registers the install and refreshes the profile. Offline or
+  /// a server error keeps the cached profile ([refreshProfile] retries the registration later); a
+  /// rejected session is handled by [_onSessionEnded].
+  Future<void> _refreshInBackground(String sub) async {
+    try {
+      final profile = await _loadProfileOnline(sub, register: true);
+      final s = state;
+      if (s is AuthSignedIn && s.sub == sub) state = AuthSignedIn(profile: profile, sub: sub);
+      StartupTrace.mark('auth: background profile refresh done');
+    } on ApiException catch (e) {
+      Log.i('auth: background refresh skipped (${e.runtimeType})');
+    } on Object catch (e) {
+      Log.w('auth: background refresh failed', e);
     }
   }
 
@@ -104,9 +153,12 @@ class AuthController extends Notifier<AuthState> {
   Future<void> _registerDevice() async {
     final device = ref.read(deviceIdentityProvider);
     final api = ref.read(profileApiProvider);
-    final fcm = await ref.read(pushServiceProvider).token();
-    // ADR 0010 decision 10: reported at every start/login, recorded server-side, never blocking.
-    final integrity = await ref.read(integrityReportProvider.future);
+    // ADR 0010 decision 10: reported at every start/login, recorded server-side, never blocking —
+    // both extras are optional, so a slow platform channel only drops them from this registration.
+    final (fcm, integrity) = await (
+      _optional(() => ref.read(pushServiceProvider).token()),
+      _optional(() => ref.read(integrityReportProvider.future)),
+    ).wait;
     Future<void> attempt() => api.registerDevice(
       deviceId: device.deviceId,
       model: device.model,
@@ -121,6 +173,14 @@ class AuthController extends Notifier<AuthState> {
       Log.i('auth: install id rejected (${e.status}), rotating');
       await device.rotate();
       await attempt();
+    }
+  }
+
+  Future<T?> _optional<T>(Future<T?> Function() f) async {
+    try {
+      return await f().timeout(registerExtrasBudget);
+    } on Object {
+      return null;
     }
   }
 
@@ -176,17 +236,40 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  /// Logout: revoke this device server-side (also ends the Keycloak offline session, ADR 0003 §5),
-  /// end the Keycloak session (browser mode: RP-initiated logout via AppAuth; password mode: plain
-  /// `POST …/logout` with the refresh token, no browser — ADR 0012), drop tokens, and use a new install
-  /// id next time (a revoked id can never be re-activated). The encrypted queue stays, locked to this
-  /// user's `sub`.
-  Future<void> logout() async {
+  /// Logout. ALWAYS ends in [AuthSignedOut] — offline, when Keycloak or the API hangs or fails, or
+  /// when a Keystore call throws:
+  /// 1. best effort, at most [logoutNetworkBudget] in total: revoke this device server-side (also
+  ///    ends the Keycloak offline session, ADR 0003 §5), then end the Keycloak session (browser mode:
+  ///    RP-initiated logout via AppAuth; password mode: `POST …/logout` with the refresh token, ADR 0012);
+  /// 2. local, each step bounded and isolated: drop tokens, push clean-up, new install id for the next
+  ///    login (a revoked id can never be re-activated).
+  /// The encrypted offline queue and drafts are NOT deleted: they stay locked to this user's `sub`
+  /// (ADR 0010 decision 3) and are sent after the same user signs in again. The profile screen warns
+  /// before logout when unsent items exist. Concurrent calls share one run.
+  Future<void> logout() => _logout ??= _runLogout().whenComplete(() => _logout = null);
+
+  Future<void> _runLogout() async {
+    final sw = Stopwatch()..start();
+    try {
+      await _endRemoteSession().timeout(logoutNetworkBudget);
+    } on Object catch (e) {
+      Log.i('auth: remote logout incomplete (${e.runtimeType})');
+    }
+    final tm = ref.read(tokenManagerProvider);
+    final device = ref.read(deviceIdentityProvider);
+    await _localStep('tokens', tm.clear);
+    await _localStep('push', () => ref.read(pushServiceProvider).onLogout());
+    await _localStep('install id', device.rotate);
+    state = const AuthSignedOut();
+    Log.i('auth: signed out in ${sw.elapsedMilliseconds} ms');
+  }
+
+  Future<void> _endRemoteSession() async {
     final tm = ref.read(tokenManagerProvider);
     final device = ref.read(deviceIdentityProvider);
     try {
       await ref.read(profileApiProvider).revokeDevice(device.deviceId);
-    } on ApiException catch (e) {
+    } on Object catch (e) {
       Log.i('auth: device revoke skipped (${e.runtimeType})');
     }
     try {
@@ -200,14 +283,19 @@ class AuthController extends Notifier<AuthState> {
     } on Object catch (e) {
       Log.i('auth: end session skipped (${e.runtimeType})');
     }
-    await ref.read(pushServiceProvider).onLogout();
-    await tm.clear();
-    await device.rotate();
-    state = const AuthSignedOut();
+  }
+
+  Future<void> _localStep(String name, Future<void> Function() f) async {
+    try {
+      await f().timeout(logoutLocalStepBudget);
+    } on Object catch (e) {
+      Log.w('auth: logout step "$name" failed', e);
+    }
   }
 
   Future<void> _onSessionEnded(String reason) async {
     Log.i('auth: session ended ($reason)');
+    if (_logout != null) return; // logout in progress sets the final state itself
     if (reason == TokenManager.sessionEndedDeviceRevoked) {
       // The server never re-activates a revoked install id: use a fresh one for the next login.
       await ref.read(pushServiceProvider).onLogout();

@@ -1,12 +1,16 @@
 package id.co.drms.proyekkas
 
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * Monotonic clock for the offline sync contract (ADR 0010 decision 7): `elapsed_ms` =
@@ -17,8 +21,17 @@ import java.io.File
  * (POST /api/v1/devices/register `integrity`), never used to block. No third-party plugin and no
  * extra permission: su/Magisk files + test-keys build tags (root), well-known emulator build
  * properties, and the Settings.Global developer-options / ADB switches.
+ *
+ * Threading: since Flutter 3.29 the Dart UI isolate runs on the Android main thread by default
+ * (engine `Settings::merged_platform_ui_thread = kEnabled`, Flutter 3.47.5 common/settings.h), so a
+ * method-channel handler that does file-system or binder work on the main thread freezes the whole
+ * UI. The integrity checks therefore run on a single background thread; the result is posted back
+ * to the main thread (MethodChannel.MethodCallHandler docs allow any thread, main keeps it simple).
  */
 class MainActivity : FlutterActivity() {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var integrityExecutor: ExecutorService? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "id.co.drms.proyekkas/clock")
@@ -39,17 +52,33 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "id.co.drms.proyekkas/integrity")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "check" -> result.success(
-                        mapOf(
-                            "rooted" to isRooted(),
-                            "emulator" to isEmulator(),
-                            "developerMode" to globalFlag(Settings.Global.DEVELOPMENT_SETTINGS_ENABLED),
-                            "adbEnabled" to globalFlag(Settings.Global.ADB_ENABLED),
-                        ),
-                    )
+                    "check" -> {
+                        val executor = integrityExecutor ?: Executors.newSingleThreadExecutor().also {
+                            integrityExecutor = it
+                        }
+                        executor.execute {
+                            val report: Map<String, Boolean>? = try {
+                                mapOf(
+                                    "rooted" to isRooted(),
+                                    "emulator" to isEmulator(),
+                                    "developerMode" to globalFlag(Settings.Global.DEVELOPMENT_SETTINGS_ENABLED),
+                                    "adbEnabled" to globalFlag(Settings.Global.ADB_ENABLED),
+                                )
+                            } catch (e: Exception) {
+                                null // best effort: "not measured"
+                            }
+                            mainHandler.post { result.success(report) }
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        integrityExecutor?.shutdownNow()
+        integrityExecutor = null
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     private fun globalFlag(name: String): Boolean =

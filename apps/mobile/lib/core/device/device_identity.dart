@@ -20,21 +20,34 @@ class DeviceIdentity implements ClientHeaders {
   String get deviceId => _deviceId;
 
   static Future<DeviceIdentity> load(SecureStore store) async {
-    var id = await store.read(SecureKeys.installId);
-    if (id == null) {
-      id = const Uuid().v4();
-      await store.write(SecureKeys.installId, id);
-    }
-    var version = '0.0.0';
-    var model = 'android';
-    try {
-      version = (await PackageInfo.fromPlatform()).version;
-      final a = await DeviceInfoPlugin().androidInfo;
-      model = '${a.manufacturer} ${a.model}';
-    } on Object {
-      // Not on Android (tests): keep defaults.
-    }
+    // Three independent platform calls: run them in parallel (start-up path).
+    final (id, version, model) = await (_installId(store), _appVersion(), _model()).wait;
     return DeviceIdentity._(store, id, version, model.length > 128 ? model.substring(0, 128) : model);
+  }
+
+  static Future<String> _installId(SecureStore store) async {
+    final existing = await store.read(SecureKeys.installId);
+    if (existing != null) return existing;
+    final id = const Uuid().v4();
+    await store.write(SecureKeys.installId, id);
+    return id;
+  }
+
+  static Future<String> _appVersion() async {
+    try {
+      return (await PackageInfo.fromPlatform()).version;
+    } on Object {
+      return '0.0.0'; // not on Android (tests)
+    }
+  }
+
+  static Future<String> _model() async {
+    try {
+      final a = await DeviceInfoPlugin().androidInfo;
+      return '${a.manufacturer} ${a.model}';
+    } on Object {
+      return 'android'; // not on Android (tests)
+    }
   }
 
   /// For tests.

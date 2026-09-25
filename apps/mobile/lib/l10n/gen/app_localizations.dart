@@ -1504,8 +1504,26 @@ abstract class AppLocalizations {
   /// No description provided for @logoutPendingWarning.
   ///
   /// In id, this message translates to:
-  /// **'Masih ada {count} data belum terkirim. Data tetap tersimpan terenkripsi di HP dan hanya bisa dikirim setelah Anda masuk lagi dengan akun yang sama.'**
+  /// **'Masih ada {count} data belum terkirim ke server. Data ini TIDAK dihapus: tetap tersimpan terenkripsi di HP dan baru dikirim setelah Anda masuk lagi dengan akun yang sama. Jika ada sinyal, kirim dulu lewat menu Antrean.'**
   String logoutPendingWarning(int count);
+
+  /// No description provided for @logoutAnyway.
+  ///
+  /// In id, this message translates to:
+  /// **'Tetap keluar'**
+  String get logoutAnyway;
+
+  /// No description provided for @logoutInProgress.
+  ///
+  /// In id, this message translates to:
+  /// **'Sedang keluar…'**
+  String get logoutInProgress;
+
+  /// No description provided for @offlineRecheck.
+  ///
+  /// In id, this message translates to:
+  /// **'Ketuk untuk cek koneksi.'**
+  String get offlineRecheck;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

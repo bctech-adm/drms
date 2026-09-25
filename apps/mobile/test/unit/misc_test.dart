@@ -70,12 +70,13 @@ void main() {
       profile: UserProfile(id: 1, email: 'a@b', roles: {Role.staff}),
       sub: 's',
     );
-    String? r(String loc, AuthState a, {VersionGate g = VersionGate.ok, bool loading = false}) =>
-        redirectFor(location: loc, auth: a, gate: g, configLoading: loading);
+    String? r(String loc, AuthState a, {VersionGate g = VersionGate.ok}) =>
+        redirectFor(location: loc, auth: a, gate: g);
 
     test('update gate wins', () => expect(r('/home', signedIn, g: VersionGate.updateRequired), '/update'));
     test('starting → splash', () => expect(r('/home', const AuthStarting()), '/splash'));
-    test('config loading → splash', () => expect(r('/login', signedOut, loading: true), '/splash'));
+    // Regression (slow first load): /app/config loads in the background, it never holds the splash.
+    test('config not awaited: signed out goes straight to login', () => expect(r('/splash', signedOut), '/login'));
     test('signed out → login', () => expect(r('/requests/1', signedOut), '/login'));
     test('signed in leaves login', () => expect(r('/login', signedIn), '/home'));
     test('signed in stays', () => expect(r('/requests/1', signedIn), isNull));

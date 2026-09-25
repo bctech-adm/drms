@@ -5,33 +5,68 @@ import '../../../app/providers.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../sync/application/sync_coordinator.dart';
+import '../../sync/data/outbox_repository.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _loggingOut = false;
+
+  /// Unsent items of this user (pending + failed/rejected), from the same live DB query as the
+  /// offline banner; a slow DB never blocks the dialog for more than a second.
+  Future<int> _unsentCount() async {
+    OutboxCounts? counts;
+    // Keep the provider listened while waiting (an unlistened provider may stay paused).
+    final keepAlive = ref.listenManual(outboxCountsProvider, (_, _) {});
+    try {
+      counts = await ref.read(outboxCountsProvider.future).timeout(const Duration(seconds: 1));
+    } on Object {
+      counts = ref.read(outboxCountsProvider).value;
+    } finally {
+      keepAlive.close();
+    }
+    return counts == null ? 0 : counts.pending + counts.attention;
+  }
+
+  /// Logout decision (ADR 0010 "Phone test fixes"): unsent items are never deleted. With unsent
+  /// items the dialog says so and the confirm button reads "Tetap keluar".
+  Future<void> _logout() async {
+    if (_loggingOut) return;
     final t = AppLocalizations.of(context);
-    final pending = ref.read(outboxCountsProvider).value?.pending ?? 0;
+    final unsent = await _unsentCount();
+    if (!mounted) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
         title: Text(t.logoutConfirm),
-        content: pending > 0 ? Text(t.logoutPendingWarning(pending)) : null,
+        content: unsent > 0 ? Text(t.logoutPendingWarning(unsent), key: const Key('logout-pending-warning')) : null,
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancel)),
           FilledButton(
             key: const Key('logout-confirm'),
             onPressed: () => Navigator.pop(c, true),
-            child: Text(t.logout),
+            child: Text(unsent > 0 ? t.logoutAnyway : t.logout),
           ),
         ],
       ),
     );
-    if (ok == true) await ref.read(authControllerProvider.notifier).logout();
+    if (ok != true || !mounted) return;
+    setState(() => _loggingOut = true);
+    try {
+      // Always ends signed out (bounded network part); the router then shows the login screen.
+      await ref.read(authControllerProvider.notifier).logout();
+    } finally {
+      if (mounted) setState(() => _loggingOut = false);
+    }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final p = ref.watch(currentProfileProvider);
     final device = ref.watch(deviceIdentityProvider);
@@ -70,9 +105,11 @@ class ProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: OutlinedButton.icon(
               key: const Key('logout-button'),
-              onPressed: () => _logout(context, ref),
-              icon: const Icon(Icons.logout),
-              label: Text(t.logout),
+              onPressed: _loggingOut ? null : _logout,
+              icon: _loggingOut
+                  ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.logout),
+              label: Text(_loggingOut ? t.logoutInProgress : t.logout),
             ),
           ),
         ],

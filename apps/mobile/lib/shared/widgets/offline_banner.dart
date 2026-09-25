@@ -16,7 +16,7 @@ class OfflineBanner extends ConsumerWidget {
     final counts = ref.watch(outboxCountsProvider).value;
     final sync = ref.watch(syncCoordinatorProvider);
     final lines = <String>[
-      if (!online) t.offlineBanner,
+      if (!online) '${t.offlineBanner} ${t.offlineRecheck}',
       if (counts != null && counts.pending > 0) t.pendingQueue(counts.pending),
       if (counts != null && counts.attention > 0) t.failedQueue(counts.attention),
       if (online && sync.serverUnsupported) t.syncServerUnsupported,
@@ -26,16 +26,20 @@ class OfflineBanner extends ConsumerWidget {
     return Material(
       key: const Key('offline-banner'),
       color: online ? scheme.secondaryContainer : scheme.errorContainer,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Icon(online ? Icons.cloud_queue : Icons.cloud_off, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text(lines.join('\n'))),
-            ],
+      child: InkWell(
+        // Offline: probe GET /api/v1/health now instead of waiting for the next automatic probe.
+        onTap: online ? null : () => ref.read(connectivityProvider.notifier).recheck(),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Icon(online ? Icons.cloud_queue : Icons.cloud_off, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text(lines.join('\n'))),
+              ],
+            ),
           ),
         ),
       ),

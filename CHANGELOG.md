@@ -57,6 +57,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
 ### Fixed
+- APK (staging phone test, ADR 0010 "Phone test fixes"): "Offline" shown on working mobile data — a successful API
+  answer now always means online and a `GET /api/v1/health` probe recovers from failures and wrong `none` reports;
+  logout that never finished — now always returns to the login screen (network part ≤ 5 s, local clean-up always,
+  unsent data kept with a warning); slow first load — home from the cached profile at once, device registration,
+  `/me` and `/app/config` in the background, integrity checks off the Android main thread.
 - `media-selfies` stored WebP while accepting only `image/jpeg`, so every selfie upload failed with "Invalid file type";
   selfies are now stored as JPEG q75 (F4b).
 - APK: a failed masters refresh at login (e.g. 401/5xx) no longer surfaces as an unhandled async error (F4b).

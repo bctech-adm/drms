@@ -7,15 +7,23 @@ import 'app/providers.dart';
 import 'core/config/app_env.dart';
 import 'core/db/app_database.dart';
 import 'core/device/device_identity.dart';
+import 'core/logging/startup_trace.dart';
 import 'core/storage/secure_store.dart';
 
 Future<void> main() async {
+  StartupTrace.mark('main');
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id');
   final env = AppEnv.fromEnvironment();
   final store = PlatformSecureStore();
-  final device = await DeviceIdentity.load(store);
-  final db = await openEncryptedDatabase(store);
+  // Only what the first frame needs, in parallel: install id + app version (request headers) and the
+  // DB handle. The DB itself opens lazily in drift's background isolate on the first query, so the
+  // SQLite3MultipleCiphers key derivation never runs on the UI thread.
+  final (_, device, db) = await (
+    initializeDateFormatting('id'),
+    DeviceIdentity.load(store),
+    openEncryptedDatabase(store),
+  ).wait;
+  StartupTrace.mark('bootstrap done');
   runApp(
     ProviderScope(
       overrides: [
@@ -27,4 +35,5 @@ Future<void> main() async {
       child: const ProyekKasApp(),
     ),
   );
+  WidgetsBinding.instance.addPostFrameCallback((_) => StartupTrace.mark('first frame'));
 }
