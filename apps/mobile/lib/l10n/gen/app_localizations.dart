@@ -217,6 +217,12 @@ abstract class AppLocalizations {
   /// **'Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.'**
   String get sessionEnded;
 
+  /// No description provided for @deviceRevoked.
+  ///
+  /// In id, this message translates to:
+  /// **'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.'**
+  String get deviceRevoked;
+
   /// No description provided for @stagingBadge.
   ///
   /// In id, this message translates to:

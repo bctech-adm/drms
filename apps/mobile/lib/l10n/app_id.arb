@@ -24,6 +24,7 @@
   "loginFailed": "Login gagal. Coba lagi.",
   "loginNeedsInternet": "Login pertama kali butuh koneksi internet.",
   "sessionEnded": "Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.",
+  "deviceRevoked": "Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.",
   "stagingBadge": "STAGING",
   "loginSubtitlePassword": "Gunakan akun DRMS Anda.",
   "loginUsernameLabel": "Email atau username",

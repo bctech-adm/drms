@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/config/app_env.dart';
 import '../core/db/app_database.dart';
 import '../core/device/device_identity.dart';
+import '../core/device/device_integrity.dart';
 import '../core/media/photo_compressor.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/secure_store.dart';
@@ -31,6 +32,7 @@ final deviceIdentityProvider = Provider<DeviceIdentity>((ref) => throw Unimpleme
 final databaseProvider = Provider<AppDatabase>((ref) => throw UnimplementedError('databaseProvider'));
 
 final deviceClockProvider = Provider<DeviceClock>((ref) => AndroidDeviceClock());
+final integrityProbeProvider = Provider<DeviceIntegrityProbe>((ref) => AndroidIntegrityProbe());
 final oidcBrowserClientProvider = Provider<OidcBrowserClient>((ref) => AppAuthBrowserClient(ref.watch(appEnvProvider)));
 
 /// In-app login (`PK_LOGIN_MODE=password`, staging only — ADR 0012).

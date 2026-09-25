@@ -9,6 +9,7 @@ import '../../../core/network/api_exception.dart';
 import '../../expense/data/expense_mappers.dart';
 import '../data/oidc_client.dart';
 import '../data/password_login_client.dart';
+import '../data/token_manager.dart';
 import '../domain/user_profile.dart';
 
 sealed class AuthState {
@@ -18,6 +19,9 @@ sealed class AuthState {
 class AuthStarting extends AuthState {
   const AuthStarting();
 }
+
+/// [AuthSignedOut.message] after a 401 `DEVICE_REVOKED` (login screen shows the `deviceRevoked` text).
+const signedOutDeviceRevoked = 'device_revoked';
 
 class AuthSignedOut extends AuthState {
   const AuthSignedOut({this.message});
@@ -101,11 +105,14 @@ class AuthController extends Notifier<AuthState> {
     final device = ref.read(deviceIdentityProvider);
     final api = ref.read(profileApiProvider);
     final fcm = await ref.read(pushServiceProvider).token();
+    // ADR 0010 decision 10: reported at every start/login, recorded server-side, never blocking.
+    final integrity = await ref.read(integrityProbeProvider).check();
     Future<void> attempt() => api.registerDevice(
       deviceId: device.deviceId,
       model: device.model,
       appVersion: device.appVersion,
       fcmToken: fcm,
+      integrity: integrity?.toJson(),
     );
     try {
       await attempt();
@@ -201,6 +208,13 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> _onSessionEnded(String reason) async {
     Log.i('auth: session ended ($reason)');
+    if (reason == TokenManager.sessionEndedDeviceRevoked) {
+      // The server never re-activates a revoked install id: use a fresh one for the next login.
+      await ref.read(pushServiceProvider).onLogout();
+      await ref.read(deviceIdentityProvider).rotate();
+      state = const AuthSignedOut(message: signedOutDeviceRevoked);
+      return;
+    }
     state = const AuthSignedOut(message: 'session_ended');
   }
 }

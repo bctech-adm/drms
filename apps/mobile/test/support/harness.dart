@@ -34,6 +34,10 @@ class StaticTokens implements TokenSource {
 
   @override
   Future<void> onUnauthorized() async => unauthorized++;
+
+  int deviceRevoked = 0;
+  @override
+  Future<void> onDeviceRevoked() async => deviceRevoked++;
 }
 
 DeviceIdentity testDevice() =>

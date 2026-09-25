@@ -78,6 +78,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get sessionEnded => 'Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.';
 
   @override
+  String get deviceRevoked =>
+      'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.';
+
+  @override
   String get stagingBadge => 'STAGING';
 
   @override
