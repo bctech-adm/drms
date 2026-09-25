@@ -33,6 +33,11 @@ final databaseProvider = Provider<AppDatabase>((ref) => throw UnimplementedError
 
 final deviceClockProvider = Provider<DeviceClock>((ref) => AndroidDeviceClock());
 final integrityProbeProvider = Provider<DeviceIntegrityProbe>((ref) => AndroidIntegrityProbe());
+
+/// Last integrity report of this device (null = unknown). Q-43 proposal: warn + flag, never block.
+final integrityReportProvider = FutureProvider<DeviceIntegrityReport?>(
+  (ref) => ref.watch(integrityProbeProvider).check(),
+);
 final oidcBrowserClientProvider = Provider<OidcBrowserClient>((ref) => AppAuthBrowserClient(ref.watch(appEnvProvider)));
 
 /// In-app login (`PK_LOGIN_MODE=password`, staging only — ADR 0012).

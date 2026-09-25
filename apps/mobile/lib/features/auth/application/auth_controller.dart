@@ -106,7 +106,7 @@ class AuthController extends Notifier<AuthState> {
     final api = ref.read(profileApiProvider);
     final fcm = await ref.read(pushServiceProvider).token();
     // ADR 0010 decision 10: reported at every start/login, recorded server-side, never blocking.
-    final integrity = await ref.read(integrityProbeProvider).check();
+    final integrity = await ref.read(integrityReportProvider.future);
     Future<void> attempt() => api.registerDevice(
       deviceId: device.deviceId,
       model: device.model,

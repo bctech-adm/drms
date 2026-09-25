@@ -1237,6 +1237,12 @@ abstract class AppLocalizations {
   /// **'Tersimpan.'**
   String get actionSaved;
 
+  /// No description provided for @integrityWarning.
+  ///
+  /// In id, this message translates to:
+  /// **'HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.'**
+  String get integrityWarning;
+
   /// No description provided for @notificationsTitle.
   ///
   /// In id, this message translates to:

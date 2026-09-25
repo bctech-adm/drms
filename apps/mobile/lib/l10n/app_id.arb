@@ -214,6 +214,7 @@
   "actionCompleteConfirm": "Dana sudah diterima dan pengajuan ini selesai?",
   "actionSaved": "Tersimpan.",
 
+  "integrityWarning": "HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.",
   "notificationsTitle": "Notifikasi",
   "notificationsEmpty": "Belum ada notifikasi.",
   "notificationsReadAll": "Tandai semua dibaca",

@@ -610,6 +610,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionSaved => 'Tersimpan.';
 
   @override
+  String get integrityWarning =>
+      'HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.';
+
+  @override
   String get notificationsTitle => 'Notifikasi';
 
   @override

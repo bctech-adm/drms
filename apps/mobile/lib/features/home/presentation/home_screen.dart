@@ -87,6 +87,12 @@ class HomeScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           children: [
             Text(t.greeting(profile.displayName), style: Theme.of(context).textTheme.titleLarge),
+            if (ref.watch(integrityReportProvider).value?.risky ?? false)
+              Card(
+                key: const Key('integrity-warning'),
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: ListTile(leading: const Icon(Icons.gpp_maybe), title: Text(t.integrityWarning)),
+              ),
             if (gate == VersionGate.updateAvailable && latest != null)
               Padding(padding: const EdgeInsets.only(top: 8), child: Text(t.updateAvailable(latest))),
             const SizedBox(height: 16),
