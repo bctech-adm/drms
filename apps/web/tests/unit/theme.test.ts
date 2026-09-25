@@ -48,14 +48,14 @@ describe('theme tokens — WCAG contrast', () => {
   }
 
   const base = ramps.base
-  it('light: Payload input text (elevation-800) and secondary text (elevation-500) on card/background', () => {
+  it('light: Payload input text (elevation-800) and secondary text (elevation-400/500 = base-500) on card/background', () => {
     for (const bg of [semantic.light.card, semantic.light.background]) {
       expect(contrastRatio(base[800]!, bg)).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(base[500]!, bg)).toBeGreaterThanOrEqual(4.5)
     }
   })
 
-  it('dark: Payload input text (elevation-800 = base-100) and lifted elevation-500 (= base-400) on card/background', () => {
+  it('dark: Payload input text (elevation-800 = base-100) and lifted elevation-400/500 (= base-400) on card/background', () => {
     for (const bg of [semantic.dark.card, semantic.dark.background]) {
       expect(contrastRatio(base[100]!, bg)).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(base[400]!, bg)).toBeGreaterThanOrEqual(4.5)

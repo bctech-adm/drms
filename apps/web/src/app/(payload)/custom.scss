@@ -48,6 +48,9 @@
     --theme-text: var(--pk-fg);
     --theme-input-bg: var(--pk-card);
     --theme-border-color: var(--pk-border);
+    // Payload uses elevation-400 for secondary text (field descriptions, placeholders, table
+    // headers): base-400 on the light surfaces is < 4.5:1 → one step darker.
+    --theme-elevation-400: var(--color-base-500);
 
     --font-body: var(--font-brand-body), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', roboto, arial, sans-serif;
     --pk-font-heading: var(--font-brand-heading), var(--font-brand-body), ui-sans-serif, system-ui, sans-serif;
@@ -92,8 +95,9 @@
     --theme-text: var(--pk-fg);
     --theme-input-bg: var(--pk-card);
     --theme-border-color: var(--pk-input);
-    // Payload leaves elevation-500 unmapped in dark mode (mid-grey on the dark bg < 4.5:1) and uses
-    // it for secondary text → lift it one step.
+    // Secondary text in dark mode: Payload maps elevation-400 to base-450 (4.5:1 on the card, too
+    // tight) and leaves elevation-500 unmapped (< 4.5:1) → both use base-400.
+    --theme-elevation-400: var(--color-base-400);
     --theme-elevation-500: var(--color-base-400);
   }
 
