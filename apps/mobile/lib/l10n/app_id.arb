@@ -263,6 +263,9 @@
   "pushDisabled": "Notifikasi push belum aktif.",
   "logout": "Keluar",
   "logoutConfirm": "Keluar dari aplikasi?",
-  "logoutPendingWarning": "Masih ada {count} data belum terkirim. Data tetap tersimpan terenkripsi di HP dan hanya bisa dikirim setelah Anda masuk lagi dengan akun yang sama.",
-  "@logoutPendingWarning": {"placeholders": {"count": {"type": "int"}}}
+  "logoutPendingWarning": "Masih ada {count} data belum terkirim ke server. Data ini TIDAK dihapus: tetap tersimpan terenkripsi di HP dan baru dikirim setelah Anda masuk lagi dengan akun yang sama. Jika ada sinyal, kirim dulu lewat menu Antrean.",
+  "@logoutPendingWarning": {"placeholders": {"count": {"type": "int"}}},
+  "logoutAnyway": "Tetap keluar",
+  "logoutInProgress": "Sedang keluar…",
+  "offlineRecheck": "Ketuk untuk cek koneksi."
 }

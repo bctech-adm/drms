@@ -19,6 +19,13 @@ class FakeConnectivity extends ConnectivityController {
   final bool initial;
   @override
   bool build() => initial;
+
+  /// No platform channel and no health-probe timers in widget tests.
+  @override
+  void reportServerReachable(bool ok) => state = ok;
+
+  @override
+  Future<bool> recheck() async => state;
 }
 
 class FakeAuth extends AuthController {

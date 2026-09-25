@@ -22,15 +22,13 @@ import '../features/settings/presentation/profile_screen.dart';
 import '../features/sync/presentation/queue_screen.dart';
 
 /// Pure redirect rule (unit-tested): update gate → splash while starting → login when signed out.
-String? redirectFor({
-  required String location,
-  required AuthState auth,
-  required VersionGate gate,
-  required bool configLoading,
-}) {
+/// `/app/config` is NOT awaited: it loads in the background and the update gate redirects whenever it
+/// resolves (the server enforces the minimum version with 426 anyway), so a slow network never holds
+/// the splash screen.
+String? redirectFor({required String location, required AuthState auth, required VersionGate gate}) {
   if (gate == VersionGate.updateRequired) return location == '/update' ? null : '/update';
   if (location == '/update') return '/splash';
-  if (auth is AuthStarting || configLoading) return location == '/splash' ? null : '/splash';
+  if (auth is AuthStarting) return location == '/splash' ? null : '/splash';
   if (auth is AuthSignedOut) return location == '/login' ? null : '/login';
   if (location == '/login' || location == '/splash') return '/home';
   return null;
@@ -40,7 +38,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(authControllerProvider, (_, _) => refresh.value++);
   ref.listen(versionGateProvider, (_, _) => refresh.value++);
-  ref.listen(appConfigProvider, (_, _) => refresh.value++);
+  ref.listen(appConfigProvider, (_, _) => refresh.value++); // also starts the background fetch
   ref.onDispose(refresh.dispose);
 
   final router = GoRouter(
@@ -50,7 +48,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       location: state.matchedLocation,
       auth: ref.read(authControllerProvider),
       gate: ref.read(versionGateProvider),
-      configLoading: ref.read(appConfigProvider).isLoading,
     ),
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),

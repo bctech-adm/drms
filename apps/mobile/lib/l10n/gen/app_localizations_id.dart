@@ -753,6 +753,15 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String logoutPendingWarning(int count) {
-    return 'Masih ada $count data belum terkirim. Data tetap tersimpan terenkripsi di HP dan hanya bisa dikirim setelah Anda masuk lagi dengan akun yang sama.';
+    return 'Masih ada $count data belum terkirim ke server. Data ini TIDAK dihapus: tetap tersimpan terenkripsi di HP dan baru dikirim setelah Anda masuk lagi dengan akun yang sama. Jika ada sinyal, kirim dulu lewat menu Antrean.';
   }
+
+  @override
+  String get logoutAnyway => 'Tetap keluar';
+
+  @override
+  String get logoutInProgress => 'Sedang keluar…';
+
+  @override
+  String get offlineRecheck => 'Ketuk untuk cek koneksi.';
 }

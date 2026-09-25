@@ -111,7 +111,8 @@ class ApiClient {
     if (inner is ApiException) return inner;
     final res = e.response;
     if (res == null) {
-      onReachability?.call(false);
+      // A cancelled request says nothing about the network; everything else without an answer does.
+      if (e.type != DioExceptionType.cancel) onReachability?.call(false);
       return const NetworkException();
     }
     onReachability?.call(true);

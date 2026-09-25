@@ -32,6 +32,10 @@ class TokenManager implements TokenSource {
   DateTime? _accessExpiry;
   Completer<String?>? _inflight;
 
+  /// Bumped by [saveLogin] and [clear]: a refresh that was still in flight when the session changed
+  /// (e.g. a slow refresh abandoned by the logout timeout) must not write its tokens back.
+  int _generation = 0;
+
   Future<bool> hasSession() async => (await store.read(SecureKeys.refreshToken)) != null;
 
   Future<String?> sessionSub() => store.read(SecureKeys.sessionSub);
@@ -43,6 +47,7 @@ class TokenManager implements TokenSource {
 
   /// Stores a fresh login. Refresh token first (atomic w.r.t. rotation), then memory.
   Future<void> saveLogin(OidcTokens t) async {
+    _generation++;
     await store.write(SecureKeys.refreshToken, t.refreshToken);
     if (t.idToken != null) await store.write(SecureKeys.idToken, t.idToken!);
     final sub = subjectOf(t.accessToken) ?? subjectOf(t.idToken);
@@ -51,12 +56,22 @@ class TokenManager implements TokenSource {
     _accessExpiry = t.accessTokenExpiry?.toUtc() ?? expiryOf(t.accessToken);
   }
 
+  /// Drops the session. Memory first (synchronously), then each stored key independently, so one
+  /// failing Keystore call cannot leave the other token behind.
   Future<void> clear() async {
+    _generation++;
     _access = null;
     _accessExpiry = null;
-    await store.delete(SecureKeys.refreshToken);
-    await store.delete(SecureKeys.idToken);
+    Object? failure;
+    for (final key in [SecureKeys.refreshToken, SecureKeys.idToken]) {
+      try {
+        await store.delete(key);
+      } on Object catch (e) {
+        failure ??= e;
+      }
+    }
     // sessionSub is kept on purpose: the offline queue stays locked to that user (ADR 0010).
+    if (failure != null) throw failure;
   }
 
   bool get _accessValid =>
@@ -85,6 +100,7 @@ class TokenManager implements TokenSource {
   }
 
   Future<String?> _doRefresh() async {
+    final generation = _generation;
     final refresh = await store.read(SecureKeys.refreshToken);
     if (refresh == null) return null;
     Response<dynamic> res;
@@ -96,6 +112,10 @@ class TokenManager implements TokenSource {
       );
     } on DioException {
       throw const NetworkException();
+    }
+    if (generation != _generation) {
+      Log.i('auth: stale refresh result dropped (session changed)');
+      return null;
     }
     final body = res.data;
     if (res.statusCode == 200 && body is Map<String, dynamic> && body['access_token'] is String) {
