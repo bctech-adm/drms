@@ -316,12 +316,15 @@ describe('POST /api/v1/sync/batch — expense request drafts (ADR 0010)', () => 
     expect(del2.body.results[0].errors[0].code).toBe('NOT_EDITABLE')
   })
 
-  it('attendance / progress items → unsupported (kept for F5, not stored); feature flag off → FEATURE_DISABLED', async () => {
-    const att = item('attendance.check_in', { project_id: w.project, lat: -2.2, lng: 113.9 })
+  it('on-behalf attendance / progress items → unsupported (kept for F5, not stored); feature flags off → FEATURE_DISABLED', async () => {
+    const att = item('attendance.on_behalf', { project_id: w.project, lat: -2.2, lng: 113.9 })
     const prog = item('progress_report.draft_upsert', {})
     const r = await sync(staffA, [att, prog])
     expect(r.body.results.map((x: { status: string }) => x.status)).toEqual(['unsupported', 'unsupported'])
     expect((await sqlAs('app', 'SELECT count(*)::int AS n FROM sync_receipts WHERE client_uuid = ANY($1::uuid[])', [[att.client_uuid, prog.client_uuid]])).rows[0].n).toBe(0)
+    // F4b: own check-in is supported but off by default (company-settings.syncAttendanceEnabled).
+    const own = await sync(staffA, [item('attendance.check_in', { project_id: w.project, lat: -2.2, lng: 113.9, is_mocked: false, selfie_media_id: 1 })])
+    expect(own.body.results[0]).toMatchObject({ status: 'rejected', errors: [expect.objectContaining({ code: 'FEATURE_DISABLED' })] })
 
     const p = await getTestPayload()
     await p.updateGlobal({ slug: 'company-settings', data: { syncExpenseDraftsEnabled: false }, overrideAccess: true /* SYSTEM-WRITE: fixture */ })

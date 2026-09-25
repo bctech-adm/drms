@@ -108,6 +108,16 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         defaultValue: true,
         admin: { description: 'Nonaktif → item offline ditolak FEATURE_DISABLED (ADR 0010 rollback).' },
       },
+      {
+        name: 'syncAttendanceEnabled',
+        type: 'checkbox',
+        label: 'Absensi dari APK (termasuk offline) aktif',
+        defaultValue: false,
+        admin: {
+          description:
+            'Tahap F4: absen masuk/pulang sendiri di project yang ditugaskan (geofence, selfie, lokasi palsu ditolak). Nonaktif → item absensi ditolak FEATURE_DISABLED.',
+        },
+      },
       intField('offlineMaxAgeDays', 'Umur maksimal sesi offline APK (hari)', 30, 1, 30),
       {
         name: 'imageTargets',

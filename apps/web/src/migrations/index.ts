@@ -11,6 +11,8 @@ import * as migration_20260924_025114_f4_mobile_sync from './20260924_025114_f4_
 import * as migration_20260924_025115_f4_security from './20260924_025115_f4_security';
 import * as migration_20260924_110138_f3_reports from './20260924_110138_f3_reports';
 import * as migration_20260925_015425_f4b_device_integrity from './20260925_015425_f4b_device_integrity';
+import * as migration_20260925_023715_f4b_attendance from './20260925_023715_f4b_attendance';
+import * as migration_20260925_023716_f4b_attendance_security from './20260925_023716_f4b_attendance_security';
 
 export const migrations = [
   {
@@ -76,6 +78,16 @@ export const migrations = [
   {
     up: migration_20260925_015425_f4b_device_integrity.up,
     down: migration_20260925_015425_f4b_device_integrity.down,
-    name: '20260925_015425_f4b_device_integrity'
+    name: '20260925_015425_f4b_device_integrity',
+  },
+  {
+    up: migration_20260925_023715_f4b_attendance.up,
+    down: migration_20260925_023715_f4b_attendance.down,
+    name: '20260925_023715_f4b_attendance',
+  },
+  {
+    up: migration_20260925_023716_f4b_attendance_security.up,
+    down: migration_20260925_023716_f4b_attendance_security.down,
+    name: '20260925_023716_f4b_attendance_security',
   },
 ];

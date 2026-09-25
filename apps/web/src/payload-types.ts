@@ -98,6 +98,7 @@ export interface Config {
     settlements: Settlement;
     'cash-entries': CashEntry;
     'period-closings': PeriodClosing;
+    attendances: Attendance;
     notifications: Notification;
     devices: Device;
     'web-sessions': WebSession;
@@ -148,6 +149,7 @@ export interface Config {
     settlements: SettlementsSelect<false> | SettlementsSelect<true>;
     'cash-entries': CashEntriesSelect<false> | CashEntriesSelect<true>;
     'period-closings': PeriodClosingsSelect<false> | PeriodClosingsSelect<true>;
+    attendances: AttendancesSelect<false> | AttendancesSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     devices: DevicesSelect<false> | DevicesSelect<true>;
     'web-sessions': WebSessionsSelect<false> | WebSessionsSelect<true>;
@@ -1250,20 +1252,41 @@ export interface PeriodClosing {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "notifications".
+ * via the `definition` "attendances".
  */
-export interface Notification {
+export interface Attendance {
   id: number;
+  employee: number | Employee;
   user: number | User;
-  event: string;
-  title: string;
-  body: string;
-  docType?: string | null;
-  docId?: string | null;
-  docNo?: string | null;
-  readAt?: string | null;
-  pushStatus: 'skipped' | 'pending' | 'sent' | 'failed';
-  uuid?: string | null;
+  kind: 'check_in' | 'check_out';
+  project: number | Project;
+  localDate: string;
+  attendanceTime: string;
+  receivedAt: string;
+  deviceTime?: string | null;
+  estimatedTime?: string | null;
+  timeTrust: 'server' | 'estimated' | 'device_only';
+  offline?: boolean | null;
+  lat: number;
+  lng: number;
+  accuracyM?: number | null;
+  distanceM: number;
+  selfie: number | MediaSelfy;
+  device?: (number | null) | Device;
+  flags?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  clientUuid: string;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1302,6 +1325,25 @@ export interface Device {
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
    */
   changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  user: number | User;
+  event: string;
+  title: string;
+  body: string;
+  docType?: string | null;
+  docId?: string | null;
+  docNo?: string | null;
+  readAt?: string | null;
+  pushStatus: 'skipped' | 'pending' | 'sent' | 'failed';
+  uuid?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1716,6 +1758,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'period-closings';
         value: number | PeriodClosing;
+      } | null)
+    | ({
+        relationTo: 'attendances';
+        value: number | Attendance;
       } | null)
     | ({
         relationTo: 'devices';
@@ -2431,6 +2477,34 @@ export interface PeriodClosingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "attendances_select".
+ */
+export interface AttendancesSelect<T extends boolean = true> {
+  employee?: T;
+  user?: T;
+  kind?: T;
+  project?: T;
+  localDate?: T;
+  attendanceTime?: T;
+  receivedAt?: T;
+  deviceTime?: T;
+  estimatedTime?: T;
+  timeTrust?: T;
+  offline?: T;
+  lat?: T;
+  lng?: T;
+  accuracyM?: T;
+  distanceM?: T;
+  selfie?: T;
+  device?: T;
+  flags?: T;
+  clientUuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "notifications_select".
  */
 export interface NotificationsSelect<T extends boolean = true> {
@@ -2883,6 +2957,10 @@ export interface CompanySetting {
    * Nonaktif → item offline ditolak FEATURE_DISABLED (ADR 0010 rollback).
    */
   syncExpenseDraftsEnabled?: boolean | null;
+  /**
+   * Tahap F4: absen masuk/pulang sendiri di project yang ditugaskan (geofence, selfie, lokasi palsu ditolak). Nonaktif → item absensi ditolak FEATURE_DISABLED.
+   */
+  syncAttendanceEnabled?: boolean | null;
   offlineMaxAgeDays: number;
   imageTargets: {
     receiptsMaxPx: number;
@@ -2942,6 +3020,7 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   latestAppVersion?: T;
   appDownloadUrl?: T;
   syncExpenseDraftsEnabled?: T;
+  syncAttendanceEnabled?: T;
   offlineMaxAgeDays?: T;
   imageTargets?:
     | T

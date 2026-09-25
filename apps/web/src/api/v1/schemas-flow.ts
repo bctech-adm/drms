@@ -379,7 +379,7 @@ export const HistoryItem = z
   .meta({ id: 'HistoryItem' })
 export const History = z.object({ items: z.array(HistoryItem) }).meta({ id: 'History' })
 
-export const MediaKindEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments']).meta({ id: 'MediaKind' })
+export const MediaKindEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'selfies']).meta({ id: 'MediaKind' })
 export const MediaUploaded = z
   .object({ id, kind: MediaKindEnum, mimeType: z.string().nullable(), filesize: z.number().int().nullable(), width: z.number().int().nullable(), height: z.number().int().nullable(), sha256Original: z.string().nullable() })
   .meta({ id: 'MediaUploaded' })

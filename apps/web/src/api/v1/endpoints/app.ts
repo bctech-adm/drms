@@ -13,6 +13,7 @@ type GateSettings = {
   appDownloadUrl: string | null
   timezone: string
   syncExpenseDraftsEnabled: boolean
+  syncAttendanceEnabled: boolean
 }
 
 let cache: { value: GateSettings; at: number } | undefined
@@ -30,6 +31,7 @@ async function gateSettings(req: PayloadRequest): Promise<GateSettings> {
     appDownloadUrl?: string | null
     timezone?: string | null
     syncExpenseDraftsEnabled?: boolean | null
+    syncAttendanceEnabled?: boolean | null
   }
   const value: GateSettings = {
     minAppVersion: s.minAppVersion || null,
@@ -37,6 +39,7 @@ async function gateSettings(req: PayloadRequest): Promise<GateSettings> {
     appDownloadUrl: s.appDownloadUrl || null,
     timezone: s.timezone || DEFAULT_TZ,
     syncExpenseDraftsEnabled: s.syncExpenseDraftsEnabled !== false,
+    syncAttendanceEnabled: s.syncAttendanceEnabled === true,
   }
   cache = { value, at: Date.now() }
   return value
@@ -71,7 +74,7 @@ export const appConfigEndpoint = v1({
         // until then the APK polls GET /notifications.
         pushEnabled: getEnv().PUSH_FCM_ENABLED,
         syncExpenseDrafts: s.syncExpenseDraftsEnabled,
-        syncAttendance: false, // F5
+        syncAttendance: s.syncAttendanceEnabled, // F4 slice: own check-in/out (company-settings)
         syncProgressReports: false, // F5
       },
       sync: { maxItemsPerBatch: SYNC_MAX_ITEMS, maxBatchBytes: SYNC_MAX_BYTES, rateLimitPerMinute: SYNC_RATE_LIMIT[0] },
