@@ -21,7 +21,7 @@ export const F3_STYLE = `
 .pk-f3 .pk-tile h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--pk-muted); }
 .pk-f3 .pk-big { font-family: var(--pk-font-heading); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; font-variant-numeric: tabular-nums; }
 .pk-f3 .pk-tile p { margin: 2px 0; font-size: 13px; }
-.pk-f3 .pk-tile a.pk-more { display: inline-block; margin-top: 6px; font-size: 12px; }
+.pk-f3 .pk-tile a.pk-more { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--pk-primary); }
 .pk-f3 section.pk-block { margin: 0 0 24px; }
 .pk-f3 section.pk-block > h2 { font-family: var(--pk-font-heading); font-size: 17px; margin: 0 0 10px; }
 .pk-f3 .pk-scroll { overflow-x: auto; }
