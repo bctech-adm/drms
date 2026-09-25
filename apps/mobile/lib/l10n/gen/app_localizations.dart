@@ -1027,6 +1027,216 @@ abstract class AppLocalizations {
   /// **'Keputusan tersimpan.'**
   String get decisionDone;
 
+  /// No description provided for @transferTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Transfer dari Finance'**
+  String get transferTitle;
+
+  /// No description provided for @transferNone.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada transfer.'**
+  String get transferNone;
+
+  /// No description provided for @transferTotal.
+  ///
+  /// In id, this message translates to:
+  /// **'Total ditransfer'**
+  String get transferTotal;
+
+  /// No description provided for @transferRef.
+  ///
+  /// In id, this message translates to:
+  /// **'Ref. bank'**
+  String get transferRef;
+
+  /// No description provided for @transferPosted.
+  ///
+  /// In id, this message translates to:
+  /// **'Tercatat'**
+  String get transferPosted;
+
+  /// No description provided for @transferVoid.
+  ///
+  /// In id, this message translates to:
+  /// **'Dibatalkan'**
+  String get transferVoid;
+
+  /// No description provided for @transferVoidReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan batal: {reason}'**
+  String transferVoidReason(String reason);
+
+  /// No description provided for @lpjTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'LPJ (Laporan Pertanggungjawaban)'**
+  String get lpjTitle;
+
+  /// No description provided for @lpjStatus.
+  ///
+  /// In id, this message translates to:
+  /// **'Status LPJ'**
+  String get lpjStatus;
+
+  /// No description provided for @lpjReceiptsTotal.
+  ///
+  /// In id, this message translates to:
+  /// **'Total nota'**
+  String get lpjReceiptsTotal;
+
+  /// No description provided for @lpjVerifiedTotal.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota terverifikasi'**
+  String get lpjVerifiedTotal;
+
+  /// No description provided for @lpjDifference.
+  ///
+  /// In id, this message translates to:
+  /// **'Selisih'**
+  String get lpjDifference;
+
+  /// No description provided for @lpjSettlement.
+  ///
+  /// In id, this message translates to:
+  /// **'Penyelesaian'**
+  String get lpjSettlement;
+
+  /// No description provided for @lpjUsageNotes.
+  ///
+  /// In id, this message translates to:
+  /// **'Keterangan penggunaan dana'**
+  String get lpjUsageNotes;
+
+  /// No description provided for @lpjFinanceNotes.
+  ///
+  /// In id, this message translates to:
+  /// **'Catatan Finance'**
+  String get lpjFinanceNotes;
+
+  /// No description provided for @requesterActionsTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota & LPJ'**
+  String get requesterActionsTitle;
+
+  /// No description provided for @addReceiptOnlineCamera.
+  ///
+  /// In id, this message translates to:
+  /// **'Tambah nota (kamera)'**
+  String get addReceiptOnlineCamera;
+
+  /// No description provided for @addReceiptOnlineGallery.
+  ///
+  /// In id, this message translates to:
+  /// **'Tambah nota dari galeri'**
+  String get addReceiptOnlineGallery;
+
+  /// No description provided for @chooseLine.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota ini untuk baris mana?'**
+  String get chooseLine;
+
+  /// No description provided for @uploadingReceipt.
+  ///
+  /// In id, this message translates to:
+  /// **'Mengunggah nota…'**
+  String get uploadingReceipt;
+
+  /// No description provided for @receiptSaved.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota tersimpan.'**
+  String get receiptSaved;
+
+  /// No description provided for @receiptRemove.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus nota'**
+  String get receiptRemove;
+
+  /// No description provided for @receiptRemoveReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan menghapus nota'**
+  String get receiptRemoveReason;
+
+  /// No description provided for @receiptRemoved.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota dihapus.'**
+  String get receiptRemoved;
+
+  /// No description provided for @reasonTooShort.
+  ///
+  /// In id, this message translates to:
+  /// **'Wajib diisi (minimal 3 karakter).'**
+  String get reasonTooShort;
+
+  /// No description provided for @actionReceiptsComplete.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota sudah lengkap'**
+  String get actionReceiptsComplete;
+
+  /// No description provided for @actionReceiptsCompleteConfirm.
+  ///
+  /// In id, this message translates to:
+  /// **'Tandai semua nota sudah lengkap? Setelah itu Anda bisa mengirim LPJ.'**
+  String get actionReceiptsCompleteConfirm;
+
+  /// No description provided for @actionLpjSubmit.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim LPJ'**
+  String get actionLpjSubmit;
+
+  /// No description provided for @actionLpjResubmit.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim ulang LPJ'**
+  String get actionLpjResubmit;
+
+  /// No description provided for @lpjUsageNotesHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Jelaskan penggunaan dana (wajib pada pengiriman pertama).'**
+  String get lpjUsageNotesHint;
+
+  /// No description provided for @actionReceiptsResubmit.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim ulang nota'**
+  String get actionReceiptsResubmit;
+
+  /// No description provided for @actionReceiptsResubmitConfirm.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim ulang nota yang sudah diperbaiki ke Finance?'**
+  String get actionReceiptsResubmitConfirm;
+
+  /// No description provided for @actionComplete.
+  ///
+  /// In id, this message translates to:
+  /// **'Tandai selesai'**
+  String get actionComplete;
+
+  /// No description provided for @actionCompleteConfirm.
+  ///
+  /// In id, this message translates to:
+  /// **'Dana sudah diterima dan pengajuan ini selesai?'**
+  String get actionCompleteConfirm;
+
+  /// No description provided for @actionSaved.
+  ///
+  /// In id, this message translates to:
+  /// **'Tersimpan.'**
+  String get actionSaved;
+
   /// No description provided for @queueTitle.
   ///
   /// In id, this message translates to:

@@ -6,6 +6,20 @@ import '../../../core/network/api_client.dart';
 import '../domain/expense_request.dart';
 import 'expense_mappers.dart';
 
+/// Requester transitions after approval (state table `apps/web/src/domain/expense/state.ts`).
+enum RequesterAction {
+  receiptsComplete('receipts_complete', 'receipts-complete'),
+  lpjSubmit('lpj_submit', 'lpj/submit'),
+  receiptsResubmit('receipts_resubmit', 'receipts-resubmit'),
+  complete('complete', 'complete');
+
+  const RequesterAction(this.code, this.path);
+
+  /// `allowedActions` value.
+  final String code;
+  final String path;
+}
+
 class ExpensePage {
   const ExpensePage(this.items, this.nextCursor);
   final List<ExpenseSummary> items;
@@ -62,6 +76,35 @@ class ExpenseApi {
     (d) => d.post<dynamic>(
       '/expense-requests/$requestId/submit',
       data: {'signatureMediaId': ?signatureMediaId},
+      options: _idem(idempotencyKey),
+    ),
+    (data) => detailFromJson(data as Map<String, dynamic>),
+  );
+
+  /// Soft-removes one receipt (`POST …/receipts/{rid}/remove`, reason required; US-38/T4). Allowed
+  /// while `add_receipt` is (Uang Muka after transfer / LPJ revision, Reimburse receipt revision).
+  Future<ExpenseDetail> removeReceipt(int requestId, int receiptId, String reason, {required String idempotencyKey}) =>
+      client.run(
+        (d) => d.post<dynamic>(
+          '/expense-requests/$requestId/receipts/$receiptId/remove',
+          data: {'reason': reason},
+          options: _idem(idempotencyKey),
+        ),
+        (data) => detailFromJson(data as Map<String, dynamic>),
+      );
+
+  /// Requester-side transitions without a body field besides the optional LPJ notes:
+  /// `receipts-complete` (Uang Muka: nota lengkap), `lpj/submit` (usageNotes required at the first
+  /// submit), `receipts-resubmit` (Reimburse after receipt revision), `complete` (Reimburse done).
+  Future<ExpenseDetail> requesterAction(
+    int requestId,
+    RequesterAction action, {
+    required String idempotencyKey,
+    String? usageNotes,
+  }) => client.run(
+    (d) => d.post<dynamic>(
+      '/expense-requests/$requestId/${action.path}',
+      data: {if (action == RequesterAction.lpjSubmit) 'usageNotes': ?usageNotes},
       options: _idem(idempotencyKey),
     ),
     (data) => detailFromJson(data as Map<String, dynamic>),

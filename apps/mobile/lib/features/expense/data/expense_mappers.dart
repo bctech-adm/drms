@@ -186,11 +186,49 @@ ExpenseDetail detailFromJson(Json j) {
           ),
     ],
     budget: budgetFromJson(j['budget']),
+    transfers: [
+      for (final t in _list(j['transfers']))
+        if (_map(t) case final m?)
+          TransferInfo(
+            id: _int(m['id']),
+            docNo: _strN(m['docNo']),
+            kind: '${m['kind'] ?? ''}',
+            amount: _int(m['amount']),
+            transferDate: _strN(m['transferDate']),
+            bankRef: _strN(m['bankRef']),
+            status: '${m['status'] ?? 'posted'}',
+            voidReason: _strN(m['voidReason']),
+          ),
+    ],
+    transferredTotal: _int(j['transferredTotal']),
+    settlement: settlementFromJson(j['settlement']),
     allowedActions: {for (final a in _list(j['allowedActions'])) '$a'},
     rejectReason: _strN(j['rejectReason']),
     cancelReason: _strN(j['cancelReason']),
     submittedAt: _strN(j['submittedAt']),
     updatedAt: _strN(j['updatedAt']),
+  );
+}
+
+SettlementInfo? settlementFromJson(Object? v) {
+  final m = _map(v);
+  if (m == null || _intN(m['id']) == null) return null;
+  return SettlementInfo(
+    id: _int(m['id']),
+    docNo: _strN(m['docNo']),
+    status: '${m['status'] ?? ''}',
+    statusLabel: '${m['statusLabel'] ?? m['status'] ?? ''}',
+    usageNotes: _strN(m['usageNotes']),
+    transferredTotal: _intN(m['transferredTotal']),
+    receiptsTotal: _intN(m['receiptsTotal']),
+    verifiedReceiptsTotal: _intN(m['verifiedReceiptsTotal']),
+    difference: _intN(m['difference']),
+    settlementType: _strN(m['settlementType']),
+    financeNotes: _strN(m['financeNotes']),
+    submitCount: _int(m['submitCount']),
+    submittedAt: _strN(m['submittedAt']),
+    verifiedAt: _strN(m['verifiedAt']),
+    settledAt: _strN(m['settledAt']),
   );
 }
 

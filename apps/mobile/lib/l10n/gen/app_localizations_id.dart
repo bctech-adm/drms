@@ -503,6 +503,113 @@ class AppLocalizationsId extends AppLocalizations {
   String get decisionDone => 'Keputusan tersimpan.';
 
   @override
+  String get transferTitle => 'Transfer dari Finance';
+
+  @override
+  String get transferNone => 'Belum ada transfer.';
+
+  @override
+  String get transferTotal => 'Total ditransfer';
+
+  @override
+  String get transferRef => 'Ref. bank';
+
+  @override
+  String get transferPosted => 'Tercatat';
+
+  @override
+  String get transferVoid => 'Dibatalkan';
+
+  @override
+  String transferVoidReason(String reason) {
+    return 'Alasan batal: $reason';
+  }
+
+  @override
+  String get lpjTitle => 'LPJ (Laporan Pertanggungjawaban)';
+
+  @override
+  String get lpjStatus => 'Status LPJ';
+
+  @override
+  String get lpjReceiptsTotal => 'Total nota';
+
+  @override
+  String get lpjVerifiedTotal => 'Nota terverifikasi';
+
+  @override
+  String get lpjDifference => 'Selisih';
+
+  @override
+  String get lpjSettlement => 'Penyelesaian';
+
+  @override
+  String get lpjUsageNotes => 'Keterangan penggunaan dana';
+
+  @override
+  String get lpjFinanceNotes => 'Catatan Finance';
+
+  @override
+  String get requesterActionsTitle => 'Nota & LPJ';
+
+  @override
+  String get addReceiptOnlineCamera => 'Tambah nota (kamera)';
+
+  @override
+  String get addReceiptOnlineGallery => 'Tambah nota dari galeri';
+
+  @override
+  String get chooseLine => 'Nota ini untuk baris mana?';
+
+  @override
+  String get uploadingReceipt => 'Mengunggah nota…';
+
+  @override
+  String get receiptSaved => 'Nota tersimpan.';
+
+  @override
+  String get receiptRemove => 'Hapus nota';
+
+  @override
+  String get receiptRemoveReason => 'Alasan menghapus nota';
+
+  @override
+  String get receiptRemoved => 'Nota dihapus.';
+
+  @override
+  String get reasonTooShort => 'Wajib diisi (minimal 3 karakter).';
+
+  @override
+  String get actionReceiptsComplete => 'Nota sudah lengkap';
+
+  @override
+  String get actionReceiptsCompleteConfirm => 'Tandai semua nota sudah lengkap? Setelah itu Anda bisa mengirim LPJ.';
+
+  @override
+  String get actionLpjSubmit => 'Kirim LPJ';
+
+  @override
+  String get actionLpjResubmit => 'Kirim ulang LPJ';
+
+  @override
+  String get lpjUsageNotesHint => 'Jelaskan penggunaan dana (wajib pada pengiriman pertama).';
+
+  @override
+  String get actionReceiptsResubmit => 'Kirim ulang nota';
+
+  @override
+  String get actionReceiptsResubmitConfirm => 'Kirim ulang nota yang sudah diperbaiki ke Finance?';
+
+  @override
+  String get actionComplete => 'Tandai selesai';
+
+  @override
+  String get actionCompleteConfirm => 'Dana sudah diterima dan pengajuan ini selesai?';
+
+  @override
+  String get actionSaved => 'Tersimpan.';
+
+  @override
   String get queueTitle => 'Antrean kirim';
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/connectivity/connectivity_controller.dart';
 import '../../../core/format/dates.dart';
 import '../../../core/format/rupiah.dart';
 import '../../../l10n/gen/app_localizations.dart';
@@ -13,7 +14,9 @@ import '../../auth/application/auth_controller.dart';
 import '../application/expense_providers.dart';
 import '../domain/expense_request.dart';
 import '../domain/turn_timeline.dart';
+import 'requester_actions.dart';
 import 'widgets/receipt_thumb.dart';
+import 'widgets/transfer_lpj.dart';
 import 'widgets/timeline_view.dart';
 
 String pct(double? v) => v == null ? '-' : '${v.toStringAsFixed(1).replaceAll('.', ',')}%';
@@ -105,12 +108,20 @@ class _DetailBody extends StatelessWidget {
         ),
         if (over) Text('⚠ ${t.budgetImpact} > 85%', style: const TextStyle(color: StatusColors.danger)),
         if (d.rejectReason != null) row(t.rejectReasonLabel, d.rejectReason!),
+        if (TransferSection.visibleFor(d)) TransferSection(detail: d),
+        if (d.settlement != null) LpjSection(settlement: d.settlement!),
+        RequesterActionsSection(detail: d),
         const Divider(height: 32),
         Text(t.timelineTitle, style: theme.textTheme.titleMedium),
         TimelineView(steps: buildTimeline(d), zone: zone),
         const Divider(height: 32),
         Text(t.linesTitle, style: theme.textTheme.titleMedium),
-        for (final l in d.lines) _LineCard(line: l, receipts: d.receipts.where((r) => r.lineId == l.id).toList()),
+        for (final l in d.lines)
+          _LineCard(
+            detail: d,
+            line: l,
+            receipts: d.receipts.where((r) => r.lineId == l.id && r.status != 'removed').toList(),
+          ),
         if (d.flags.isNotEmpty) ...[
           const Divider(height: 32),
           Text(t.flagsTitle, style: theme.textTheme.titleMedium),
@@ -128,13 +139,16 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-class _LineCard extends StatelessWidget {
-  const _LineCard({required this.line, required this.receipts});
+class _LineCard extends ConsumerWidget {
+  const _LineCard({required this.detail, required this.line, required this.receipts});
+  final ExpenseDetail detail;
   final ExpenseLine line;
   final List<ReceiptInfo> receipts;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
+    final canRemove = RequesterActionsSection.canAddReceipts(detail) && ref.watch(connectivityProvider);
     final qty = line.qty == null
         ? ''
         : '${line.qty!.toString().replaceAll(RegExp(r'\.0$'), '')} ${line.uom?.name ?? ''} · ';
@@ -168,10 +182,18 @@ class _LineCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '${r.vendorName}\n${r.receiptNo ?? '-'} · ${formatDateOnly(r.receiptDate)} · ${r.status}',
+                        '${r.vendorName}\n${r.receiptNo ?? '-'} · ${formatDateOnly(r.receiptDate)} · '
+                        '${receiptStatusLabel(r.status)}',
                       ),
                     ),
                     Text(formatRupiah(r.amount)),
+                    if (canRemove)
+                      IconButton(
+                        key: Key('receipt-remove-${r.id}'),
+                        tooltip: t.receiptRemove,
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => removeServerReceipt(context, ref, detail, r),
+                      ),
                   ],
                 ),
               ),

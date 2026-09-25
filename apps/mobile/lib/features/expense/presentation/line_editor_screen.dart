@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/format/dates.dart';
 import '../../../core/format/rupiah.dart';
-import '../../../core/media/compress_plan.dart';
 import '../../../core/media/photo_compressor.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -15,7 +13,7 @@ import '../../masters/domain/master_item.dart';
 import '../data/draft_repository.dart';
 import '../domain/draft.dart';
 import '../domain/draft_validation.dart';
-import 'camera_capture_screen.dart';
+import 'receipt_capture.dart';
 import 'widgets/master_picker.dart';
 
 /// Edits one line item (US-37) and its receipts (US-7/US-38). Returns the updated [DraftLine].
@@ -58,40 +56,33 @@ class _LineEditorScreenState extends ConsumerState<LineEditorScreen> {
     final t = AppLocalizations.of(context);
     final sub = ref.read(currentSubProvider);
     if (sub == null) return;
-    Uint8List? raw;
-    if (fromCamera) {
-      raw = await Navigator.of(context).push<Uint8List>(MaterialPageRoute(builder: (_) => const CameraCaptureScreen()));
-    } else {
-      // Q-41 default: gallery allowed for receipts (e.g. booking screenshots); never for selfies.
-      final file = await ImagePicker().pickImage(source: ImageSource.gallery, requestFullMetadata: false);
-      raw = await file?.readAsBytes();
-    }
+    final raw = await pickReceiptImage(context, fromCamera: fromCamera);
     if (raw == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      final profile = ref.read(currentProfileProvider);
-      final serverMax = profile?.imageTargets.receiptsMaxPx ?? PhotoTarget.receipt.maxSide;
-      final target = PhotoTarget(
-        maxSide: serverMax < PhotoTarget.receipt.maxSide ? serverMax : PhotoTarget.receipt.maxSide,
-        quality: PhotoTarget.receipt.quality,
-        maxBytes: PhotoTarget.receipt.maxBytes,
-      );
+      final target = receiptTargetFor(ref.read(currentProfileProvider));
       final photo = await ref.read(photoCompressorProvider).compress(raw, target);
       final mediaUuid = ref.read(draftServiceProvider).newId();
       await ref
           .read(draftRepositoryProvider)
           .addMedia(sub, uuid: mediaUuid, kind: 'receipt', bytes: photo.bytes, sha256: photo.sha256Hex);
       if (!mounted) return;
-      final receipt = await showDialog<DraftReceipt>(
+      final fields = await showDialog<ReceiptFields>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => _ReceiptDialog(
-          clientUuid: ref.read(draftServiceProvider).newId(),
-          mediaUuid: mediaUuid,
-          photo: photo.bytes,
-          defaultAmount: parseRupiah(_total.text),
-        ),
+        builder: (_) => ReceiptDetailsDialog(photo: photo.bytes, defaultAmount: parseRupiah(_total.text)),
       );
+      final receipt = fields == null
+          ? null
+          : DraftReceipt(
+              clientUuid: ref.read(draftServiceProvider).newId(),
+              receiptNo: fields.receiptNo,
+              vendorName: fields.vendorName,
+              receiptDate: fields.receiptDate,
+              receiptTime: fields.receiptTime,
+              amount: fields.amount,
+              mediaUuid: mediaUuid,
+            );
       if (receipt != null) setState(() => _line = _line.copyWith(receipts: [..._line.receipts, receipt]));
     } on PhotoTooLargeException catch (e) {
       if (mounted) showSnack(context, e.message);
@@ -259,121 +250,6 @@ class _LineEditorScreenState extends ConsumerState<LineEditorScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ReceiptDialog extends StatefulWidget {
-  const _ReceiptDialog({required this.clientUuid, required this.mediaUuid, required this.photo, this.defaultAmount});
-  final String clientUuid;
-  final String mediaUuid;
-  final Uint8List photo;
-  final int? defaultAmount;
-
-  @override
-  State<_ReceiptDialog> createState() => _ReceiptDialogState();
-}
-
-class _ReceiptDialogState extends State<_ReceiptDialog> {
-  final _form = GlobalKey<FormState>();
-  final _no = TextEditingController();
-  final _vendor = TextEditingController();
-  late final _amount = TextEditingController(text: widget.defaultAmount?.toString() ?? '');
-  DateTime _date = DateTime.now();
-  TimeOfDay? _time;
-
-  @override
-  void dispose() {
-    _no.dispose();
-    _vendor.dispose();
-    _amount.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(t.receiptDetailsTitle),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _form,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 140, child: Image.memory(widget.photo, fit: BoxFit.contain)),
-              TextFormField(
-                key: const Key('receipt-vendor'),
-                controller: _vendor,
-                maxLength: 160,
-                decoration: InputDecoration(labelText: t.receiptVendor),
-                validator: (v) => (v == null || v.trim().isEmpty) ? t.required : null,
-              ),
-              TextFormField(
-                controller: _no,
-                maxLength: 64,
-                decoration: InputDecoration(labelText: t.receiptNo),
-              ),
-              TextFormField(
-                key: const Key('receipt-amount'),
-                controller: _amount,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(labelText: t.receiptAmount, prefixText: 'Rp '),
-                validator: (v) => (parseRupiah(v ?? '') ?? 0) <= 0 ? t.invalidAmount : null,
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(t.receiptDate),
-                subtitle: Text(formatDateOnly(toYmd(_date))),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: _date,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                  );
-                  if (d != null) setState(() => _date = d);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(t.receiptTime),
-                subtitle: Text(_time == null ? '-' : _time!.format(context)),
-                trailing: const Icon(Icons.schedule),
-                onTap: () async {
-                  final tm = await showTimePicker(context: context, initialTime: _time ?? TimeOfDay.now());
-                  if (tm != null) setState(() => _time = tm);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(t.cancel)),
-        FilledButton(
-          key: const Key('receipt-save'),
-          onPressed: () {
-            if (!(_form.currentState?.validate() ?? false)) return;
-            String two(int v) => v.toString().padLeft(2, '0');
-            Navigator.pop(
-              context,
-              DraftReceipt(
-                clientUuid: widget.clientUuid,
-                receiptNo: _no.text.trim().isEmpty ? null : _no.text.trim(),
-                vendorName: _vendor.text.trim(),
-                receiptDate: toYmd(_date),
-                receiptTime: _time == null ? null : '${two(_time!.hour)}:${two(_time!.minute)}',
-                amount: parseRupiah(_amount.text)!,
-                mediaUuid: widget.mediaUuid,
-              ),
-            );
-          },
-          child: Text(t.save),
-        ),
-      ],
     );
   }
 }
