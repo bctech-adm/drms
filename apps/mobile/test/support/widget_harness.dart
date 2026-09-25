@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:proyekkas/app/providers.dart';
+import 'package:proyekkas/core/config/app_env.dart';
 import 'package:proyekkas/core/connectivity/connectivity_controller.dart';
 import 'package:proyekkas/core/storage/secure_store.dart';
 import 'package:proyekkas/features/auth/application/auth_controller.dart';
@@ -41,6 +42,8 @@ Future<void> pumpScreen(
   bool online = true,
   AuthState? auth,
   List<Override> overrides = const [],
+  AppEnv? env,
+  AuthController Function()? authController,
 }) async {
   await initializeDateFormatting('id');
   tester.view.physicalSize = const Size(1200, 3200);
@@ -52,13 +55,13 @@ Future<void> pumpScreen(
     ProviderScope(
       retry: (_, _) => null,
       overrides: [
-        appEnvProvider.overrideWithValue(testEnv('https://example.test')),
+        appEnvProvider.overrideWithValue(env ?? testEnv('https://example.test')),
         secureStoreProvider.overrideWithValue(MemorySecureStore()),
         deviceIdentityProvider.overrideWithValue(testDevice()),
         databaseProvider.overrideWithValue(db),
         connectivityProvider.overrideWith(() => FakeConnectivity(online)),
         authControllerProvider.overrideWith(
-          () => FakeAuth(auth ?? AuthSignedIn(profile: profile({Role.staff}), sub: 'user-sub-1')),
+          authController ?? () => FakeAuth(auth ?? AuthSignedIn(profile: profile({Role.staff}), sub: 'user-sub-1')),
         ),
         ...overrides,
       ],

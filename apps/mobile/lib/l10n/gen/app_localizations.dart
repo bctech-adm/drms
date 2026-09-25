@@ -223,6 +223,54 @@ abstract class AppLocalizations {
   /// **'STAGING'**
   String get stagingBadge;
 
+  /// No description provided for @loginSubtitlePassword.
+  ///
+  /// In id, this message translates to:
+  /// **'Gunakan akun DRMS Anda.'**
+  String get loginSubtitlePassword;
+
+  /// No description provided for @loginUsernameLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Email atau username'**
+  String get loginUsernameLabel;
+
+  /// No description provided for @loginUsernameRequired.
+  ///
+  /// In id, this message translates to:
+  /// **'Isi email atau username.'**
+  String get loginUsernameRequired;
+
+  /// No description provided for @loginPasswordLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Kata sandi'**
+  String get loginPasswordLabel;
+
+  /// No description provided for @loginPasswordRequired.
+  ///
+  /// In id, this message translates to:
+  /// **'Isi kata sandi.'**
+  String get loginPasswordRequired;
+
+  /// No description provided for @loginShowPassword.
+  ///
+  /// In id, this message translates to:
+  /// **'Tampilkan kata sandi'**
+  String get loginShowPassword;
+
+  /// No description provided for @loginHidePassword.
+  ///
+  /// In id, this message translates to:
+  /// **'Sembunyikan kata sandi'**
+  String get loginHidePassword;
+
+  /// No description provided for @loginForgotPassword.
+  ///
+  /// In id, this message translates to:
+  /// **'Lupa kata sandi? Hubungi Admin.'**
+  String get loginForgotPassword;
+
   /// No description provided for @updateRequiredTitle.
   ///
   /// In id, this message translates to:

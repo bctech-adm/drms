@@ -11,6 +11,7 @@ import '../core/util/async_lock.dart';
 import '../features/app_config/data/app_config_api.dart';
 import '../features/approvals/data/approvals_api.dart';
 import '../features/auth/data/oidc_client.dart';
+import '../features/auth/data/password_login_client.dart';
 import '../features/auth/data/profile_api.dart';
 import '../features/auth/data/token_manager.dart';
 import '../features/expense/application/draft_service.dart';
@@ -31,6 +32,11 @@ final databaseProvider = Provider<AppDatabase>((ref) => throw UnimplementedError
 
 final deviceClockProvider = Provider<DeviceClock>((ref) => AndroidDeviceClock());
 final oidcBrowserClientProvider = Provider<OidcBrowserClient>((ref) => AppAuthBrowserClient(ref.watch(appEnvProvider)));
+
+/// In-app login (`PK_LOGIN_MODE=password`, staging only — ADR 0012).
+final passwordLoginClientProvider = Provider<PasswordLoginClient>(
+  (ref) => KeycloakPasswordClient(ref.watch(appEnvProvider)),
+);
 final photoCompressorProvider = Provider<PhotoCompressor>((ref) => DevicePhotoCompressor());
 final syncLockProvider = Provider<AsyncLock>((ref) => AsyncLock());
 
