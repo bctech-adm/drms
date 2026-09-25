@@ -42,7 +42,7 @@ export const Devices: CollectionConfig = withAudit(
   {
     slug: 'devices',
     labels: { singular: 'Perangkat', plural: 'Perangkat' },
-    admin: { useAsTitle: 'deviceId', group: 'Pengguna & Akses', defaultColumns: ['deviceId', 'user', 'model', 'appVersion', 'status', 'lastSeenAt'] },
+    admin: { useAsTitle: 'deviceId', group: 'Pengguna & Akses', defaultColumns: ['deviceId', 'user', 'model', 'appVersion', 'status', 'integrityRisk', 'lastSeenAt'] },
     access: {
       read: byRole({
         'pk-admin': true,
@@ -93,11 +93,37 @@ export const Devices: CollectionConfig = withAudit(
         ],
       },
       { name: 'revokeReason', type: 'text', label: 'Alasan pencabutan', maxLength: 500 },
+      // ADR 0010 decision 10 / QM-4: best-effort signals reported by the APK at register (every app
+      // start and login). Recorded + audited (field diff), never blocking; policy is the client's.
+      {
+        name: 'integrityRisk',
+        type: 'checkbox',
+        label: 'Risiko integritas',
+        defaultValue: false,
+        index: true,
+        access: { update: () => false },
+        admin: { readOnly: true, description: 'Root, emulator atau lokasi palsu terdeteksi pada pemeriksaan terakhir.' },
+      },
+      {
+        name: 'integrity',
+        type: 'group',
+        label: 'Integritas perangkat (laporan aplikasi)',
+        access: { update: () => false },
+        admin: { readOnly: true },
+        fields: [
+          { name: 'rooted', type: 'checkbox', label: 'Root terdeteksi' },
+          { name: 'emulator', type: 'checkbox', label: 'Emulator' },
+          { name: 'developerMode', type: 'checkbox', label: 'Opsi pengembang aktif' },
+          { name: 'adbEnabled', type: 'checkbox', label: 'USB debugging aktif' },
+          { name: 'mockLocation', type: 'checkbox', label: 'Lokasi palsu (dari fix GPS terakhir)' },
+        ],
+      },
+      { name: 'integrityCheckedAt', type: 'date', label: 'Integritas diperiksa', access: { update: () => false }, admin: { readOnly: true } },
       { name: 'registeredAt', type: 'date', label: 'Terdaftar', access: { update: () => false }, admin: { readOnly: true } },
       { name: 'lastSeenAt', type: 'date', label: 'Terakhir aktif', access: { update: () => false }, admin: { readOnly: true } },
       { name: 'revokedAt', type: 'date', label: 'Dicabut pada', access: { update: () => false }, admin: { readOnly: true } },
       { name: 'revokedBy', type: 'relationship', relationTo: 'users', label: 'Dicabut oleh', access: { update: () => false }, admin: { readOnly: true } },
     ],
   },
-  { docType: 'device', exclude: ['fcmToken', 'lastSeenAt'], reasonRules: [reasonOnChange(['status'], 'Alasan wajib diisi saat mencabut perangkat.')] },
+  { docType: 'device', exclude: ['fcmToken', 'lastSeenAt', 'integrityCheckedAt'], reasonRules: [reasonOnChange(['status'], 'Alasan wajib diisi saat mencabut perangkat.')] },
 )

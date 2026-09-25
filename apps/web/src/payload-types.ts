@@ -1282,6 +1282,18 @@ export interface Device {
   keycloakSid?: string | null;
   status: 'active' | 'revoked' | 'lost';
   revokeReason?: string | null;
+  /**
+   * Root, emulator atau lokasi palsu terdeteksi pada pemeriksaan terakhir.
+   */
+  integrityRisk?: boolean | null;
+  integrity?: {
+    rooted?: boolean | null;
+    emulator?: boolean | null;
+    developerMode?: boolean | null;
+    adbEnabled?: boolean | null;
+    mockLocation?: boolean | null;
+  };
+  integrityCheckedAt?: string | null;
   registeredAt?: string | null;
   lastSeenAt?: string | null;
   revokedAt?: string | null;
@@ -2449,6 +2461,17 @@ export interface DevicesSelect<T extends boolean = true> {
   keycloakSid?: T;
   status?: T;
   revokeReason?: T;
+  integrityRisk?: T;
+  integrity?:
+    | T
+    | {
+        rooted?: T;
+        emulator?: T;
+        developerMode?: T;
+        adbEnabled?: T;
+        mockLocation?: T;
+      };
+  integrityCheckedAt?: T;
   registeredAt?: T;
   lastSeenAt?: T;
   revokedAt?: T;

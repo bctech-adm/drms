@@ -274,6 +274,10 @@ export const openapiDocument = {
           },
           "minAppVersion": {
             "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable reason. 401 DEVICE_REVOKED = the token is valid but X-Device-Id was revoked/marked lost: the APK ends the session without a refresh."
           }
         },
         "required": [
@@ -367,6 +371,16 @@ export const openapiDocument = {
               "string",
               "null"
             ]
+          },
+          "integrityRisk": {
+            "type": "boolean",
+            "description": "Any integrity signal set at the last check (rooted, emulator, mock location)."
+          },
+          "integrityCheckedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -377,7 +391,9 @@ export const openapiDocument = {
           "appVersion",
           "registeredAt",
           "lastSeenAt",
-          "revokedAt"
+          "revokedAt",
+          "integrityRisk",
+          "integrityCheckedAt"
         ]
       },
       "DeviceRegister": {
@@ -410,6 +426,9 @@ export const openapiDocument = {
             "minLength": 1,
             "maxLength": 4096,
             "description": "FCM token (ADR 0011); null clears it, omitted keeps it. Push is not enabled yet (GET /app/config features.pushEnabled)."
+          },
+          "integrity": {
+            "$ref": "#/components/schemas/DeviceIntegrity"
           }
         },
         "required": [
@@ -417,6 +436,37 @@ export const openapiDocument = {
           "platform"
         ],
         "additionalProperties": false
+      },
+      "DeviceIntegrity": {
+        "type": "object",
+        "properties": {
+          "rooted": {
+            "type": "boolean"
+          },
+          "emulator": {
+            "type": "boolean"
+          },
+          "developerMode": {
+            "type": "boolean"
+          },
+          "adbEnabled": {
+            "type": "boolean"
+          },
+          "mockLocation": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "rooted",
+          "emulator",
+          "developerMode",
+          "adbEnabled"
+        ],
+        "additionalProperties": false,
+        "description": "Best-effort device signals (ADR 0010 decision 10), sent at register. Recorded and audited, never blocking; omitted keeps the stored values. mockLocation null = not measured (needs a GPS fix, F5)."
       },
       "DeviceRevoke": {
         "type": "object",
