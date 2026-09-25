@@ -212,6 +212,10 @@
   file upstream issue; UI hint added in F2d); **5.2 409 vs 403 wording** (a requester's `approve` on a request in
   "Menunggu Diketahui" answers 409 from the state check before the G1 403 — refused either way, UAT run 4);
   **"Admin Uji" test account** for the delegated-acknowledge UAT step 4.2 (the only staging Admin is the user's).
+- **Backlog carried in (2026-09-25):** **decide prod mobile login mode** — staging uses the in-app password
+  login (`PK_LOGIN_MODE=password`, Keycloak Direct Access Grants, ADR 0012, user decision 2026-09-25); prod
+  (`config/prod.json`, realm `drms`) stays `browser` (Custom Tab, ADR 0003) until this is decided with the user,
+  taking the staging field results and the Custom Tab process-death loop into account.
 - **Dependencies:** F2–F5.
 - **Agents / estimate:** qa-security 6–9 pd · nextjs-developer 4–6 pd · flutter-developer 2–3 pd ·
   docs-versioning 4–6 pd · infra-engineer 1–2 pd · analyst 1–2 pd → **18–28 pd**.

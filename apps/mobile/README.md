@@ -2,7 +2,8 @@
 
 Flutter **3.47.5** / Dart 3.13.4, Android minSdk 24 / target 36, package `id.co.drms.proyekkas`
 (ADR 0010). Feature-first layout under `lib/features/<feature>/{domain,data,application,presentation}`;
-Riverpod, go_router, drift + SQLite3MultipleCiphers (encrypted DB), dio, flutter_appauth (Keycloak PKCE).
+Riverpod, go_router, drift + SQLite3MultipleCiphers (encrypted DB), dio, flutter_appauth (Keycloak PKCE;
+staging uses the in-app password login instead, see below).
 All UI text is Bahasa Indonesia (`lib/l10n/app_id.arb`).
 
 ## Build flavors
@@ -23,7 +24,20 @@ flutter build apk --debug --flavor staging --dart-define-from-file=config/stagin
 The config files hold URLs and the public client id only. Nothing in them is secret.
 Push is off (`PK_PUSH_ENABLED=false`, no `google-services.json`) until the Firebase project exists (Q-44).
 
-## OIDC redirect: App Link vs. fallback scheme
+## Login mode (`PK_LOGIN_MODE`, ADR 0012)
+
+| Value | Flow | Used by |
+|---|---|---|
+| `browser` (default) | Authorization Code + PKCE in a Custom Tab (flutter_appauth, ADR 0003) | `config/prod.json` (prod decision open, F6) |
+| `password` | In-app form, Keycloak Direct Access Grant (`grant_type=password`) to `<issuer>/protocol/openid-connect/token`; logout = `POST <issuer>/protocol/openid-connect/logout` with `client_id` + `refresh_token` | `config/staging.json` |
+
+`password` needs **Direct Access Grants** enabled on Keycloak client `proyekkas-mobile` (otherwise the app shows
+"Login langsung belum diaktifkan di server"). Users with a pending required action (e.g. a temporary password)
+cannot log in this way and must set their password on the web first. Rollback: build with
+`--dart-define=PK_LOGIN_MODE=browser` and turn Direct Access Grants off again. Token refresh is the same plain
+`refresh_token` grant in both modes (`TokenManager`).
+
+## OIDC redirect: App Link vs. fallback scheme (browser mode)
 
 - **App Link** `https://<host>/app/callback` is the default (ADR 0003/0010). Android only verifies it when the
   APK is signed with a key whose SHA-256 is listed in the server's `/.well-known/assetlinks.json` (env

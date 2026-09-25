@@ -8,6 +8,7 @@ import '../../../core/logging/log.dart';
 import '../../../core/network/api_exception.dart';
 import '../../expense/data/expense_mappers.dart';
 import '../data/oidc_client.dart';
+import '../data/password_login_client.dart';
 import '../domain/user_profile.dart';
 
 sealed class AuthState {
@@ -116,11 +117,20 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<String?> login() async {
+  /// Browser login (AppAuth, `PK_LOGIN_MODE=browser`). Returns null on success or an error code /
+  /// Indonesian message for the login screen.
+  Future<String?> login() => _guardedLogin(() => ref.read(oidcBrowserClientProvider).login());
+
+  /// In-app login (`PK_LOGIN_MODE=password`, ADR 0012). The password is passed straight to the token
+  /// request and is never stored or logged.
+  Future<String?> loginWithPassword({required String username, required String password}) =>
+      _guardedLogin(() => ref.read(passwordLoginClientProvider).login(username: username.trim(), password: password));
+
+  Future<String?> _guardedLogin(Future<OidcTokens> Function() obtainTokens) async {
     if (_busy) return null;
     _busy = true;
     try {
-      final tokens = await ref.read(oidcBrowserClientProvider).login();
+      final tokens = await obtainTokens();
       final tm = ref.read(tokenManagerProvider);
       await tm.saveLogin(tokens);
       final sub = await tm.sessionSub();
@@ -130,6 +140,9 @@ class AuthController extends Notifier<AuthState> {
       return null;
     } on LoginCancelled {
       return 'cancelled';
+    } on PasswordLoginException catch (e) {
+      // Nothing was stored: the token request itself failed.
+      return e.message;
     } on NetworkException {
       await ref.read(tokenManagerProvider).clear();
       return 'network';
@@ -157,8 +170,10 @@ class AuthController extends Notifier<AuthState> {
   }
 
   /// Logout: revoke this device server-side (also ends the Keycloak offline session, ADR 0003 §5),
-  /// end the browser SSO session, drop tokens, and use a new install id next time (a revoked id can
-  /// never be re-activated). The encrypted queue stays, locked to this user's `sub`.
+  /// end the Keycloak session (browser mode: RP-initiated logout via AppAuth; password mode: plain
+  /// `POST …/logout` with the refresh token, no browser — ADR 0012), drop tokens, and use a new install
+  /// id next time (a revoked id can never be re-activated). The encrypted queue stays, locked to this
+  /// user's `sub`.
   Future<void> logout() async {
     final tm = ref.read(tokenManagerProvider);
     final device = ref.read(deviceIdentityProvider);
@@ -167,9 +182,14 @@ class AuthController extends Notifier<AuthState> {
     } on ApiException catch (e) {
       Log.i('auth: device revoke skipped (${e.runtimeType})');
     }
-    final idToken = await tm.idToken();
     try {
-      await ref.read(oidcBrowserClientProvider).endSession(idTokenHint: idToken);
+      if (ref.read(appEnvProvider).usesPasswordLogin) {
+        final refresh = await tm.refreshToken();
+        if (refresh != null) await ref.read(passwordLoginClientProvider).logout(refreshToken: refresh);
+      } else {
+        final idToken = await tm.idToken();
+        await ref.read(oidcBrowserClientProvider).endSession(idTokenHint: idToken);
+      }
     } on Object catch (e) {
       Log.i('auth: end session skipped (${e.runtimeType})');
     }

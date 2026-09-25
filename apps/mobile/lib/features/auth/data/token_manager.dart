@@ -6,6 +6,7 @@ import '../../../core/config/app_env.dart';
 import '../../../core/logging/log.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/network/idp_dio.dart';
 import '../../../core/storage/secure_store.dart';
 import '../domain/jwt.dart';
 import 'oidc_client.dart';
@@ -15,9 +16,7 @@ import 'oidc_client.dart';
 /// single-flight and the NEW refresh token is persisted before the new access token is used.
 class TokenManager implements TokenSource {
   TokenManager({required this.env, required this.store, Dio? tokenDio, this.onSessionEnded})
-    : _dio =
-          tokenDio ??
-          Dio(BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 20)));
+    : _dio = tokenDio ?? createIdpDio();
 
   final AppEnv env;
   final SecureStore store;
@@ -35,6 +34,9 @@ class TokenManager implements TokenSource {
   Future<String?> sessionSub() => store.read(SecureKeys.sessionSub);
 
   Future<String?> idToken() => store.read(SecureKeys.idToken);
+
+  /// Stored refresh token, needed only for the password-mode Keycloak logout (ADR 0012).
+  Future<String?> refreshToken() => store.read(SecureKeys.refreshToken);
 
   /// Stores a fresh login. Refresh token first (atomic w.r.t. rotation), then memory.
   Future<void> saveLogin(OidcTokens t) async {
@@ -87,7 +89,7 @@ class TokenManager implements TokenSource {
       res = await _dio.post<dynamic>(
         env.tokenEndpoint,
         data: {'grant_type': 'refresh_token', 'client_id': env.oidcClientId, 'refresh_token': refresh},
-        options: Options(contentType: Headers.formUrlEncodedContentType, validateStatus: (_) => true),
+        options: idpFormOptions(),
       );
     } on DioException {
       throw const NetworkException();

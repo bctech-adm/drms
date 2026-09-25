@@ -289,3 +289,6 @@ different auth design requires only `users` collection auth config + routes. No 
   restricted nav (collections hidden in the UI; access functions enforce data); self-service signature (own row,
   `signature` field only); requester actions in the admin call `/api/v1` with `Idempotency-Key`; admin REST
   create/edit of expense requests runs the same `validateContent` as `/api/v1` (security fix). Status stays accepted.
+- **2026-09-25 (mobile login, user decision):** staging APK deviates from §1 for `proyekkas-mobile`: in-app
+  password login (Direct Access Grant) behind `PK_LOGIN_MODE=password`, see **ADR 0012**. Prod stays on
+  Authorization Code + PKCE (`browser`) until the F6 decision. Status stays accepted.

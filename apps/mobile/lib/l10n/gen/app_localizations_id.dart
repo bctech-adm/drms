@@ -81,6 +81,30 @@ class AppLocalizationsId extends AppLocalizations {
   String get stagingBadge => 'STAGING';
 
   @override
+  String get loginSubtitlePassword => 'Gunakan akun DRMS Anda.';
+
+  @override
+  String get loginUsernameLabel => 'Email atau username';
+
+  @override
+  String get loginUsernameRequired => 'Isi email atau username.';
+
+  @override
+  String get loginPasswordLabel => 'Kata sandi';
+
+  @override
+  String get loginPasswordRequired => 'Isi kata sandi.';
+
+  @override
+  String get loginShowPassword => 'Tampilkan kata sandi';
+
+  @override
+  String get loginHidePassword => 'Sembunyikan kata sandi';
+
+  @override
+  String get loginForgotPassword => 'Lupa kata sandi? Hubungi Admin.';
+
+  @override
   String get updateRequiredTitle => 'Perbarui aplikasi';
 
   @override
