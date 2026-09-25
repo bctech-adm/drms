@@ -712,4 +712,137 @@ export async function lastClosedPeriod(req: PayloadRequest): Promise<string | nu
   return (r[0]?.p as string | null) ?? null
 }
 
+// ================================================================ dashboard charts (Beranda 2026-09-25)
+
+/**
+ * K-13 per status over ALL request dates (the pipeline "posisi pengajuan saat ini"), in scope.
+ * Drafts excluded like every K-13 figure.
+ */
+export async function requestStatusCounts(req: PayloadRequest, scope: ReportScope): Promise<Array<{ type: RequestType; status: RequestStatus; count: number; sum: number }>> {
+  const r = await rows(
+    req,
+    sql`SELECT er.type::text AS type, er.status::text AS status, count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s
+        FROM expense_requests er WHERE er.status <> 'draft' AND ${requestScopeSql(scope)}
+        GROUP BY 1, 2 ORDER BY 1, 2`,
+  )
+  return r.map((x) => ({ type: x.type as RequestType, status: x.status as RequestStatus, count: num(x.n), sum: num(x.s) }))
+}
+
+/** K-13 per month of the request date (count + Σ grand total), non-draft, in scope; every month of the range present. */
+export async function requestTrendMonthly(req: PayloadRequest, scope: ReportScope, from: string, to: string): Promise<Array<{ period: string; count: number; sum: number }>> {
+  const r = await rows(
+    req,
+    sql`SELECT substr(er.request_date, 1, 7) AS period, count(*)::int AS n, coalesce(sum(er.grand_total), 0)::text AS s
+        FROM expense_requests er
+        WHERE er.status <> 'draft' AND er.request_date BETWEEN ${firstDay(from)} AND ${lastDay(to)} AND ${requestScopeSql(scope)}
+        GROUP BY 1`,
+  )
+  const by = new Map(r.map((x) => [String(x.period), x]))
+  return periodRange(from, to).map((period) => ({ period, count: num(by.get(period)?.n), sum: num(by.get(period)?.s) }))
+}
+
+/**
+ * K-05 per month (Dicairkan bersih): posted transfers by transfer month − posted LPJ refunds by
+ * entry month, of the requests in scope; every month of the range present.
+ */
+export async function disbursedMonthly(req: PayloadRequest, scope: ReportScope, from: string, to: string): Promise<Array<{ period: string; disbursed: number; refund: number; net: number }>> {
+  const r = await rows(
+    req,
+    sql`WITH d AS (
+          SELECT substr(t.transfer_date, 1, 7) AS period, sum(t.amount) AS amount FROM transfers t JOIN expense_requests er ON er.id = t.request_id
+          WHERE t.status = 'posted' AND t.transfer_date BETWEEN ${firstDay(from)} AND ${lastDay(to)} AND ${requestScopeSql(scope)} GROUP BY 1),
+        rf AS (
+          SELECT substr(c.entry_date, 1, 7) AS period, sum(c.amount) AS amount FROM cash_entries c JOIN expense_requests er ON er.id = c.expense_request_id
+          WHERE c.source_type = 'settlement_refund' AND c.status = 'posted' AND c.entry_date BETWEEN ${firstDay(from)} AND ${lastDay(to)} AND ${requestScopeSql(scope)} GROUP BY 1)
+        SELECT coalesce(d.period, rf.period) AS period, coalesce(d.amount, 0)::text AS d, coalesce(rf.amount, 0)::text AS rf
+        FROM d FULL JOIN rf ON rf.period = d.period`,
+  )
+  const by = new Map(r.map((x) => [String(x.period), x]))
+  return periodRange(from, to).map((period) => {
+    const d = num(by.get(period)?.d)
+    const rf = num(by.get(period)?.rf)
+    return { period, disbursed: d, refund: rf, net: d - rf }
+  })
+}
+
+export type RecentCashEntry = {
+  id: number
+  entryNo: string | null
+  entryDate: string
+  direction: 'in' | 'out'
+  amount: number
+  status: 'posted' | 'void'
+  sourceType: string
+  account: string
+  label: string
+  requestId: number | null
+  requestDocNo: string | null
+}
+
+/**
+ * Latest rows of the cash ledger (Owner/Finance "Transaksi terbaru"). The ledger is office data
+ * only (scope.ts): any scope other than `all` returns nothing, without querying.
+ */
+export async function recentCashEntries(req: PayloadRequest, scope: ReportScope, limit: number): Promise<RecentCashEntry[]> {
+  if (scope.kind !== 'all') return []
+  const r = await rows(
+    req,
+    sql`SELECT ce.id, ce.entry_no, ce.entry_date, ce.direction::text AS direction, ce.amount::text AS amount, ce.status::text AS status,
+          ce.source_type::text AS source_type, a.name AS account,
+          coalesce(nullif(ce.description, ''), c.name, s.name, '') AS label, er.id AS rid, er.doc_no
+        FROM cash_entries ce
+        JOIN cash_accounts a ON a.id = ce.cash_account_id
+        LEFT JOIN expense_categories c ON c.id = ce.category_id
+        LEFT JOIN cash_in_sources s ON s.id = ce.cash_in_source_id
+        LEFT JOIN expense_requests er ON er.id = ce.expense_request_id
+        ORDER BY ce.entry_date DESC, ce.id DESC LIMIT ${Math.max(1, Math.min(50, Math.floor(limit)))}`,
+  )
+  return r.map((x) => ({
+    id: num(x.id),
+    entryNo: (x.entry_no as string | null) ?? null,
+    entryDate: String(x.entry_date),
+    direction: x.direction === 'in' ? ('in' as const) : ('out' as const),
+    amount: num(x.amount),
+    status: x.status === 'void' ? ('void' as const) : ('posted' as const),
+    sourceType: String(x.source_type),
+    account: String(x.account),
+    label: String(x.label),
+    requestId: numOrNull(x.rid),
+    requestDocNo: (x.doc_no as string | null) ?? null,
+  }))
+}
+
+/**
+ * First rows of the transfer queue (K-11 set: Uang Muka "approved" + Reimburse "receipts_verified")
+ * by needed date — Finance "Menunggu tindakan saya". Office data: scope `all` only.
+ */
+export async function transferQueueTop(req: PayloadRequest, scope: ReportScope, limit: number) {
+  if (scope.kind !== 'all') return []
+  const ctx = await reportContext(req)
+  const r = await rows(
+    req,
+    sql`SELECT er.id, er.doc_no, er.title, er.type::text AS type, er.status::text AS status, er.needed_date,
+          coalesce(er.approved_amount, er.grand_total, 0)::text AS amount,
+          coalesce(p.code || ' ' || p.name, cc.code || ' ' || cc.name, '') AS scope_name
+        FROM expense_requests er
+        LEFT JOIN projects p ON p.id = er.project_id LEFT JOIN cost_centers cc ON cc.id = er.cost_center_id
+        WHERE (er.type = 'advance' AND er.status = 'approved') OR (er.type = 'reimburse' AND er.status = 'receipts_verified')
+        ORDER BY er.needed_date NULLS LAST, er.id LIMIT ${Math.max(1, Math.min(50, Math.floor(limit)))}`,
+  )
+  return r.map((x) => {
+    const needed = (x.needed_date as string | null) ?? null
+    return {
+      id: num(x.id),
+      docNo: (x.doc_no as string | null) ?? null,
+      title: String(x.title),
+      type: x.type as RequestType,
+      status: x.status as RequestStatus,
+      scopeName: String(x.scope_name),
+      amount: num(x.amount),
+      neededDate: needed,
+      overdue: needed !== null && needed < ctx.today,
+    }
+  })
+}
+
 export { inList }

@@ -2,26 +2,17 @@ import React from 'react'
 
 import { cellText } from '@/domain/reports/export'
 import type { Column, FilterField, Table } from '@/domain/reports/registry'
-import { BUDGET_LABELS, niceMax, periodLabel, shortRupiah, type BudgetTone } from '@/domain/reports/rules'
-import { formatRupiah } from '@/lib/money'
+import { BUDGET_LABELS, type BudgetTone } from '@/domain/reports/rules'
 
 /**
- * Server-rendered building blocks of the F3 dashboards/reports (wireframes §0): no client JS, no
- * chart library. Charts are inline SVG with <title> tooltips (native hover) + a data table in
- * <details> (accessible); colours are the web-starter theme tokens (--pk-*, set per light/dark
- * mode in (payload)/custom.scss from src/theme/tokens.ts): in = trust blue, out = CTA orange (a
- * CVD-safe blue/orange pair); status is never colour alone.
+ * Server-rendered building blocks of the F3 reports (wireframes §0) and shared pieces of the
+ * Beranda (charts/cards: ./viz.tsx). Colours are the web-starter theme tokens (--pk-*, set per
+ * light/dark mode in (payload)/custom.scss from src/theme/tokens.ts); status is never colour alone.
  * All text goes through React escaping. `data-pk-*` attributes are stable UAT selectors.
  */
 export const F3_STYLE = `
-.pk-f3 { --pk-in: var(--pk-primary); --pk-out: var(--pk-accent); --pk-grid: var(--pk-border); --pk-muted: var(--pk-muted-fg);
+.pk-f3 { --pk-grid: var(--pk-border); --pk-muted: var(--pk-muted-fg);
   --pk-ok: var(--pk-tone-ok-text); --pk-warn: var(--pk-tone-warn-text); --pk-bad: var(--pk-tone-bad-text); --pk-none: var(--theme-elevation-500); }
-.pk-f3 .pk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 0 0 20px; }
-.pk-f3 .pk-tile { border: 1px solid var(--pk-border); border-radius: var(--style-radius-l); padding: 14px 16px; background: var(--pk-card); box-shadow: var(--pk-shadow); }
-.pk-f3 .pk-tile h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--pk-muted); }
-.pk-f3 .pk-big { font-family: var(--pk-font-heading); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; font-variant-numeric: tabular-nums; }
-.pk-f3 .pk-tile p { margin: 2px 0; font-size: 13px; }
-.pk-f3 .pk-tile a.pk-more { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--pk-primary); }
 .pk-f3 section.pk-block { margin: 0 0 24px; }
 .pk-f3 section.pk-block > h2 { font-family: var(--pk-font-heading); font-size: 17px; line-height: 1.3; margin: 0 0 10px; }
 .pk-f3 .pk-scroll { overflow-x: auto; margin: 0 0 12px; background: var(--pk-card); border: 1px solid var(--pk-border); border-radius: var(--style-radius-l); box-shadow: var(--pk-shadow); }
@@ -35,13 +26,6 @@ export const F3_STYLE = `
 .pk-f3 .pk-badge.ok { color: var(--pk-ok); } .pk-f3 .pk-badge.warn { color: var(--pk-warn); } .pk-f3 .pk-badge.over { color: var(--pk-bad); } .pk-f3 .pk-badge.none { color: var(--pk-none); }
 .pk-f3 .pk-empty { color: var(--pk-muted); }
 .pk-f3 .pk-note { color: var(--pk-muted); font-size: 12px; margin: 4px 0; }
-.pk-f3 .pk-legend { display: flex; gap: 16px; font-size: 12px; margin: 4px 0; }
-.pk-f3 .pk-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
-.pk-f3 svg.pk-chart { width: 100%; height: auto; max-height: 280px; }
-.pk-f3 svg.pk-chart text { fill: var(--pk-muted); font-size: 11px; }
-.pk-f3 svg.pk-chart .grid { stroke: var(--pk-grid); stroke-width: 1; }
-.pk-f3 svg.pk-chart .in { fill: var(--pk-in); } .pk-f3 svg.pk-chart .out { fill: var(--pk-out); }
-.pk-f3 svg.pk-chart a:hover rect, .pk-f3 svg.pk-chart a:focus rect { opacity: .8; }
 .pk-f3 form.pk-filter { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin: 0 0 12px; padding: 12px; border: 1px solid var(--pk-border); border-radius: var(--style-radius-l); background: var(--pk-card); }
 .pk-f3 form.pk-filter label { display: flex; flex-direction: column; font-size: 12px; gap: 2px; }
 .pk-f3 form.pk-filter input, .pk-f3 form.pk-filter select { font-size: 13px; padding: 4px 6px; min-width: 140px; background: var(--theme-input-bg, var(--theme-elevation-0)); color: var(--theme-text); border: 1px solid var(--pk-input); border-radius: var(--style-radius-s); }
@@ -67,37 +51,6 @@ export function F3Root({ children, name }: { children: React.ReactNode; name: st
   )
 }
 
-export const rpx = (v: number | null | undefined) => (v === null || v === undefined ? '—' : formatRupiah(v))
-
-export function Tile({ title, id, children, href, more }: { title: string; id: string; children: React.ReactNode; href?: string; more?: string }) {
-  return (
-    <div className="pk-tile" data-pk-tile={id}>
-      <h3>{title}</h3>
-      {children}
-      {href ? (
-        <a className="pk-more" href={href}>
-          {more ?? 'Lihat rincian →'}
-        </a>
-      ) : null}
-    </div>
-  )
-}
-
-export function Big({ children, id, href }: { children: React.ReactNode; id?: string; href?: string }) {
-  const inner = (
-    <p className="pk-big" data-pk-kpi={id}>
-      {children}
-    </p>
-  )
-  return href ? (
-    <a href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
-      {inner}
-    </a>
-  ) : (
-    inner
-  )
-}
-
 const TONE_ICON: Record<BudgetTone, string> = { ok: '●', warn: '▲', over: '■', none: '○' }
 
 export function BudgetBadge({ tone }: { tone: BudgetTone }) {
@@ -117,102 +70,6 @@ export function Placeholder({ text, id }: { text: string; id: string }) {
   return (
     <div className="pk-placeholder" data-pk-placeholder={id}>
       {text}
-    </div>
-  )
-}
-
-/**
- * Paired Masuk/Keluar bars per month on ONE Rupiah axis (K-02). Each bar links to the Rekap Kas
- * of that month (C9) and carries a <title> tooltip; the table below repeats every number.
- */
-export function CashFlowChart({ rows, hrefOf, id }: { rows: Array<{ period: string; masuk: number; keluar: number }>; hrefOf: (period: string) => string; id: string }) {
-  if (rows.every((r) => r.masuk === 0 && r.keluar === 0)) return <Empty text="Belum ada transaksi kas di rentang ini." />
-  const W = 720
-  const H = 240
-  const left = 56
-  const bottom = 24
-  const top = 8
-  const plotH = H - bottom - top
-  const max = niceMax(Math.max(...rows.map((r) => Math.max(r.masuk, r.keluar))))
-  const band = (W - left - 8) / rows.length
-  const bar = Math.max(3, Math.min(18, (band - 10) / 2))
-  const y = (v: number) => top + plotH - (v / max) * plotH
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => t * max)
-  const rect = (x: number, v: number, cls: string, label: string, period: string) => {
-    const h = Math.max(0, (v / max) * plotH)
-    const r = Math.min(4, bar / 2, h)
-    const yy = top + plotH - h
-    // rounded data-end, square at the baseline
-    const d = h <= 0 ? '' : `M${x},${top + plotH} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bar - r} Q${x + bar},${yy} ${x + bar},${yy + r} V${top + plotH} Z`
-    return (
-      <a href={hrefOf(period)} key={`${cls}-${period}`}>
-        <title>{`${periodLabel(period)} · ${label} ${formatRupiah(v)}`}</title>
-        <rect x={x - 1} y={top} width={bar + 2} height={plotH} fill="transparent" />
-        {d ? <path d={d} className={cls} /> : null}
-      </a>
-    )
-  }
-  return (
-    <div data-pk-chart={id}>
-      <div className="pk-legend">
-        <span>
-          <i style={{ background: 'var(--pk-in)' }} />
-          Masuk
-        </span>
-        <span>
-          <i style={{ background: 'var(--pk-out)' }} />
-          Keluar
-        </span>
-      </div>
-      <svg className="pk-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Grafik kas masuk dan keluar per bulan">
-        {ticks.map((t) => (
-          <g key={t}>
-            <line className="grid" x1={left} x2={W - 4} y1={y(t)} y2={y(t)} />
-            <text x={left - 6} y={y(t) + 4} textAnchor="end">
-              {shortRupiah(t)}
-            </text>
-          </g>
-        ))}
-        {rows.map((r, i) => {
-          const x0 = left + i * band + (band - (bar * 2 + 2)) / 2
-          return (
-            <g key={r.period}>
-              {rect(x0, r.masuk, 'in', 'Masuk', r.period)}
-              {rect(x0 + bar + 2, r.keluar, 'out', 'Keluar', r.period)}
-              <text x={left + i * band + band / 2} y={H - 6} textAnchor="middle">
-                {periodLabel(r.period).split(' ')[0]}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
-      <details>
-        <summary style={{ fontSize: 12 }}>Tabel angka</summary>
-        <div className="pk-scroll">
-          <table className="pk-table" data-pk-table={`${id}-data`}>
-            <thead>
-              <tr>
-                <th>Bulan</th>
-                <th className="n">Masuk</th>
-                <th className="n">Keluar</th>
-                <th className="n">Selisih</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.period}>
-                  <td>
-                    <a href={hrefOf(r.period)}>{periodLabel(r.period)}</a>
-                  </td>
-                  <td className="n">{rpx(r.masuk)}</td>
-                  <td className="n">{rpx(r.keluar)}</td>
-                  <td className="n">{rpx(r.masuk - r.keluar)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
     </div>
   )
 }

@@ -63,6 +63,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   with the ProyekKas DRMS name. Tokens in `apps/web/src/theme/tokens.ts`, WCAG contrast checked by
   `tests/unit/theme.test.ts`; hard-coded status colours in the work views replaced by tokens (white on the old
   orange `#ef6c00` was 2.9:1).
+- **Beranda redesigned as a data dashboard** (same branch; user feedback 2026-09-25 "terlalu text based"): per role
+  a KPI stat-tile row (compact value + exact value, delta vs previous month, 12-point mini columns, meters), charts
+  and card tables in a responsive 12-column bento grid (tablet 2 columns, phone 1). Owner: saldo kas, pengajuan
+  menunggu (Diketahui/Approval split), pencairan bulan ini, realisasi vs anggaran; arus kas bulanan (masuk vs keluar
+  columns, one axis), status pipeline, realisasi vs RAB per project (bullet rows), komposisi biaya per kategori
+  (sorted bars, top 6 + "Lainnya", no donut), tren pengajuan, saldo per akun, menunggu tindakan saya, transaksi
+  kas terbaru, project realisasi tertinggi. Finance: saldo, antrian transfer, menunggu verifikasi, kas
+  masuk/keluar bulan ini, selisih LPJ; antrian transfer teratas, uang muka belum LPJ, pencairan per bulan. PM (team
+  scope): menunggu Diketahui, pengajuan tim, LPJ tim, realisasi anggaran; bullets, pipeline, tren, komposisi.
+  Staff: perlu tindakan, diproses, bulan ini, selesai; own pipeline and monthly value. **No chart library** (kept
+  the existing server-rendered inline SVG approach; one ~70-line client component for hover/focus tooltips, text
+  via React); every chart has a table view, focusable marks with accessible names, status always icon + label,
+  skeleton via Suspense, one subtle enter animation off under `prefers-reduced-motion`. Chart colours are ramp
+  steps of `theme/tokens.ts` validated per mode with the dataviz palette validator (dark mode uses blue-450: the
+  dark primary blue-400 fails the chart lightness band). New read-only, scope-parameterised queries
+  (`requestStatusCounts`, `requestTrendMonthly`, `disbursedMonthly`, `recentCashEntries`, `transferQueueTop`);
+  the cash-ledger rows are office-scope only. `GET /api/v1/dashboard/*` responses gain an additive `viz` object
+  (owner `approvals.pendingAck/pendingApproval`, staff `month`); OpenAPI regenerated. No schema change/migration.
+  `data-pk-*` UAT selectors kept (the KPI list items of Owner/Finance/PM now sit in tiles/cards, tables in
+  "Tabel angka").
 - The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
 ### Fixed

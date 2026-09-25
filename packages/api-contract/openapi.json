@@ -11014,13 +11014,47 @@
                             "integer",
                             "null"
                           ]
+                        },
+                        "pendingAck": {
+                          "type": "object",
+                          "properties": {
+                            "count": {
+                              "type": "integer"
+                            },
+                            "sum": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "sum"
+                          ]
+                        },
+                        "pendingApproval": {
+                          "type": "object",
+                          "properties": {
+                            "count": {
+                              "type": "integer"
+                            },
+                            "sum": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            }
+                          },
+                          "required": [
+                            "count",
+                            "sum"
+                          ]
                         }
                       },
                       "required": [
                         "count",
                         "sum",
                         "waitingForMe",
-                        "oldestDays"
+                        "oldestDays",
+                        "pendingAck",
+                        "pendingApproval"
                       ]
                     },
                     "cashFlow": {
@@ -11227,6 +11261,410 @@
                         "reimburseToVerify",
                         "reimburseToVerifyWarnings"
                       ]
+                    },
+                    "viz": {
+                      "type": "object",
+                      "properties": {
+                        "balanceTrend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "balance": {
+                                "type": "integer",
+                                "description": "K-01 closing balance at month end (book)"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "balance"
+                            ]
+                          }
+                        },
+                        "disbursed": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "net": {
+                                "type": "integer",
+                                "description": "K-05 Dicairkan bersih in the month"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "net"
+                            ]
+                          }
+                        },
+                        "requestTrend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "sum": {
+                                "type": "integer",
+                                "description": "K-13 Σ grand total of non-draft requests dated in the month"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "count",
+                              "sum"
+                            ]
+                          }
+                        },
+                        "pipeline": {
+                          "type": "object",
+                          "properties": {
+                            "stages": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ack",
+                                      "approval",
+                                      "queue",
+                                      "lpj",
+                                      "done",
+                                      "exit"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "integer"
+                                  },
+                                  "sum": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "statuses": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label",
+                                  "count",
+                                  "sum",
+                                  "statuses"
+                                ]
+                              }
+                            },
+                            "exit": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ack",
+                                    "approval",
+                                    "queue",
+                                    "lpj",
+                                    "done",
+                                    "exit"
+                                  ]
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer"
+                                },
+                                "sum": {
+                                  "type": "integer",
+                                  "description": "Rupiah (integer)"
+                                },
+                                "statuses": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label",
+                                "count",
+                                "sum",
+                                "statuses"
+                              ]
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "stages",
+                            "exit",
+                            "total"
+                          ],
+                          "description": "K-13 per status (all request dates, drafts excluded) folded into ordered stages; rejected/cancelled = exit"
+                        },
+                        "categories": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string"
+                            },
+                            "to": {
+                              "type": "string"
+                            },
+                            "total": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "includesManual": {
+                              "type": "boolean"
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "total": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "other": {
+                                    "type": "boolean"
+                                  },
+                                  "categoryId": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "total",
+                                  "other",
+                                  "categoryId"
+                                ]
+                              },
+                              "description": "K-17 Dicairkan per category, top 6 + \"Lainnya\""
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to",
+                            "total",
+                            "includesManual",
+                            "items"
+                          ]
+                        },
+                        "budgetTotals": {
+                          "type": "object",
+                          "properties": {
+                            "projects": {
+                              "type": "integer"
+                            },
+                            "budget": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "committed": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "realized": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            }
+                          },
+                          "required": [
+                            "projects",
+                            "budget",
+                            "committed",
+                            "realized"
+                          ],
+                          "description": "Σ over running projects with a budget"
+                        },
+                        "recentCash": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "entryNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "entryDate": {
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "in",
+                                  "out"
+                                ]
+                              },
+                              "amount": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "posted",
+                                  "void"
+                                ]
+                              },
+                              "sourceType": {
+                                "type": "string"
+                              },
+                              "account": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "requestId": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "requestDocNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "entryNo",
+                              "entryDate",
+                              "direction",
+                              "amount",
+                              "status",
+                              "sourceType",
+                              "account",
+                              "label",
+                              "requestId",
+                              "requestDocNo"
+                            ]
+                          }
+                        },
+                        "inbox": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "docNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "advance",
+                                  "reimburse"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "statusLabel": {
+                                "type": "string"
+                              },
+                              "step": {
+                                "type": "string",
+                                "enum": [
+                                  "approve",
+                                  "acknowledge"
+                                ]
+                              },
+                              "scopeName": {
+                                "type": "string"
+                              },
+                              "requesters": {
+                                "type": "string"
+                              },
+                              "grandTotal": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "requestDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "overWarn": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "docNo",
+                              "title",
+                              "type",
+                              "status",
+                              "statusLabel",
+                              "step",
+                              "scopeName",
+                              "requesters",
+                              "grandTotal",
+                              "requestDate",
+                              "overWarn"
+                            ]
+                          }
+                        },
+                        "warnPct": {
+                          "type": "number",
+                          "description": "company-settings.budgetWarnPct (K-08 Waspada threshold)"
+                        }
+                      },
+                      "required": [
+                        "balanceTrend",
+                        "disbursed",
+                        "requestTrend",
+                        "pipeline",
+                        "categories",
+                        "budgetTotals",
+                        "recentCash",
+                        "inbox",
+                        "warnPct"
+                      ]
                     }
                   },
                   "required": [
@@ -11239,7 +11677,8 @@
                     "cashFlow",
                     "projects",
                     "costCenters",
-                    "transferQueue"
+                    "transferQueue",
+                    "viz"
                   ]
                 }
               }
@@ -11563,6 +12002,337 @@
                     },
                     "nextClosable": {
                       "type": "string"
+                    },
+                    "viz": {
+                      "type": "object",
+                      "properties": {
+                        "balanceTrend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "balance": {
+                                "type": "integer",
+                                "description": "K-01 closing balance at month end (book)"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "balance"
+                            ]
+                          }
+                        },
+                        "disbursed": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "net": {
+                                "type": "integer",
+                                "description": "K-05 Dicairkan bersih in the month"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "net"
+                            ]
+                          }
+                        },
+                        "pipeline": {
+                          "type": "object",
+                          "properties": {
+                            "stages": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ack",
+                                      "approval",
+                                      "queue",
+                                      "lpj",
+                                      "done",
+                                      "exit"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "integer"
+                                  },
+                                  "sum": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "statuses": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label",
+                                  "count",
+                                  "sum",
+                                  "statuses"
+                                ]
+                              }
+                            },
+                            "exit": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ack",
+                                    "approval",
+                                    "queue",
+                                    "lpj",
+                                    "done",
+                                    "exit"
+                                  ]
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer"
+                                },
+                                "sum": {
+                                  "type": "integer",
+                                  "description": "Rupiah (integer)"
+                                },
+                                "statuses": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label",
+                                "count",
+                                "sum",
+                                "statuses"
+                              ]
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "stages",
+                            "exit",
+                            "total"
+                          ],
+                          "description": "K-13 per status (all request dates, drafts excluded) folded into ordered stages; rejected/cancelled = exit"
+                        },
+                        "categories": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string"
+                            },
+                            "to": {
+                              "type": "string"
+                            },
+                            "total": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "includesManual": {
+                              "type": "boolean"
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "total": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "other": {
+                                    "type": "boolean"
+                                  },
+                                  "categoryId": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "total",
+                                  "other",
+                                  "categoryId"
+                                ]
+                              },
+                              "description": "K-17 Dicairkan per category, top 6 + \"Lainnya\""
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to",
+                            "total",
+                            "includesManual",
+                            "items"
+                          ]
+                        },
+                        "recentCash": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "entryNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "entryDate": {
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "in",
+                                  "out"
+                                ]
+                              },
+                              "amount": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "posted",
+                                  "void"
+                                ]
+                              },
+                              "sourceType": {
+                                "type": "string"
+                              },
+                              "account": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "requestId": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "requestDocNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "entryNo",
+                              "entryDate",
+                              "direction",
+                              "amount",
+                              "status",
+                              "sourceType",
+                              "account",
+                              "label",
+                              "requestId",
+                              "requestDocNo"
+                            ]
+                          }
+                        },
+                        "transferTop": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "docNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "advance",
+                                  "reimburse"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "scopeName": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "neededDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "overdue": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "docNo",
+                              "title",
+                              "type",
+                              "status",
+                              "scopeName",
+                              "amount",
+                              "neededDate",
+                              "overdue"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "balanceTrend",
+                        "disbursed",
+                        "pipeline",
+                        "categories",
+                        "recentCash",
+                        "transferTop"
+                      ]
                     }
                   },
                   "required": [
@@ -11578,7 +12348,8 @@
                     "lpjDueDays",
                     "cashFlow",
                     "lastClosedPeriod",
-                    "nextClosable"
+                    "nextClosable",
+                    "viz"
                   ]
                 }
               }
@@ -11969,6 +12740,296 @@
                         "available",
                         "phase"
                       ]
+                    },
+                    "viz": {
+                      "type": "object",
+                      "properties": {
+                        "requestTrend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "sum": {
+                                "type": "integer",
+                                "description": "K-13 Σ grand total of non-draft requests dated in the month"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "count",
+                              "sum"
+                            ]
+                          }
+                        },
+                        "pipeline": {
+                          "type": "object",
+                          "properties": {
+                            "stages": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ack",
+                                      "approval",
+                                      "queue",
+                                      "lpj",
+                                      "done",
+                                      "exit"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "integer"
+                                  },
+                                  "sum": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "statuses": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label",
+                                  "count",
+                                  "sum",
+                                  "statuses"
+                                ]
+                              }
+                            },
+                            "exit": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ack",
+                                    "approval",
+                                    "queue",
+                                    "lpj",
+                                    "done",
+                                    "exit"
+                                  ]
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer"
+                                },
+                                "sum": {
+                                  "type": "integer",
+                                  "description": "Rupiah (integer)"
+                                },
+                                "statuses": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label",
+                                "count",
+                                "sum",
+                                "statuses"
+                              ]
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "stages",
+                            "exit",
+                            "total"
+                          ],
+                          "description": "K-13 per status (all request dates, drafts excluded) folded into ordered stages; rejected/cancelled = exit"
+                        },
+                        "categories": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string"
+                            },
+                            "to": {
+                              "type": "string"
+                            },
+                            "total": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "includesManual": {
+                              "type": "boolean"
+                            },
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "total": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "other": {
+                                    "type": "boolean"
+                                  },
+                                  "categoryId": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "label",
+                                  "total",
+                                  "other",
+                                  "categoryId"
+                                ]
+                              },
+                              "description": "K-17 Dicairkan per category, top 6 + \"Lainnya\""
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to",
+                            "total",
+                            "includesManual",
+                            "items"
+                          ]
+                        },
+                        "budgetTotals": {
+                          "type": "object",
+                          "properties": {
+                            "projects": {
+                              "type": "integer"
+                            },
+                            "budget": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "committed": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            },
+                            "realized": {
+                              "type": "integer",
+                              "description": "Rupiah (integer)"
+                            }
+                          },
+                          "required": [
+                            "projects",
+                            "budget",
+                            "committed",
+                            "realized"
+                          ],
+                          "description": "Σ over running projects with a budget"
+                        },
+                        "inbox": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "docNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "advance",
+                                  "reimburse"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "statusLabel": {
+                                "type": "string"
+                              },
+                              "step": {
+                                "type": "string",
+                                "enum": [
+                                  "approve",
+                                  "acknowledge"
+                                ]
+                              },
+                              "scopeName": {
+                                "type": "string"
+                              },
+                              "requesters": {
+                                "type": "string"
+                              },
+                              "grandTotal": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "requestDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "overWarn": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "docNo",
+                              "title",
+                              "type",
+                              "status",
+                              "statusLabel",
+                              "step",
+                              "scopeName",
+                              "requesters",
+                              "grandTotal",
+                              "requestDate",
+                              "overWarn"
+                            ]
+                          }
+                        },
+                        "warnPct": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "requestTrend",
+                        "pipeline",
+                        "categories",
+                        "budgetTotals",
+                        "inbox",
+                        "warnPct"
+                      ]
                     }
                   },
                   "required": [
@@ -11982,7 +13043,8 @@
                     "costCenters",
                     "latest",
                     "attendance",
-                    "progressReports"
+                    "progressReports",
+                    "viz"
                   ]
                 }
               }
@@ -12284,11 +13346,143 @@
                           "ageDays"
                         ]
                       }
+                    },
+                    "month": {
+                      "type": "string"
+                    },
+                    "viz": {
+                      "type": "object",
+                      "properties": {
+                        "requestTrend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "period": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              },
+                              "sum": {
+                                "type": "integer",
+                                "description": "K-13 Σ grand total of non-draft requests dated in the month"
+                              }
+                            },
+                            "required": [
+                              "period",
+                              "count",
+                              "sum"
+                            ]
+                          }
+                        },
+                        "pipeline": {
+                          "type": "object",
+                          "properties": {
+                            "stages": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "enum": [
+                                      "ack",
+                                      "approval",
+                                      "queue",
+                                      "lpj",
+                                      "done",
+                                      "exit"
+                                    ]
+                                  },
+                                  "label": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "integer"
+                                  },
+                                  "sum": {
+                                    "type": "integer",
+                                    "description": "Rupiah (integer)"
+                                  },
+                                  "statuses": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "label",
+                                  "count",
+                                  "sum",
+                                  "statuses"
+                                ]
+                              }
+                            },
+                            "exit": {
+                              "type": "object",
+                              "properties": {
+                                "key": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ack",
+                                    "approval",
+                                    "queue",
+                                    "lpj",
+                                    "done",
+                                    "exit"
+                                  ]
+                                },
+                                "label": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer"
+                                },
+                                "sum": {
+                                  "type": "integer",
+                                  "description": "Rupiah (integer)"
+                                },
+                                "statuses": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "key",
+                                "label",
+                                "count",
+                                "sum",
+                                "statuses"
+                              ]
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "stages",
+                            "exit",
+                            "total"
+                          ],
+                          "description": "K-13 per status (all request dates, drafts excluded) folded into ordered stages; rejected/cancelled = exit"
+                        }
+                      },
+                      "required": [
+                        "requestTrend",
+                        "pipeline"
+                      ]
                     }
                   },
                   "required": [
                     "actions",
-                    "latest"
+                    "latest",
+                    "month",
+                    "viz"
                   ]
                 }
               }

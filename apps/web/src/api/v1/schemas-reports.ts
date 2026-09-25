@@ -43,17 +43,90 @@ const AdvanceWithoutLpj = z.object({
   overdue: z.boolean().meta({ description: 'K-12b: age > company-settings.lpjDueDays' }),
 })
 
+// ---- dashboard chart data (Beranda redesign 2026-09-25; additive `viz` objects) -------------
+const RequestTrendPoint = z.object({ period: z.string(), count: z.number().int(), sum: rp.meta({ description: 'K-13 Σ grand total of non-draft requests dated in the month' }) })
+const PipelineStage = z.object({
+  key: z.enum(['ack', 'approval', 'queue', 'lpj', 'done', 'exit']),
+  label: z.string(),
+  count: z.number().int(),
+  sum: rp,
+  statuses: z.array(z.string()),
+})
+const Pipeline = z
+  .object({ stages: z.array(PipelineStage), exit: PipelineStage, total: z.number().int() })
+  .meta({ description: 'K-13 per status (all request dates, drafts excluded) folded into ordered stages; rejected/cancelled = exit' })
+const CategoryMix = z.object({
+  from: z.string(),
+  to: z.string(),
+  total: rp,
+  includesManual: z.boolean(),
+  items: z.array(z.object({ label: z.string(), total: rp, other: z.boolean(), categoryId: z.number().int().nullable() })).meta({ description: 'K-17 Dicairkan per category, top 6 + "Lainnya"' }),
+})
+const BudgetTotals = z.object({ projects: z.number().int(), budget: rp, committed: rp, realized: rp }).meta({ description: 'Σ over running projects with a budget' })
+const InboxItem = z.object({
+  id: z.number().int(),
+  docNo: z.string().nullable(),
+  title: z.string(),
+  type: z.enum(['advance', 'reimburse']),
+  status: z.string(),
+  statusLabel: z.string(),
+  step: z.enum(['approve', 'acknowledge']),
+  scopeName: z.string(),
+  requesters: z.string(),
+  grandTotal: rp,
+  requestDate: z.string().nullable(),
+  overWarn: z.boolean(),
+})
+const RecentCashEntry = z.object({
+  id: z.number().int(),
+  entryNo: z.string().nullable(),
+  entryDate: z.string(),
+  direction: z.enum(['in', 'out']),
+  amount: rp,
+  status: z.enum(['posted', 'void']),
+  sourceType: z.string(),
+  account: z.string(),
+  label: z.string(),
+  requestId: z.number().int().nullable(),
+  requestDocNo: z.string().nullable(),
+})
+const TransferTopItem = z.object({
+  id: z.number().int(),
+  docNo: z.string().nullable(),
+  title: z.string(),
+  type: z.enum(['advance', 'reimburse']),
+  status: z.string(),
+  scopeName: z.string(),
+  amount: rp,
+  neededDate: z.string().nullable(),
+  overdue: z.boolean(),
+})
+const BalancePoint = z.object({ period: z.string(), balance: rp.meta({ description: 'K-01 closing balance at month end (book)' }) })
+const DisbursedPoint = z.object({ period: z.string(), net: rp.meta({ description: 'K-05 Dicairkan bersih in the month' }) })
+const StatusSplit = z.object({ count: z.number().int(), sum: rp })
+
 export const OwnerDashboard = z.object({
   asOf: z.string(),
   month: z.string(),
   cash: z.object({ total: rp, accounts: z.array(z.object({ id: z.number().int(), name: z.string(), active: z.boolean(), balance: rp })), monthIn: rp, monthOut: rp }),
   budget: z.object({ running: z.number().int(), over: z.number().int(), warn: z.number().int(), ok: z.number().int(), none: z.number().int() }),
   completeness: z.object({ ratioDone: z.number().int(), ratioTotal: z.number().int(), withoutLpj: z.number().int(), overdue: z.number().int(), reimburseToVerify: z.number().int(), openWarnings: z.number().int() }),
-  approvals: z.object({ count: z.number().int(), sum: rp, waitingForMe: z.number().int(), oldestDays: z.number().int().nullable() }),
+  approvals: z.object({ count: z.number().int(), sum: rp, waitingForMe: z.number().int(), oldestDays: z.number().int().nullable(), pendingAck: StatusSplit, pendingApproval: StatusSplit }),
   cashFlow: z.object({ basis: z.literal('K-02b'), months: z.number().int(), rows: z.array(CashFlowPoint) }),
   projects: z.array(ProjectBudget),
   costCenters: z.array(CostCenterMonth),
   transferQueue: TransferQueueSummary,
+  viz: z.object({
+    balanceTrend: z.array(BalancePoint),
+    disbursed: z.array(DisbursedPoint),
+    requestTrend: z.array(RequestTrendPoint),
+    pipeline: Pipeline,
+    categories: CategoryMix,
+    budgetTotals: BudgetTotals,
+    recentCash: z.array(RecentCashEntry),
+    inbox: z.array(InboxItem),
+    warnPct: z.number().meta({ description: 'company-settings.budgetWarnPct (K-08 Waspada threshold)' }),
+  }),
 })
 
 export const FinanceDashboard = z.object({
@@ -70,6 +143,14 @@ export const FinanceDashboard = z.object({
   cashFlow: z.object({ basis: z.literal('K-02a'), months: z.number().int(), rows: z.array(CashFlowPoint) }),
   lastClosedPeriod: z.string().nullable(),
   nextClosable: z.string(),
+  viz: z.object({
+    balanceTrend: z.array(BalancePoint),
+    disbursed: z.array(DisbursedPoint),
+    pipeline: Pipeline,
+    categories: CategoryMix,
+    recentCash: z.array(RecentCashEntry),
+    transferTop: z.array(TransferTopItem),
+  }),
 })
 
 const RequestRow = z.object({
@@ -101,10 +182,16 @@ export const PmDashboard = z.object({
   latest: z.array(RequestRow),
   attendance: z.object({ available: z.literal(false), phase: z.string() }),
   progressReports: z.object({ available: z.literal(false), phase: z.string() }),
+  viz: z.object({ requestTrend: z.array(RequestTrendPoint), pipeline: Pipeline, categories: CategoryMix, budgetTotals: BudgetTotals, inbox: z.array(InboxItem), warnPct: z.number() }),
 })
 
 const OwnRequest = z.object({ id: z.number().int(), docNo: z.string().nullable(), title: z.string(), type: z.enum(['advance', 'reimburse']), status: z.string(), grandTotal: rp, ageDays: z.number().int() })
-export const StaffDashboard = z.object({ actions: z.array(OwnRequest), latest: z.array(OwnRequest) })
+export const StaffDashboard = z.object({
+  actions: z.array(OwnRequest),
+  latest: z.array(OwnRequest),
+  month: z.string(),
+  viz: z.object({ requestTrend: z.array(RequestTrendPoint), pipeline: Pipeline }),
+})
 
 export const AdminDashboard = z.object({
   gaps: z.object({ usersIncomplete: z.number().int(), projectsWithoutPm: z.number().int(), costCentersWithoutManager: z.number().int() }),
