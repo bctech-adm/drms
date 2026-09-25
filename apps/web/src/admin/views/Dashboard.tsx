@@ -7,7 +7,7 @@ import { rolesOf, type Role } from '@/access/roles'
 import { statusLabel, type RequestStatus, type RequestType } from '@/domain/expense/types'
 import { adminDashboard, financeDashboard, ownerDashboard, pmDashboard, staffDashboard } from '@/domain/reports/dashboards'
 import type { ProjectBudget } from '@/domain/reports/kpi'
-import { lastDay, periodLabel } from '@/domain/reports/rules'
+import { lastDay, MONTHS_SHORT, periodLabel } from '@/domain/reports/rules'
 import { delta, share, statusTone, type PipelineStage } from '@/domain/reports/viz'
 import { withReqTransaction } from '@/lib/system-tx'
 
@@ -143,6 +143,8 @@ async function Body({ layout, req, months }: { layout: Layout; req: PayloadReque
 const prevOf = <T,>(xs: T[]) => (xs.length > 1 ? xs[xs.length - 2]! : null)
 const lastOf = <T,>(xs: T[]) => xs[xs.length - 1]!
 const short = (period: string) => periodLabel(period)
+/** '2026-09-25' → '25 Sep' (full date in the title). */
+const dayMonth = (date: string) => `${Number(date.slice(8, 10))} ${MONTHS_SHORT[Number(date.slice(5, 7)) - 1] ?? ''}`
 
 function PipelineCard({ id, pipeline, title, sub, span, i }: { id: string; pipeline: { stages: PipelineStage[]; exit: PipelineStage; total: number }; title: string; sub: string; span: 4 | 5 | 6; i: number }) {
   const row = (s: PipelineStage) => ({ key: s.key, label: s.label, count: s.count, sum: s.sum, href: statusList(s.statuses) })
@@ -453,7 +455,7 @@ const SOURCE: Record<string, string> = { transfer: 'Transfer', settlement_refund
 
 function RecentCashCard({ id, rows, span, i }: { id: string; rows: CashRow[]; span: 6 | 8 | 12; i: number }) {
   const cols: Col<CashRow>[] = [
-    { key: 'date', label: 'Tanggal', sort: 'descending', cell: (r) => r.entryDate },
+    { key: 'date', label: 'Tanggal', sort: 'descending', cell: (r) => <span className="nw" title={r.entryDate}>{dayMonth(r.entryDate)}</span> },
     {
       key: 'desc',
       label: 'Transaksi',
@@ -471,7 +473,7 @@ function RecentCashCard({ id, rows, span, i }: { id: string; rows: CashRow[]; sp
       label: 'Nominal',
       num: true,
       cell: (r) => (
-        <span className="amt">
+        <span className="amt nw">
           <span className={`dir ${r.direction}`} aria-hidden>
             {r.direction === 'in' ? '+' : '−'}
           </span>
@@ -685,8 +687,8 @@ async function Finance({ req }: { req: PayloadRequest }) {
         Per {d.asOf} (WITA) · buku kas termasuk koreksi void.
       </p>
       <Bento label="Ringkasan Finance">
-        <KpiRow>
-          <KpiTile id="cash" hero icon="wallet" label="Saldo kas total" value={rpShort(d.cashTotal)} title={rp(d.cashTotal)} kpi="k01-total" href="#pk-card-accounts" more="Saldo per akun" i={0}>
+        <KpiRow cols={6}>
+          <KpiTile id="cash" icon="wallet" label="Saldo kas total" value={rpShort(d.cashTotal)} title={rp(d.cashTotal)} kpi="k01-total" href="#pk-card-accounts" more="Saldo per akun" i={0}>
             <p className="pk-kpi-x">{rp(d.cashTotal)}</p>
             {balPrev ? <Delta d={delta(d.cashTotal, balPrev.balance)} good="up" vs={`vs akhir ${short(balPrev.period)}`} /> : null}
             <Sparkline label="Saldo akhir bulan" values={v.balanceTrend.map((b) => ({ label: short(b.period), value: b.balance }))} />
@@ -992,7 +994,7 @@ async function Admin({ req }: { req: PayloadRequest }) {
   type AuditRow = (typeof d.latestAudit)[number]
   return (
     <Bento label="Ringkasan Admin">
-      <KpiRow>
+      <KpiRow cols={3}>
         <KpiTile id="master-gaps" icon="users" label="User tanpa karyawan/peran" value={`${g.usersIncomplete}`} kpi="users-incomplete" href={`/admin/collections/users?${where({ 'where[employee][exists]': 'false' })}`} more="Lengkapi" i={0}>
           <p className="pk-kpi-x">{g.usersIncomplete === 0 ? <StatusPill tone="ok" label="Lengkap" /> : <StatusPill tone="warn" label="Perlu dilengkapi" />}</p>
         </KpiTile>

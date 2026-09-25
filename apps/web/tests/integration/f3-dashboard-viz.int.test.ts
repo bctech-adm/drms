@@ -127,7 +127,14 @@ describe('office-only ledger rows', () => {
 
   it('transferQueueTop: approved Uang Muka is queued; non-office scope → []', async () => {
     const q = await asUser(w.users.finance, async (req) => transferQueueTop(req, await officeScope(req), 50))
-    expect(q.map((x) => x.id)).toContain(ids.approved)
+    // same K-11 set and order in plain SQL (shared DB: other files queue requests too)
+    const sql = await sqlAs(
+      'app',
+      "SELECT id FROM expense_requests WHERE (type = 'advance' AND status = 'approved') OR (type = 'reimburse' AND status = 'receipts_verified') ORDER BY needed_date NULLS LAST, id LIMIT 50",
+    )
+    expect(q.map((x) => x.id)).toEqual(sql.rows.map((r) => r.id))
+    const all = await sqlAs('app', "SELECT count(*)::int AS n FROM expense_requests WHERE type = 'advance' AND status = 'approved' AND id = $1", [ids.approved])
+    expect(all.rows[0].n).toBe(1)
     expect(q.map((x) => x.id)).not.toContain(ids.transferred)
     expect(await asUser(w.users.pm, async (req) => transferQueueTop(req, await teamScope(req), 50))).toEqual([])
   })
