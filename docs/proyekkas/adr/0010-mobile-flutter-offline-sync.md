@@ -497,6 +497,38 @@ Verified in `apps/web/src/api/v1/{schemas-sync.ts,endpoints/sync.ts,endpoints/ap
   (verification fails closed → APK uses the private-use scheme fallback). Traefik: served by the host's
   catch-all web router (`drms-pk-stg-web`, priority 1), no infra change.
 
+### Implemented in F4b (branch `feat/f4b-mobile-completion`, 2026-09-25) — precisions / deviations
+
+Details and evidence: `docs/proyekkas/f4/f4-gap-analysis.md`. Needs the Lead's review before merge.
+- **Decision 10, root/emulator (deviation):** no `safe_device`. It is still maintained (1.4.1, 2026-07-07, MIT,
+  140/160) but its Android part adds location permissions, `play-services-location`, appcompat/material, an AGP 7.2.2
+  `buildscript` with `kotlin-android` (build under AGP 9.1 / built-in Kotlin **UNVERIFIED**), and its mock check
+  subscribes to fused location updates. Instead a method channel `id.co.drms.proyekkas/integrity` in `MainActivity.kt`
+  reports `rooted` (su/Magisk paths, `test-keys`), `emulator` (build properties), `developerMode`, `adbEnabled`.
+  Mock location = `Position.isMocked` of the attendance GPS fix (geolocator 14.0.3).
+- **Decision 10, transport (deviation):** the flags are sent as `integrity` in `POST /api/v1/devices/register` (every
+  app start and login), not as an `X-Device-Integrity` header on every request. Stored on `devices`
+  (`integrity*`, `integrityRisk` = rooted ∨ emulator ∨ mocked fix), audited by the field diff, never blocking
+  (Q-43 proposal). The app shows a warning on the home screen when the report is risky.
+- **Remote logout (decision 3):** a valid token on a revoked/lost device now gets `401` with `code: DEVICE_REVOKED`;
+  the app ends the session on that first answer (no refresh), rotates the install id and shows an Indonesian notice.
+- **Attendance (decisions 5/7/8), F4 slice:** `attendance.check_in` / `attendance.check_out` are processed (no longer
+  `unsupported`) when `company-settings.syncAttendanceEnabled` is on (default off; else `rejected FEATURE_DISABLED`).
+  Payload `SyncAttendancePayload`: `project_id`, `lat`, `lng`, `accuracy_m`, `is_mocked`, `selfie_media_id` (uploaded
+  first with `POST /api/v1/media/selfies` — numeric id like receipts, not `selfie_media_client_uuid`), `camera_lens`.
+  Server checks: own employee, project with a geofence (`NO_GEOFENCE`), assignment on the local date
+  (`NOT_ASSIGNED`), haversine distance ≤ radius + min(accuracy, 50 m) (`OUTSIDE_GEOFENCE`), `MOCK_LOCATION`, own
+  selfie (`MEDIA_MISSING`/`FORBIDDEN`), one check-in and one check-out per employee/project/local date
+  (`ALREADY_CHECKED_IN`, `NO_CHECK_IN`, `ALREADY_CHECKED_OUT`; DB unique index as backstop). Time that counts
+  (QM-3 proposal): server time online, else the monotonic estimate, else the device clock flagged
+  `DEVICE_TIME_ONLY`. Table `attendances` is append-only (no UPDATE/DELETE for the app role, reject triggers;
+  `received_at` set by a DB trigger). Still F5: `attendance.on_behalf`, cost-center geofences (QM-1b), corrections
+  (T10), schedules/late minutes, recap.
+- **Media:** `media-selfies` now stores JPEG q75 (it was WebP, which Payload rejected against the collection's
+  `image/jpeg` mime list, so no selfie upload could succeed).
+- **Build (decision 13):** every APK is scanned for secrets in CI (`apps/mobile/tool/apk_secret_scan.sh`).
+- **Background sync (decision 12):** WorkManager still not added (foreground triggers only).
+
 ## Alternatives
 
 | Alternative | Rejected because |
