@@ -331,9 +331,20 @@ Json draftToSyncPayload(DraftRequest d, {bool includeDraftId = false}) => {
 /// Local-only key inside a queued payload; never sent (replaced by `media_id`).
 const mediaPlaceholderKey = 'pk_media_uuid';
 
+/// Local-only key of an attendance item's selfie (replaced by `selfie_media_id`).
+const selfiePlaceholderKey = 'pk_selfie_uuid';
+
 /// Replaces [mediaPlaceholderKey] by `media_id` using [mediaIds] (local uuid → server id).
 /// Returns null when a photo has no server id yet.
 Json? resolveMediaIds(Json payload, Map<String, int> mediaIds) {
+  // Attendance: the selfie sits at the top level (`selfie_media_id`, SyncAttendancePayload).
+  if (payload.containsKey(selfiePlaceholderKey)) {
+    final out = Map<String, dynamic>.of(payload);
+    final id = mediaIds[out.remove(selfiePlaceholderKey)];
+    if (id == null) return null;
+    out['selfie_media_id'] = id;
+    return out;
+  }
   final lines = payload['lines'];
   if (lines is! List) return payload;
   final out = Map<String, dynamic>.of(payload);

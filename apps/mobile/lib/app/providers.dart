@@ -93,9 +93,15 @@ final syncEngineProvider = Provider((ref) {
     clock: ref.watch(deviceClockProvider),
     deviceId: () => device.deviceId,
     lock: ref.watch(syncLockProvider),
+    // Local kind → `POST /media/{kind}`: receipt photos and attendance selfies (F4b).
     uploadMedia: (blob) => ref
         .read(expenseApiProvider)
-        .uploadMedia('receipts', blob.bytes, filename: '${blob.clientUuid}.jpg', mime: blob.mimeType),
+        .uploadMedia(
+          blob.kind == 'selfie' ? 'selfies' : 'receipts',
+          blob.bytes,
+          filename: '${blob.clientUuid}.jpg',
+          mime: blob.mimeType,
+        ),
   );
 });
 

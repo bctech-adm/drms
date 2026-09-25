@@ -163,7 +163,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionInbox => 'Menunggu Persetujuan';
 
   @override
-  String get actionAttendance => 'Absensi (segera hadir)';
+  String get actionAttendance => 'Absensi';
+
+  @override
+  String get actionAttendanceOff => 'Absensi (belum diaktifkan Admin)';
 
   @override
   String get actionAllRequests => 'Semua Pengajuan';
@@ -612,6 +615,67 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get integrityWarning =>
       'HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.';
+
+  @override
+  String get attendanceTitle => 'Absensi';
+
+  @override
+  String get attendanceDisabled => 'Absensi dari aplikasi belum diaktifkan Admin (Setting perusahaan).';
+
+  @override
+  String get attendanceNoProjects => 'Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.';
+
+  @override
+  String get attendanceProject => 'Project';
+
+  @override
+  String get attendanceCheckIn => 'Absen masuk';
+
+  @override
+  String get attendanceCheckOut => 'Absen pulang';
+
+  @override
+  String get attendanceLocating => 'Membaca lokasi GPS…';
+
+  @override
+  String attendanceOutside(int distance) {
+    return 'Anda di luar radius project ($distance m dari titik). Absen hanya bisa di lokasi project.';
+  }
+
+  @override
+  String attendanceInside(int distance) {
+    return 'Di dalam radius project ($distance m dari titik).';
+  }
+
+  @override
+  String get attendanceNoGeofence =>
+      'Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.';
+
+  @override
+  String get attendanceMocked =>
+      'Lokasi palsu (mock location) terdeteksi. Matikan aplikasi lokasi palsu. Absen ditolak.';
+
+  @override
+  String get attendanceSelfieTitle => 'Selfie absensi';
+
+  @override
+  String get attendanceSavedOnline => 'Absen tersimpan dan sedang dikirim.';
+
+  @override
+  String get attendanceSavedOffline =>
+      'Absen tersimpan di HP (offline). Dikirim otomatis saat ada sinyal; jam absen dihitung server.';
+
+  @override
+  String get attendanceHistory => 'Riwayat absen di HP ini';
+
+  @override
+  String get attendanceHistoryEmpty => 'Belum ada absen dari HP ini.';
+
+  @override
+  String get attendanceOfflineTag => 'offline';
+
+  @override
+  String get frontCameraUnavailable => 'Kamera depan tidak tersedia. Absen butuh selfie dengan kamera depan.';
 
   @override
   String get notificationsTitle => 'Notifikasi';

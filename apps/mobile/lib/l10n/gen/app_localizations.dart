@@ -376,8 +376,14 @@ abstract class AppLocalizations {
   /// No description provided for @actionAttendance.
   ///
   /// In id, this message translates to:
-  /// **'Absensi (segera hadir)'**
+  /// **'Absensi'**
   String get actionAttendance;
+
+  /// No description provided for @actionAttendanceOff.
+  ///
+  /// In id, this message translates to:
+  /// **'Absensi (belum diaktifkan Admin)'**
+  String get actionAttendanceOff;
 
   /// No description provided for @actionAllRequests.
   ///
@@ -1242,6 +1248,114 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.'**
   String get integrityWarning;
+
+  /// No description provided for @attendanceTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Absensi'**
+  String get attendanceTitle;
+
+  /// No description provided for @attendanceDisabled.
+  ///
+  /// In id, this message translates to:
+  /// **'Absensi dari aplikasi belum diaktifkan Admin (Setting perusahaan).'**
+  String get attendanceDisabled;
+
+  /// No description provided for @attendanceNoProjects.
+  ///
+  /// In id, this message translates to:
+  /// **'Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.'**
+  String get attendanceNoProjects;
+
+  /// No description provided for @attendanceProject.
+  ///
+  /// In id, this message translates to:
+  /// **'Project'**
+  String get attendanceProject;
+
+  /// No description provided for @attendanceCheckIn.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen masuk'**
+  String get attendanceCheckIn;
+
+  /// No description provided for @attendanceCheckOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen pulang'**
+  String get attendanceCheckOut;
+
+  /// No description provided for @attendanceLocating.
+  ///
+  /// In id, this message translates to:
+  /// **'Membaca lokasi GPS…'**
+  String get attendanceLocating;
+
+  /// No description provided for @attendanceOutside.
+  ///
+  /// In id, this message translates to:
+  /// **'Anda di luar radius project ({distance} m dari titik). Absen hanya bisa di lokasi project.'**
+  String attendanceOutside(int distance);
+
+  /// No description provided for @attendanceInside.
+  ///
+  /// In id, this message translates to:
+  /// **'Di dalam radius project ({distance} m dari titik).'**
+  String attendanceInside(int distance);
+
+  /// No description provided for @attendanceNoGeofence.
+  ///
+  /// In id, this message translates to:
+  /// **'Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.'**
+  String get attendanceNoGeofence;
+
+  /// No description provided for @attendanceMocked.
+  ///
+  /// In id, this message translates to:
+  /// **'Lokasi palsu (mock location) terdeteksi. Matikan aplikasi lokasi palsu. Absen ditolak.'**
+  String get attendanceMocked;
+
+  /// No description provided for @attendanceSelfieTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Selfie absensi'**
+  String get attendanceSelfieTitle;
+
+  /// No description provided for @attendanceSavedOnline.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen tersimpan dan sedang dikirim.'**
+  String get attendanceSavedOnline;
+
+  /// No description provided for @attendanceSavedOffline.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen tersimpan di HP (offline). Dikirim otomatis saat ada sinyal; jam absen dihitung server.'**
+  String get attendanceSavedOffline;
+
+  /// No description provided for @attendanceHistory.
+  ///
+  /// In id, this message translates to:
+  /// **'Riwayat absen di HP ini'**
+  String get attendanceHistory;
+
+  /// No description provided for @attendanceHistoryEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada absen dari HP ini.'**
+  String get attendanceHistoryEmpty;
+
+  /// No description provided for @attendanceOfflineTag.
+  ///
+  /// In id, this message translates to:
+  /// **'offline'**
+  String get attendanceOfflineTag;
+
+  /// No description provided for @frontCameraUnavailable.
+  ///
+  /// In id, this message translates to:
+  /// **'Kamera depan tidak tersedia. Absen butuh selfie dengan kamera depan.'**
+  String get frontCameraUnavailable;
 
   /// No description provided for @notificationsTitle.
   ///

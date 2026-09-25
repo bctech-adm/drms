@@ -7,6 +7,7 @@ import '../features/app_config/application/app_config_providers.dart';
 import '../features/app_config/domain/app_config.dart';
 import '../features/app_config/presentation/update_required_screen.dart';
 import '../features/approvals/presentation/inbox_screen.dart';
+import '../features/attendance/presentation/attendance_screen.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
@@ -80,6 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, s) => RequestDetailScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
       ),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
+      GoRoute(path: '/attendance', builder: (_, _) => const AttendanceScreen()),
       GoRoute(
         path: '/drafts/new',
         builder: (_, s) => DraftEditorRoute(type: RequestType.fromCode(s.uri.queryParameters['type'])),

@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/gen/app_localizations.dart';
 
-/// Rear-camera receipt capture (ADR 0010 decision 11). Returns the raw JPEG bytes; compression
-/// happens afterwards on the device.
+/// Full-screen capture (ADR 0010 decision 11): rear camera for receipts, FRONT camera only for the
+/// attendance selfie (no gallery path; fails closed without that lens). Returns the raw JPEG bytes;
+/// compression happens afterwards on the device.
 class CameraCaptureScreen extends StatefulWidget {
-  const CameraCaptureScreen({super.key});
+  const CameraCaptureScreen({super.key, this.lens = CameraLensDirection.back, this.title});
+  final CameraLensDirection lens;
+  final String? title;
 
   @override
   State<CameraCaptureScreen> createState() => _CameraCaptureScreenState();
@@ -28,12 +31,14 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> with WidgetsB
     final t = AppLocalizations.of(context);
     try {
       final cams = await availableCameras();
-      final back = cams.where((c) => c.lensDirection == CameraLensDirection.back).firstOrNull;
-      if (back == null) {
-        setState(() => _error = t.cameraUnavailable);
+      final cam = cams.where((c) => c.lensDirection == widget.lens).firstOrNull;
+      if (cam == null) {
+        setState(
+          () => _error = widget.lens == CameraLensDirection.front ? t.frontCameraUnavailable : t.cameraUnavailable,
+        );
         return;
       }
-      final c = CameraController(back, ResolutionPreset.high, enableAudio: false);
+      final c = CameraController(cam, ResolutionPreset.high, enableAudio: false);
       await c.initialize();
       if (!mounted) {
         await c.dispose();
@@ -83,7 +88,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> with WidgetsB
     final c = _controller;
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: Text(t.addReceiptCamera)),
+      appBar: AppBar(title: Text(widget.title ?? t.addReceiptCamera)),
       body: _error != null
           ? Center(
               child: Text(_error!, style: const TextStyle(color: Colors.white)),

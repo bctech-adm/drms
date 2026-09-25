@@ -35,7 +35,13 @@ class SyncCoordinator extends Notifier<SyncStatus> {
     _online = ref.watch(onlineAgainProvider).listen((_) => requestSync());
     ref.listen<String?>(currentSubProvider, (prev, next) {
       if (next != null && prev != next) {
-        unawaited(ref.read(mastersRepositoryProvider).refresh(next));
+        // Best effort: a 401/5xx here must not become an unhandled async error.
+        unawaited(
+          ref
+              .read(mastersRepositoryProvider)
+              .refresh(next)
+              .then<void>((_) {}, onError: (Object e) => Log.w('masters: refresh failed', e)),
+        );
         requestSync();
       }
     }, fireImmediately: true);

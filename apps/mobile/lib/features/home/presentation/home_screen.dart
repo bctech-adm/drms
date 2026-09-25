@@ -26,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final gate = ref.watch(versionGateProvider);
     final latest = ref.watch(appConfigProvider).value?.latestAppVersion;
     final kind = profile.homeKind;
+    final attendanceOn = ref.watch(appConfigProvider).value?.syncAttendance ?? false;
     final inboxCount = profile.hasApprovalInbox ? ref.watch(inboxProvider).value?.items.length : null;
 
     final actions = <Widget>[
@@ -58,7 +59,12 @@ class HomeScreen extends ConsumerWidget {
         onPressed: () => context.go('/requests'),
       ),
       if (profile.has(Role.staff) || profile.has(Role.pm))
-        BigActionButton(icon: Icons.fingerprint, label: t.actionAttendance, onPressed: null),
+        BigActionButton(
+          key: const Key('home-attendance'),
+          icon: Icons.fingerprint,
+          label: attendanceOn ? t.actionAttendance : t.actionAttendanceOff,
+          onPressed: attendanceOn ? () => context.push('/attendance') : null,
+        ),
       if (kind == HomeKind.finance)
         Card(
           child: Padding(padding: const EdgeInsets.all(16), child: Text(t.financeHint)),

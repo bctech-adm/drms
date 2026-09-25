@@ -53,7 +53,7 @@ class SyncEngine {
   final String Function() deviceId;
   final AsyncLock lock;
 
-  /// Uploads one receipt photo (`POST /api/v1/media/receipts`) and returns its media id.
+  /// Uploads one local photo (`POST /api/v1/media/receipts` or `/media/selfies` by kind) → media id.
   final Future<int> Function(MediaBlob blob) uploadMedia;
   final Random _random;
 
