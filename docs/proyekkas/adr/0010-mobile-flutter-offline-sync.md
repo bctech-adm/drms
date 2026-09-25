@@ -529,6 +529,37 @@ Details and evidence: `docs/proyekkas/f4/f4-gap-analysis.md`. Needs the Lead's r
 - **Build (decision 13):** every APK is scanned for secrets in CI (`apps/mobile/tool/apk_secret_scan.sh`).
 - **Background sync (decision 12):** WorkManager still not added (foreground triggers only).
 
+### Phone test fixes (branch `fix/mobile-startup-offline-logout`, 2026-09-25) — precisions
+
+Found on a real phone with the staging APK (password login, ADR 0012): "Offline" shown on working mobile data, logout
+that never finished, slow first load. Server answers were all fast (Traefik log), so the fixes are client-side.
+- **Online state (decision 12, precision):** the server decides. Any HTTP answer from `/api/v1` — success or problem —
+  sets the app ONLINE, even when connectivity_plus reported `none` (before, a `none` could only be cleared by the next
+  OS network event, so the app stayed "Offline" while every API call succeeded). A request without an answer sets
+  OFFLINE and starts a probe of `GET /api/v1/health` (public, own dio, 5 s timeout) with backoff 3/10/20/30/60 s
+  until the server answers; a `none` from the OS is verified the same way. Tapping the red banner probes at once.
+  All connectivity_plus 7.3.1 values except `none` (mobile, wifi, vpn, other, …) count as a network. A cancelled
+  request is not reported as offline.
+- **Logout (decision 3, precision):** logout ALWAYS ends on the login screen. The network part (device revoke, then
+  the Keycloak logout) is best effort with a 5 s budget in total; afterwards the local session is cleared in every
+  case (tokens, push, new install id), each Keystore step isolated and bounded. A token refresh still in flight when
+  the session is cleared can no longer write tokens back (generation check in `TokenManager`). The button shows
+  "Sedang keluar…" and ignores a second tap.
+- **Unsent data on logout (decision 3, decision):** never deleted. Pending and failed/rejected outbox items and local
+  drafts stay in the encrypted DB, locked to the user's `sub`, and are sent after the SAME user signs in again. When
+  such items exist, the confirmation dialog says so in Bahasa Indonesia ("… data belum terkirim … TIDAK dihapus …")
+  and the button reads "Tetap keluar"; "Batal" keeps the session so the user can send them first (Antrean).
+  Rationale: deleting would silently lose expense/attendance evidence; another user on the same phone cannot see or
+  send them (queue owner = `sub`). Wiping a lost phone stays the Admin's remote revoke + the 30-day offline limit.
+- **Start-up (decision 12 / 10, precision):** before `runApp` only the install id, app version, model, DB handle and
+  date symbols are loaded, in parallel (the encrypted DB opens lazily in drift's background isolate). `/app/config`
+  no longer holds the splash (the update gate redirects when it arrives; the server enforces 426 anyway). With a
+  cached profile the home screen shows as soon as tokens + cached profile are read; `POST /devices/register` and
+  `/me` then run in the background. The integrity report and push token wait at most 2 s before registration is
+  sent without them. The integrity checks run on a background thread in `MainActivity.kt`, because in Flutter 3.47.5
+  Dart runs on the Android main thread by default (engine `Settings::merged_platform_ui_thread = kEnabled`), so
+  main-thread native work freezes the UI. Debug builds log start-up marks (`pk.startup`); release builds do not.
+
 ## Alternatives
 
 | Alternative | Rejected because |
