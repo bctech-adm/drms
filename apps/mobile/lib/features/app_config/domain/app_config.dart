@@ -8,6 +8,7 @@ class AppConfig {
     this.timezone,
     this.pushEnabled = false,
     this.syncExpenseDrafts = true,
+    this.syncAttendance = false,
   });
   final String? minAppVersion;
   final String? latestAppVersion;
@@ -16,6 +17,9 @@ class AppConfig {
   final String? timezone;
   final bool pushEnabled;
   final bool syncExpenseDrafts;
+
+  /// Own check-in/out from the APK (company-settings.syncAttendanceEnabled, F4b).
+  final bool syncAttendance;
 
   factory AppConfig.fromJson(Map<String, dynamic> j) {
     String? s(String k) => j[k] is String && (j[k] as String).isNotEmpty ? j[k] as String : null;
@@ -29,6 +33,7 @@ class AppConfig {
       timezone: s('timezone'),
       pushEnabled: features['pushEnabled'] == true,
       syncExpenseDrafts: features['syncExpenseDrafts'] != false,
+      syncAttendance: features['syncAttendance'] == true,
     );
   }
 }

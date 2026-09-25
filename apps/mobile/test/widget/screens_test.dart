@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:proyekkas/app/providers.dart';
+import 'package:proyekkas/core/device/device_integrity.dart';
 import 'package:proyekkas/core/network/api_exception.dart';
 import 'package:proyekkas/features/approvals/application/inbox_providers.dart';
 import 'package:proyekkas/features/approvals/data/approvals_api.dart';
@@ -170,6 +172,21 @@ void main() {
       expect(find.byKey(const Key('home-new-advance')), findsOneWidget);
       expect(find.byKey(const Key('home-new-reimburse')), findsOneWidget);
       expect(find.byKey(const Key('home-inbox')), findsNothing);
+    });
+
+    testWidgets('rooted/emulator device: warning on home (Q-43: warn + flag, never block)', (tester) async {
+      await pumpScreen(
+        tester,
+        const HomeScreen(),
+        overrides: [
+          integrityReportProvider.overrideWith(
+            (ref) async =>
+                const DeviceIntegrityReport(rooted: true, emulator: false, developerMode: false, adbEnabled: false),
+          ),
+        ],
+      );
+      expect(find.byKey(const Key('integrity-warning')), findsOneWidget);
+      expect(find.byKey(const Key('home-new-advance')), findsOneWidget);
     });
 
     testWidgets('owner home: approval inbox with count, no create buttons', (tester) async {

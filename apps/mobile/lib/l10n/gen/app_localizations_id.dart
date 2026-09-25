@@ -78,6 +78,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get sessionEnded => 'Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.';
 
   @override
+  String get deviceRevoked =>
+      'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.';
+
+  @override
   String get stagingBadge => 'STAGING';
 
   @override
@@ -159,7 +163,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionInbox => 'Menunggu Persetujuan';
 
   @override
-  String get actionAttendance => 'Absensi (segera hadir)';
+  String get actionAttendance => 'Absensi';
+
+  @override
+  String get actionAttendanceOff => 'Absensi (belum diaktifkan Admin)';
 
   @override
   String get actionAllRequests => 'Semua Pengajuan';
@@ -497,6 +504,187 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get decisionDone => 'Keputusan tersimpan.';
+
+  @override
+  String get transferTitle => 'Transfer dari Finance';
+
+  @override
+  String get transferNone => 'Belum ada transfer.';
+
+  @override
+  String get transferTotal => 'Total ditransfer';
+
+  @override
+  String get transferRef => 'Ref. bank';
+
+  @override
+  String get transferPosted => 'Tercatat';
+
+  @override
+  String get transferVoid => 'Dibatalkan';
+
+  @override
+  String transferVoidReason(String reason) {
+    return 'Alasan batal: $reason';
+  }
+
+  @override
+  String get lpjTitle => 'LPJ (Laporan Pertanggungjawaban)';
+
+  @override
+  String get lpjStatus => 'Status LPJ';
+
+  @override
+  String get lpjReceiptsTotal => 'Total nota';
+
+  @override
+  String get lpjVerifiedTotal => 'Nota terverifikasi';
+
+  @override
+  String get lpjDifference => 'Selisih';
+
+  @override
+  String get lpjSettlement => 'Penyelesaian';
+
+  @override
+  String get lpjUsageNotes => 'Keterangan penggunaan dana';
+
+  @override
+  String get lpjFinanceNotes => 'Catatan Finance';
+
+  @override
+  String get requesterActionsTitle => 'Nota & LPJ';
+
+  @override
+  String get addReceiptOnlineCamera => 'Tambah nota (kamera)';
+
+  @override
+  String get addReceiptOnlineGallery => 'Tambah nota dari galeri';
+
+  @override
+  String get chooseLine => 'Nota ini untuk baris mana?';
+
+  @override
+  String get uploadingReceipt => 'Mengunggah nota…';
+
+  @override
+  String get receiptSaved => 'Nota tersimpan.';
+
+  @override
+  String get receiptRemove => 'Hapus nota';
+
+  @override
+  String get receiptRemoveReason => 'Alasan menghapus nota';
+
+  @override
+  String get receiptRemoved => 'Nota dihapus.';
+
+  @override
+  String get reasonTooShort => 'Wajib diisi (minimal 3 karakter).';
+
+  @override
+  String get actionReceiptsComplete => 'Nota sudah lengkap';
+
+  @override
+  String get actionReceiptsCompleteConfirm => 'Tandai semua nota sudah lengkap? Setelah itu Anda bisa mengirim LPJ.';
+
+  @override
+  String get actionLpjSubmit => 'Kirim LPJ';
+
+  @override
+  String get actionLpjResubmit => 'Kirim ulang LPJ';
+
+  @override
+  String get lpjUsageNotesHint => 'Jelaskan penggunaan dana (wajib pada pengiriman pertama).';
+
+  @override
+  String get actionReceiptsResubmit => 'Kirim ulang nota';
+
+  @override
+  String get actionReceiptsResubmitConfirm => 'Kirim ulang nota yang sudah diperbaiki ke Finance?';
+
+  @override
+  String get actionComplete => 'Tandai selesai';
+
+  @override
+  String get actionCompleteConfirm => 'Dana sudah diterima dan pengajuan ini selesai?';
+
+  @override
+  String get actionSaved => 'Tersimpan.';
+
+  @override
+  String get integrityWarning =>
+      'HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.';
+
+  @override
+  String get attendanceTitle => 'Absensi';
+
+  @override
+  String get attendanceDisabled => 'Absensi dari aplikasi belum diaktifkan Admin (Setting perusahaan).';
+
+  @override
+  String get attendanceNoProjects => 'Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.';
+
+  @override
+  String get attendanceProject => 'Project';
+
+  @override
+  String get attendanceCheckIn => 'Absen masuk';
+
+  @override
+  String get attendanceCheckOut => 'Absen pulang';
+
+  @override
+  String get attendanceLocating => 'Membaca lokasi GPS…';
+
+  @override
+  String attendanceOutside(int distance) {
+    return 'Anda di luar radius project ($distance m dari titik). Absen hanya bisa di lokasi project.';
+  }
+
+  @override
+  String attendanceInside(int distance) {
+    return 'Di dalam radius project ($distance m dari titik).';
+  }
+
+  @override
+  String get attendanceNoGeofence =>
+      'Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.';
+
+  @override
+  String get attendanceMocked =>
+      'Lokasi palsu (mock location) terdeteksi. Matikan aplikasi lokasi palsu. Absen ditolak.';
+
+  @override
+  String get attendanceSelfieTitle => 'Selfie absensi';
+
+  @override
+  String get attendanceSavedOnline => 'Absen tersimpan dan sedang dikirim.';
+
+  @override
+  String get attendanceSavedOffline =>
+      'Absen tersimpan di HP (offline). Dikirim otomatis saat ada sinyal; jam absen dihitung server.';
+
+  @override
+  String get attendanceHistory => 'Riwayat absen di HP ini';
+
+  @override
+  String get attendanceHistoryEmpty => 'Belum ada absen dari HP ini.';
+
+  @override
+  String get attendanceOfflineTag => 'offline';
+
+  @override
+  String get frontCameraUnavailable => 'Kamera depan tidak tersedia. Absen butuh selfie dengan kamera depan.';
+
+  @override
+  String get notificationsTitle => 'Notifikasi';
+
+  @override
+  String get notificationsEmpty => 'Belum ada notifikasi.';
+
+  @override
+  String get notificationsReadAll => 'Tandai semua dibaca';
 
   @override
   String get queueTitle => 'Antrean kirim';

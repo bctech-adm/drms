@@ -25,6 +25,9 @@ class TokenManager implements TokenSource {
   /// Called once when the session cannot continue (refresh rejected / 401 after refresh).
   Future<void> Function(String reason)? onSessionEnded;
 
+  /// [onSessionEnded] reason for 401 `DEVICE_REVOKED`.
+  static const sessionEndedDeviceRevoked = 'device_revoked';
+
   String? _access;
   DateTime? _accessExpiry;
   Completer<String?>? _inflight;
@@ -121,5 +124,12 @@ class TokenManager implements TokenSource {
   Future<void> onUnauthorized() async {
     await clear();
     await onSessionEnded?.call('unauthorized');
+  }
+
+  @override
+  Future<void> onDeviceRevoked() async {
+    if (!await hasSession()) return; // parallel requests: end the session once
+    await clear();
+    await onSessionEnded?.call(sessionEndedDeviceRevoked);
   }
 }

@@ -18,6 +18,8 @@ const COLLECTION: Record<string, CollectionSlug> = {
   'transfer-proofs': 'media-transfer-proofs',
   signatures: 'media-signatures',
   attachments: 'media-attachments',
+  // F4b attendance selfie (720 px, JPEG in / WebP stored, EXIF stripped — ADR 0004).
+  selfies: 'media-selfies',
 }
 
 /**

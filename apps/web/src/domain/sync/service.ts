@@ -4,6 +4,7 @@ import type { z } from 'zod'
 
 import { relId, userId } from '@/access/roles'
 import {
+  SyncAttendancePayload,
   SyncDraftDeletePayload,
   SyncDraftUpsertPayload,
   type SyncBatchIn,
@@ -19,8 +20,10 @@ import { createDraft, updateDraft, type DraftInput, type LineInputApi } from '@/
 import { addReceipt, editReceipt } from '@/domain/expense/receipts'
 import { cancel } from '@/domain/expense/workflow'
 import { withReqTransaction } from '@/lib/system-tx'
+import { DEFAULT_TZ } from '@/lib/time'
 import { getRequestTx } from '@/lib/tx'
 
+import { attendanceTimeOf, dayRows, employeeOfUser, haversineM, insideGeofence, isAssigned, localDateString, type AttendanceKind } from './attendance'
 import { judgeTime, type TimeVerdict } from './clock'
 
 /**
@@ -39,7 +42,10 @@ import { judgeTime, type TimeVerdict } from './clock'
  *   missing `base_rev` → `conflict` + `server_copy` (server wins, nothing changes).
  * - Drafts are edited only by their creator and only in status Draft (else `rejected
  *   NOT_EDITABLE`); delete = cancel (soft delete, requirements §1.2 #6).
- * - Attendance / progress reports: accepted by the schema, answered `unsupported` (F5).
+ * - Attendance check-in/out (F4 slice, company-settings.syncAttendanceEnabled): own employee, assigned
+ *   project with a geofence, inside radius (+ capped GPS accuracy), not mocked, own selfie, one
+ *   check-in and one check-out per employee/project/local date. `attendance.on_behalf` and progress
+ *   reports: accepted by the schema, answered `unsupported` (F5).
  */
 
 type SyncError = { code: string; field?: string; message: string }
@@ -72,7 +78,11 @@ type Outcome = {
 
 type ItemCtx = { req: PayloadRequest; uid: number; item: SyncItemIn }
 
-const UNSUPPORTED: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.check_in', 'attendance.check_out', 'attendance.on_behalf', 'progress_report.draft_upsert'])
+/** Server switches + company timezone, read once per batch. */
+type Features = { drafts: boolean; attendance: boolean; timezone: string }
+
+const UNSUPPORTED: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.on_behalf', 'progress_report.draft_upsert'])
+const ATTENDANCE: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.check_in', 'attendance.check_out'])
 
 const reject = (code: string, message: string, field?: string, target: SyncReject['target'] = null): never => {
   throw new SyncReject([{ code, message, ...(field ? { field } : {}) }], target)
@@ -386,6 +396,82 @@ async function applyDraftDelete(c: ItemCtx): Promise<Outcome> {
   return { status: 'applied', id: doc.id, rev: copy.rev, copy, flags: [], errors: [] }
 }
 
+// ------------------------------------------------------------------------------------ attendance
+
+type ProjectGeo = { id: number; lat?: number | null; lng?: number | null; radiusM?: number | null; status?: string | null }
+
+async function applyAttendance(c: ItemCtx, verdict: TimeVerdict, receivedAt: Date, features: Features): Promise<Outcome> {
+  const { req, uid, item } = c
+  const kind: AttendanceKind = item.type === 'attendance.check_out' ? 'check_out' : 'check_in'
+  const p = parsePayload(SyncAttendancePayload, item.payload)
+  const employee = await employeeOfUser(req, uid)
+  if (employee === undefined) reject('VALIDATION', 'Akun Anda belum terhubung ke data karyawan. Hubungi Admin.')
+  // ADR 0010 decision 8 / US-01 "Mock location ditolak" (Q-43 proposal: fake GPS always blocked).
+  if (p.is_mocked) reject('MOCK_LOCATION', 'Lokasi palsu (mock location) terdeteksi. Absensi ditolak.', 'payload.is_mocked')
+  const project = (await req.payload.findByID({ collection: 'projects', id: p.project_id, depth: 0, overrideAccess: true /* SYSTEM-READ: geofence of the target project */, req, disableErrors: true })) as ProjectGeo | null
+  if (!project) return reject('NOT_FOUND', 'Project tidak ditemukan.', 'payload.project_id')
+  if (project.status === 'arsip') reject('VALIDATION', 'Project sudah diarsipkan.', 'payload.project_id')
+  if (typeof project.lat !== 'number' || typeof project.lng !== 'number' || typeof project.radiusM !== 'number') {
+    reject('NO_GEOFENCE', 'Titik lokasi/radius project belum diisi Admin. Absensi belum bisa dipakai di project ini.', 'payload.project_id')
+  }
+  const { time, flags: timeFlags } = attendanceTimeOf(verdict, item.device_time, receivedAt)
+  const localDate = localDateString(time, features.timezone)
+  if (!(await isAssigned(req, employee!, project.id, localDate))) {
+    reject('NOT_ASSIGNED', 'Anda tidak ditugaskan di project ini pada tanggal tersebut.', 'payload.project_id')
+  }
+  const distance = Math.round(haversineM(p.lat, p.lng, project.lat!, project.lng!))
+  if (!insideGeofence(distance, project.radiusM!, p.accuracy_m)) {
+    reject('OUTSIDE_GEOFENCE', `Di luar radius project (${distance} m dari titik, radius ${project.radiusM} m).`, 'payload.lat')
+  }
+  const selfie = (await req.payload.findByID({ collection: 'media-selfies', id: p.selfie_media_id, depth: 0, overrideAccess: true /* SYSTEM-READ: existence + uploader */, req, disableErrors: true })) as {
+    uploadedBy?: unknown
+  } | null
+  if (!selfie) reject('MEDIA_MISSING', 'Selfie belum terunggah (POST /api/v1/media/selfies).', 'payload.selfie_media_id')
+  if (relId(selfie!.uploadedBy) !== uid) reject('FORBIDDEN', 'Selfie bukan unggahan Anda.', 'payload.selfie_media_id')
+
+  // One check-in and one check-out per employee/project/local date (serialised per day).
+  const tx = await getRequestTx(req)
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`att:${employee}:${project.id}:${localDate}`}, 0))`)
+  const today = await dayRows(req, employee!, project.id, localDate)
+  const checkIn = today.find((r) => r.kind === 'check_in')
+  if (kind === 'check_in' && checkIn) reject('ALREADY_CHECKED_IN', 'Sudah absen masuk di project ini hari ini.')
+  if (kind === 'check_out') {
+    if (!checkIn) reject('NO_CHECK_IN', 'Belum ada absen masuk hari ini di project ini.')
+    if (today.some((r) => r.kind === 'check_out')) reject('ALREADY_CHECKED_OUT', 'Sudah absen pulang di project ini hari ini.')
+    if (new Date(checkIn!.attendanceTime).getTime() > time.getTime()) reject('VALIDATION', 'Jam pulang lebih awal dari jam masuk.')
+  }
+  const device = (req.user as { _pkDevice?: { id?: number } } | null)?._pkDevice?.id
+  const flags = [...timeFlags]
+  const created = await req.payload.create({
+    collection: 'attendances',
+    data: {
+      employee: employee!,
+      user: uid,
+      kind,
+      project: project.id,
+      localDate,
+      attendanceTime: time.toISOString(),
+      receivedAt: receivedAt.toISOString(),
+      deviceTime: new Date(item.device_time).toISOString(),
+      estimatedTime: verdict.estimatedTime,
+      timeTrust: verdict.timeTrust,
+      offline: item.offline,
+      lat: p.lat,
+      lng: p.lng,
+      accuracyM: p.accuracy_m ?? null,
+      distanceM: distance,
+      selfie: p.selfie_media_id,
+      device: device ?? null,
+      flags: [...verdict.flags, ...flags],
+      clientUuid: item.client_uuid,
+    },
+    depth: 0,
+    overrideAccess: true, // SYSTEM-WRITE: attendance after the server-side checks above (create is closed for HTTP)
+    req,
+  })
+  return { status: 'applied', id: created.id, rev: null, copy: null, flags, errors: [] }
+}
+
 // ------------------------------------------------------------------------------------ storage
 
 type StoredRow = { user_id: number; status: 'applied' | 'rejected' | 'conflict'; result: SyncResultOut }
@@ -414,7 +500,7 @@ async function store(c: ItemCtx, batch: SyncBatchIn, deviceId: string, verdict: 
   await writeAudit(req, [
     {
       action: 'sync_offline',
-      docType: 'expense_request',
+      docType: ATTENDANCE.has(item.type) ? 'attendance' : 'expense_request',
       docId: result.server_id ?? undefined,
       docNo: result.server_copy?.doc_no ?? undefined,
       field: item.type,
@@ -504,7 +590,7 @@ function duplicateOf(stored: StoredRow, uid: number, fallback: SyncResultOut): S
   return { ...stored.result, status: 'duplicate', original_status: stored.status }
 }
 
-async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: string, uid: number, item: SyncItemIn, draftsEnabled: boolean): Promise<SyncResultOut> {
+async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: string, uid: number, item: SyncItemIn, features: Features): Promise<SyncResultOut> {
   const receivedAt = new Date()
   const verdict = judgeTime(item, batch.clock, receivedAt)
   const base = baseResult(item, receivedAt, verdict)
@@ -517,9 +603,15 @@ async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: st
       await lockItem(req, item.client_uuid)
       const stored = await readStored(req, item.client_uuid)
       if (stored) return duplicateOf(stored, uid, base)
-      if (!draftsEnabled) reject('FEATURE_DISABLED', 'Sinkronisasi draft pengajuan sedang dinonaktifkan server.')
+      const isAttendance = ATTENDANCE.has(item.type)
+      if (isAttendance && !features.attendance) reject('FEATURE_DISABLED', 'Absensi dari aplikasi belum diaktifkan server (Setting perusahaan).')
+      if (!isAttendance && !features.drafts) reject('FEATURE_DISABLED', 'Sinkronisasi draft pengajuan sedang dinonaktifkan server.')
       await checkDependencies(req, uid, item)
-      const out = item.type === 'expense_request.draft_delete' ? await applyDraftDelete(c) : await applyDraftUpsert(c)
+      const out = isAttendance
+        ? await applyAttendance(c, verdict, receivedAt, features)
+        : item.type === 'expense_request.draft_delete'
+          ? await applyDraftDelete(c)
+          : await applyDraftUpsert(c)
       const result: SyncResultOut = {
         ...base,
         status: out.status,
@@ -561,11 +653,15 @@ async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: st
 export async function processBatch(req: PayloadRequest, batch: SyncBatchIn, deviceId: string) {
   const uid = userId(req)
   if (uid === undefined) throw new APIError('Unauthorized', 401)
-  const s = await settings(req)
-  const draftsEnabled = (s as { syncExpenseDraftsEnabled?: boolean | null }).syncExpenseDraftsEnabled !== false
+  const s = (await settings(req)) as { syncExpenseDraftsEnabled?: boolean | null; syncAttendanceEnabled?: boolean | null; timezone?: string | null }
+  const features: Features = {
+    drafts: s.syncExpenseDraftsEnabled !== false,
+    attendance: s.syncAttendanceEnabled === true,
+    timezone: s.timezone || DEFAULT_TZ,
+  }
   const results: SyncResultOut[] = []
   for (const item of batch.items) {
-    results.push(await processItem(req, batch, deviceId, uid, item, draftsEnabled))
+    results.push(await processItem(req, batch, deviceId, uid, item, features))
   }
   return { batch_id: batch.batch_id, server_time: new Date().toISOString(), results }
 }

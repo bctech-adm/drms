@@ -115,6 +115,51 @@ class OutboxRepository {
     return opUuid;
   }
 
+  /// Queues one attendance check-in/out (ADR 0010 Example A). Never merged or edited: every tap is its
+  /// own item; the selfie is uploaded first ([dependsOn] = local media uuid).
+  Future<String> enqueueAttendance({
+    required String sub,
+    required String type,
+    required Map<String, dynamic> payload,
+    required String selfieUuid,
+    required String deviceTime,
+    required int elapsedMs,
+    required String bootId,
+    required bool offline,
+  }) async {
+    final opUuid = const Uuid().v7();
+    await db
+        .into(db.outbox)
+        .insert(
+          OutboxCompanion.insert(
+            opUuid: opUuid,
+            userSub: sub,
+            type: type,
+            targetUuid: opUuid,
+            payloadJson: jsonEncode(payload),
+            dependsOnJson: Value(jsonEncode([selfieUuid])),
+            deviceTime: deviceTime,
+            elapsedMs: elapsedMs,
+            bootId: bootId,
+            offline: Value(offline),
+            createdAt: DateTime.now(),
+          ),
+        );
+    return opUuid;
+  }
+
+  /// Attendance items of [sub], newest first (attendance screen).
+  Stream<List<OutboxData>> watchAttendance(String sub) =>
+      (db.select(db.outbox)
+            ..where(
+              (t) =>
+                  t.userSub.equals(sub) &
+                  t.type.isIn([SyncItemType.attendanceCheckIn, SyncItemType.attendanceCheckOut]),
+            )
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(20))
+          .watch();
+
   /// Items of [sub] that may be sent now, in creation order.
   Future<List<OutboxData>> due(String sub, DateTime now) =>
       (db.select(db.outbox)

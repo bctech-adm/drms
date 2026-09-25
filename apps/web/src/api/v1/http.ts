@@ -2,10 +2,13 @@ import { addDataAndFileToRequest, APIError, ValidationError, type Endpoint, type
 import type { z } from 'zod'
 
 import { hasRole, type Role } from '@/access/roles'
+import { AUTH_FAILURE_KEY } from '@/auth/strategies'
 import { claimKey, IDEMPOTENCY_KEY_RE, requestHash, storeResponse } from '@/lib/idempotency'
 import { requestMeta } from '@/lib/request-meta'
 import { takeToken } from '@/lib/rate-limit'
 import { withReqTransaction } from '@/lib/system-tx'
+
+export const DEVICE_REVOKED_DETAIL = 'Perangkat ini sudah dicabut dari akun Anda. Silakan masuk kembali atau hubungi Admin.'
 
 /** RFC 9457 problem details (architecture §6.2). Never echoes internals. */
 export function problem(status: number, title: string, extra: Record<string, unknown> = {}): Response {
@@ -99,7 +102,14 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
     handler: async (req) => {
       try {
         if (opts.auth !== 'public') {
-          if (!req.user) return problem(401, 'Unauthorized')
+          if (!req.user) {
+            // Valid token, revoked/lost device (mobileBearer): a code the APK maps to a forced logout
+            // without trying a token refresh. Nothing else about the caller is disclosed.
+            if (req.context?.[AUTH_FAILURE_KEY] === 'device_revoked') {
+              return problem(401, 'Unauthorized', { code: 'DEVICE_REVOKED', detail: DEVICE_REVOKED_DETAIL })
+            }
+            return problem(401, 'Unauthorized')
+          }
           if (opts.roles && !hasRole(req, ...opts.roles)) return problem(403, 'Forbidden')
           const meta = requestMeta(req)
           if (meta.source === 'apk') {

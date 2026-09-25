@@ -36,6 +36,9 @@ dependencies:
   path_provider: 2.1.6
   path: 1.9.1
   crypto: 3.0.7
+  # F4b attendance: GPS fix + Position.isMocked (ADR 0010 package table; re-verified on pub.dev 2026-09-25:
+  # 14.0.3, published 2026-06-12, MIT, publisher baseflow.com, 160/160 points).
+  geolocator: 14.0.3
 
 dev_dependencies:
   flutter_test:

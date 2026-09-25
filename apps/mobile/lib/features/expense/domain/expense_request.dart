@@ -61,6 +61,70 @@ abstract class ReceiptInfo with _$ReceiptInfo {
   }) = _ReceiptInfo;
 }
 
+/// Receipt status labels (server `receipts.status`).
+String receiptStatusLabel(String status) => switch (status) {
+  'pending' => 'Menunggu verifikasi',
+  'valid' => 'Valid',
+  'rejected' => 'Ditolak',
+  'removed' => 'Dihapus',
+  _ => status,
+};
+
+/// `ExpenseRequestDetail.transfers[]` — what the requester sees of Finance's transfer (US-08, T3).
+@freezed
+abstract class TransferInfo with _$TransferInfo {
+  const TransferInfo._();
+  const factory TransferInfo({
+    required int id,
+    String? docNo,
+    required String kind, // advance | reimburse | lpj_shortfall
+    required int amount,
+    String? transferDate,
+    String? bankRef,
+    required String status, // posted | void
+    String? voidReason,
+  }) = _TransferInfo;
+
+  bool get isVoid => status == 'void';
+
+  String get kindLabel => switch (kind) {
+    'advance' => 'Uang muka',
+    'reimburse' => 'Reimburse',
+    'lpj_shortfall' => 'Kekurangan LPJ',
+    _ => kind,
+  };
+}
+
+/// `ExpenseRequestDetail.settlement` — LPJ of an Uang Muka (T5).
+@freezed
+abstract class SettlementInfo with _$SettlementInfo {
+  const SettlementInfo._();
+  const factory SettlementInfo({
+    required int id,
+    String? docNo,
+    required String status, // draft | submitted | revision | verified | settled
+    required String statusLabel,
+    String? usageNotes,
+    int? transferredTotal,
+    int? receiptsTotal,
+    int? verifiedReceiptsTotal,
+    int? difference,
+    String? settlementType, // none | refund | shortfall
+    String? financeNotes,
+    @Default(0) int submitCount,
+    String? submittedAt,
+    String? verifiedAt,
+    String? settledAt,
+  }) = _SettlementInfo;
+
+  String? get settlementTypeLabel => switch (settlementType) {
+    'none' => 'Pas — tanpa selisih',
+    'refund' => 'Sisa dana dikembalikan ke kas',
+    'shortfall' => 'Kekurangan dibayar dengan transfer',
+    _ => null,
+  };
+}
+
 enum SignPosition { diajukan, dibuat, diketahui, approval }
 
 @freezed
@@ -146,6 +210,9 @@ abstract class ExpenseDetail with _$ExpenseDetail {
     int? currentLevel,
     @Default([]) List<FlagInfo> flags,
     @Default(BudgetImpact(basis: 'none')) BudgetImpact budget,
+    @Default([]) List<TransferInfo> transfers,
+    @Default(0) int transferredTotal,
+    SettlementInfo? settlement,
     @Default(<String>{}) Set<String> allowedActions,
     String? rejectReason,
     String? cancelReason,

@@ -156,6 +156,21 @@ void main() {
     });
   });
 
+  testWidgets('remote device revoke (401 DEVICE_REVOKED) → specific Indonesian notice', (tester) async {
+    await pumpScreen(
+      tester,
+      const LoginScreen(),
+      env: _passwordEnv,
+      auth: const AuthSignedOut(message: signedOutDeviceRevoked),
+    );
+    expect(
+      find.text(
+        'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   group('Login (PK_LOGIN_MODE=browser, unchanged)', () {
     testWidgets('one Masuk button, no form fields, opens the browser flow', (tester) async {
       auth = _RecordingAuth();

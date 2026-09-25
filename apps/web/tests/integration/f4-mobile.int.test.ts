@@ -316,12 +316,15 @@ describe('POST /api/v1/sync/batch — expense request drafts (ADR 0010)', () => 
     expect(del2.body.results[0].errors[0].code).toBe('NOT_EDITABLE')
   })
 
-  it('attendance / progress items → unsupported (kept for F5, not stored); feature flag off → FEATURE_DISABLED', async () => {
-    const att = item('attendance.check_in', { project_id: w.project, lat: -2.2, lng: 113.9 })
+  it('on-behalf attendance / progress items → unsupported (kept for F5, not stored); feature flags off → FEATURE_DISABLED', async () => {
+    const att = item('attendance.on_behalf', { project_id: w.project, lat: -2.2, lng: 113.9 })
     const prog = item('progress_report.draft_upsert', {})
     const r = await sync(staffA, [att, prog])
     expect(r.body.results.map((x: { status: string }) => x.status)).toEqual(['unsupported', 'unsupported'])
     expect((await sqlAs('app', 'SELECT count(*)::int AS n FROM sync_receipts WHERE client_uuid = ANY($1::uuid[])', [[att.client_uuid, prog.client_uuid]])).rows[0].n).toBe(0)
+    // F4b: own check-in is supported but off by default (company-settings.syncAttendanceEnabled).
+    const own = await sync(staffA, [item('attendance.check_in', { project_id: w.project, lat: -2.2, lng: 113.9, is_mocked: false, selfie_media_id: 1 })])
+    expect(own.body.results[0]).toMatchObject({ status: 'rejected', errors: [expect.objectContaining({ code: 'FEATURE_DISABLED' })] })
 
     const p = await getTestPayload()
     await p.updateGlobal({ slug: 'company-settings', data: { syncExpenseDraftsEnabled: false }, overrideAccess: true /* SYSTEM-WRITE: fixture */ })
@@ -435,6 +438,44 @@ describe('/.well-known/assetlinks.json (Android App Links)', () => {
 })
 
 describe('device registry for the APK (ADR 0003 §5 / ADR 0010)', () => {
+  it('an unknown install id or another user\'s device is a plain 401 (no DEVICE_REVOKED hint)', async () => {
+    const m = await mobile(w.users.staffA, ['pk-staff'])
+    const unknown = await http('GET', '/api/v1/me', { headers: headers(m, { 'X-Device-Id': randomUUID() }) })
+    expect(unknown.status).toBe(401)
+    expect((unknown.body as { code?: string }).code).toBeUndefined()
+    const other = await mobile(w.users.pm, ['pk-pm'])
+    const foreign = await http('GET', '/api/v1/me', { headers: headers(m, { 'X-Device-Id': other.device }) })
+    expect(foreign.status).toBe(401)
+    expect((foreign.body as { code?: string }).code).toBeUndefined()
+  })
+
+  it('integrity signals (F4b): stored with risk + time, audited on change, omitted → kept, never blocking', async () => {
+    const m = await mobile(w.users.staffA, ['pk-staff'])
+    const reg = (json: Record<string, unknown>) => http('POST', '/api/v1/devices/register', { headers: headers(m), json: { deviceId: m.device, platform: 'android', ...json } })
+    const read = async () =>
+      (await sqlAs('app', 'SELECT id, integrity_risk, integrity_rooted, integrity_emulator, integrity_developer_mode, integrity_adb_enabled, integrity_mock_location, integrity_checked_at FROM devices WHERE device_id = $1', [m.device])).rows[0]
+    const before = await read()
+    expect(before.integrity_risk).toBe(false)
+    expect(before.integrity_checked_at).toBeNull()
+    const clean = { rooted: false, emulator: false, developerMode: true, adbEnabled: true, mockLocation: null }
+    const r1 = await reg({ integrity: clean })
+    expect(r1.status).toBe(200)
+    expect(r1.body).toMatchObject({ integrityRisk: false })
+    expect((r1.body as { integrityCheckedAt: string | null }).integrityCheckedAt).not.toBeNull()
+    const rooted = await reg({ integrity: { ...clean, rooted: true } })
+    expect(rooted.status).toBe(200) // recorded, not blocked (QM-4)
+    expect(rooted.body).toMatchObject({ integrityRisk: true, status: 'active' })
+    expect(await read()).toMatchObject({ integrity_risk: true, integrity_rooted: true, integrity_developer_mode: true, integrity_adb_enabled: true, integrity_mock_location: null })
+    expect((await http('GET', '/api/v1/me', { headers: headers(m) })).status).toBe(200)
+    expect((await reg({ appVersion: '1.0.4' })).status).toBe(200)
+    expect((await read()).integrity_rooted).toBe(true)
+    const rows = await auditRows('device', before.id as number)
+    expect(rows.some((x) => x.field === 'integrityRisk' && JSON.stringify(x.new_value).includes('true'))).toBe(true)
+    expect(rows.some((x) => x.field === 'integrityCheckedAt')).toBe(false)
+    const bad = await reg({ integrity: { ...clean, rooted: 'no' } })
+    expect(bad.status).toBe(400)
+  })
+
   it('registration stores platform/model/version; push token nullable (null clears, omitted keeps)', async () => {
     const m = await mobile(w.users.finance, ['pk-finance'])
     const reg = (json: Record<string, unknown>) => http('POST', '/api/v1/devices/register', { headers: headers(m), json: { deviceId: m.device, platform: 'android', ...json } })
@@ -453,8 +494,14 @@ describe('device registry for the APK (ADR 0003 §5 / ADR 0010)', () => {
     const dev = (await sqlAs('app', 'SELECT id FROM devices WHERE device_id = $1', [m.device])).rows[0].id as number
     const r = await api('PATCH', `/api/devices/${dev}`, w.users.admin, { status: 'lost', revokeReason: 'HP hilang di lokasi', changeReason: 'HP hilang di lokasi' })
     expect(r.status, JSON.stringify(r.body)).toBe(200)
-    expect((await http('GET', '/api/v1/me', { headers: headers(m) })).status).toBe(401)
-    expect((await sync(m, [item('attendance.check_in', {})])).status).toBe(401)
+    const me = await http('GET', '/api/v1/me', { headers: headers(m) })
+    expect(me.status).toBe(401)
+    // F4b: a valid token on a revoked/lost device says so → the APK logs out without refreshing.
+    expect(me.body).toMatchObject({ status: 401, code: 'DEVICE_REVOKED' })
+    expect((me.body as { detail: string }).detail).toMatch(/dicabut/)
+    const s = await sync(m, [item('attendance.check_in', {})])
+    expect(s.status).toBe(401)
+    expect(s.body.code).toBe('DEVICE_REVOKED')
     const again = await http('POST', '/api/v1/devices/register', { headers: headers(m), json: { deviceId: m.device, platform: 'android' } })
     expect(again.status).toBe(403)
     const rows = await auditRows('device', dev)

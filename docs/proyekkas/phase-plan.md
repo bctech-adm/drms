@@ -184,6 +184,12 @@
 - **Acceptance gate:** E2E on physical Android device(s) against staging: create → approve (owner on
   phone) → transfer (web) → receipts → LPJ; offline check-in synced with "offline" flag and server time;
   revoked device blocked ≤ 1 request; APK signed; no secrets in APK (static scan).
+- **Status (2026-09-25, branch `feat/f4b-mobile-completion`, not merged):** gap analysis and remaining work in
+  `docs/proyekkas/f4/f4-gap-analysis.md`; phone test script `docs/proyekkas/f4/f4-e2e-scenario.md`. Built in F4b:
+  explicit 401 `DEVICE_REVOKED` + forced logout, device integrity flags, requester receipts/LPJ and transfer status on
+  the phone, in-app notifications, minimal attendance check-in/out (offline, behind a company setting), APK secret
+  scan in CI. Blocked: FCM push (Firebase project, Q-44). Gate test on a physical phone pending (needs a staging
+  redeploy with 3 additive migrations).
 
 ### F5 — Project, progress, attendance, reports
 - **Scope:** projects & stages (weights = 100 %, templates, archive), progress reports (≤ 5 photos,
@@ -206,7 +212,7 @@
   (today Payload renders a 200 shell that leaks only page titles, no data); settlement reversal (void of
   refund KM / shortfall transfer currently 409); signed/time-limited media URLs (ADR 0004 §4); prod compose
   + GHCR push/deploy jobs; container uid not mapped to a host user for prod secrets; `PUSH_FCM_ENABLED` in
-  the env schema (F4); ~~self-involvement guard for Finance receipt verification~~ (**done in F2e**, architecture
+  the env schema (F4) (**done in F4b**: refused while `true` until the FCM dispatcher exists); ~~self-involvement guard for Finance receipt verification~~ (**done in F2e**, architecture
   §5.5 G17); Payload 3.90.1
   admin form-state race (adding an array row while a form-state request is pending leaves a skeleton row —
   file upstream issue; UI hint added in F2d); **5.2 409 vs 403 wording** (a requester's `approve` on a request in

@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **F4b APK completion** (branch `feat/f4b-mobile-completion`; gap analysis `docs/proyekkas/f4/f4-gap-analysis.md`,
+  phone test script `docs/proyekkas/f4/f4-e2e-scenario.md`):
+  - API: a valid token on a revoked/lost device gets `401` with `code: DEVICE_REVOKED`; the APK logs out on that first
+    answer with an Indonesian message and a new install id.
+  - Device integrity flags (root, emulator, developer options, ADB; mocked GPS per attendance fix) reported in
+    `POST /api/v1/devices/register` and stored on `devices` (`integrityRisk`, `integrity*`) — recorded, never blocking
+    (Q-43 proposal); warning on the APK home screen. Migration `20260925_015425_f4b_device_integrity` (additive).
+  - APK: transfer status (amount, date, bank reference, void reason) and LPJ summary on the request detail; online
+    receipts after approval (camera/gallery, device compression), remove receipt, "Nota sudah lengkap",
+    "Kirim LPJ"/"Kirim ulang LPJ", "Kirim ulang nota", "Tandai selesai"; in-app notifications (bell + list, polling).
+  - Attendance, F4 slice: own check-in/out at an assigned project from the APK, offline-capable (GPS via geolocator
+    14.0.3, front-camera selfie, server geofence/mock/assignment/one-per-day checks, server-estimated time). Company
+    setting `syncAttendanceEnabled` (default off). New collection `attendances` (append-only), migrations
+    `20260925_023715_f4b_attendance` + `20260925_023716_f4b_attendance_security` (additive), `POST /api/v1/media/selfies`.
+  - Env `PUSH_FCM_ENABLED` in the schema (default false; `true` refused until the FCM dispatcher exists).
+  - CI: static secret scan of every built APK (`apps/mobile/tool/apk_secret_scan.sh`: gitleaks + trivy + deny-list).
 - **F3 dashboards, reports and exports** (`apps/web`; design `docs/proyekkas/f3/*`, approved by the user 2026-09-24 with
   all defaults Q-F3-1…8): role home pages replacing the Payload dashboard (`admin.components.views.dashboard`) for
   Owner, Finance, PM (team scope), Admin and Staff, server-rendered with inline SVG charts (no chart library,
@@ -41,6 +57,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
 ### Fixed
+- `media-selfies` stored WebP while accepting only `image/jpeg`, so every selfie upload failed with "Invalid file type";
+  selfies are now stored as JPEG q75 (F4b).
+- APK: a failed masters refresh at login (e.g. 401/5xx) no longer surfaces as an unhandled async error (F4b).
 - **Report "Anggaran Project" with a project filter** (F3 UAT): the per-category table used
   `FULL JOIN … ON category_id IS NOT DISTINCT FROM …`, which PostgreSQL 16 rejects ("FULL JOIN is only supported with
   merge-joinable or hash-joinable join conditions"), so the page ("Data tidak dapat dimuat…"), JSON and CSV/XLSX/PDF

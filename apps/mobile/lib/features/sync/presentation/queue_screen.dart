@@ -11,6 +11,7 @@ import '../../auth/application/auth_controller.dart';
 import '../../expense/data/draft_repository.dart';
 import '../application/sync_coordinator.dart';
 import '../application/sync_engine.dart';
+import '../domain/sync_models.dart';
 
 final _queueRowsProvider = FutureProvider.autoDispose<(List<OutboxData>, int)>((ref) async {
   ref.watch(outboxCountsProvider);
@@ -95,7 +96,10 @@ class QueueScreen extends ConsumerWidget {
                       'pending' => Icons.schedule,
                       _ => Icons.error,
                     }),
-                    title: Text('Draft pengajuan · ${statusLabel(r.status)}'),
+                    title: Text(
+                      '${SyncItemType.isAttendance(r.type) ? (r.type == SyncItemType.attendanceCheckIn ? 'Absen masuk' : 'Absen pulang') : 'Draft pengajuan'}'
+                      ' · ${statusLabel(r.status)}',
+                    ),
                     subtitle: Text(
                       [
                         formatServerDateTime(r.createdAt.toUtc().toIso8601String()),

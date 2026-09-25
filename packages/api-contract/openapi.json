@@ -273,6 +273,10 @@
           },
           "minAppVersion": {
             "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Machine-readable reason. 401 DEVICE_REVOKED = the token is valid but X-Device-Id was revoked/marked lost: the APK ends the session without a refresh."
           }
         },
         "required": [
@@ -366,6 +370,16 @@
               "string",
               "null"
             ]
+          },
+          "integrityRisk": {
+            "type": "boolean",
+            "description": "Any integrity signal set at the last check (rooted, emulator, mock location)."
+          },
+          "integrityCheckedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -376,7 +390,9 @@
           "appVersion",
           "registeredAt",
           "lastSeenAt",
-          "revokedAt"
+          "revokedAt",
+          "integrityRisk",
+          "integrityCheckedAt"
         ]
       },
       "DeviceRegister": {
@@ -409,6 +425,9 @@
             "minLength": 1,
             "maxLength": 4096,
             "description": "FCM token (ADR 0011); null clears it, omitted keeps it. Push is not enabled yet (GET /app/config features.pushEnabled)."
+          },
+          "integrity": {
+            "$ref": "#/components/schemas/DeviceIntegrity"
           }
         },
         "required": [
@@ -416,6 +435,37 @@
           "platform"
         ],
         "additionalProperties": false
+      },
+      "DeviceIntegrity": {
+        "type": "object",
+        "properties": {
+          "rooted": {
+            "type": "boolean"
+          },
+          "emulator": {
+            "type": "boolean"
+          },
+          "developerMode": {
+            "type": "boolean"
+          },
+          "adbEnabled": {
+            "type": "boolean"
+          },
+          "mockLocation": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "rooted",
+          "emulator",
+          "developerMode",
+          "adbEnabled"
+        ],
+        "additionalProperties": false,
+        "description": "Best-effort device signals (ADR 0010 decision 10), sent at register. Recorded and audited, never blocking; omitted keeps the stored values. mockLocation null = not measured (needs a GPS fix, F5)."
       },
       "DeviceRevoke": {
         "type": "object",
@@ -2425,7 +2475,8 @@
           "receipts",
           "transfer-proofs",
           "signatures",
-          "attachments"
+          "attachments",
+          "selfies"
         ]
       },
       "CashEntryList": {
@@ -3511,7 +3562,7 @@
               "properties": {
                 "code": {
                   "type": "string",
-                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL."
+                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT."
                 },
                 "field": {
                   "type": "string"
@@ -3969,11 +4020,14 @@
                 "$ref": "#/components/schemas/SyncDraftDeletePayload"
               },
               {
+                "$ref": "#/components/schemas/SyncAttendancePayload"
+              },
+              {
                 "type": "object",
                 "additionalProperties": {}
               }
             ],
-            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload; other types: free-form until supported."
+            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload; other types: free-form until supported."
           }
         },
         "required": [
@@ -3997,7 +4051,7 @@
           "expense_request.draft_delete",
           "progress_report.draft_upsert"
         ],
-        "description": "Attendance and progress reports are accepted by the schema but answered `unsupported` until their phase ships (F5)."
+        "description": "attendance.on_behalf and progress_report.draft_upsert are accepted by the schema but answered `unsupported` until F5."
       },
       "SyncDraftUpsertPayload": {
         "type": "object",
@@ -4272,6 +4326,57 @@
         },
         "additionalProperties": false,
         "description": "Soft delete = the draft is cancelled (no hard delete)."
+      },
+      "SyncAttendancePayload": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "accuracy_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "GPS accuracy radius (m); up to 50 m is added to the geofence radius."
+          },
+          "is_mocked": {
+            "type": "boolean",
+            "description": "Android Position.isMocked of this fix; true → rejected MOCK_LOCATION."
+          },
+          "selfie_media_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "media-selfies id uploaded by the caller (POST /api/v1/media/selfies)."
+          },
+          "camera_lens": {
+            "type": "string",
+            "enum": [
+              "front"
+            ]
+          }
+        },
+        "required": [
+          "project_id",
+          "lat",
+          "lng",
+          "is_mocked",
+          "selfie_media_id"
+        ],
+        "additionalProperties": false
       }
     },
     "parameters": {}
@@ -10612,7 +10717,7 @@
     "/sync/batch": {
       "post": {
         "summary": "APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.",
-        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload); attendance.* and progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
+        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN); attendance.on_behalf and progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
         "security": [
           {
             "bearer": []

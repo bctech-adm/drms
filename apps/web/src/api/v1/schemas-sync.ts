@@ -32,7 +32,7 @@ export const SyncItemTypeEnum = z
     'expense_request.draft_delete',
     'progress_report.draft_upsert',
   ])
-  .meta({ id: 'SyncItemType', description: 'Attendance and progress reports are accepted by the schema but answered `unsupported` until their phase ships (F5).' })
+  .meta({ id: 'SyncItemType', description: 'attendance.on_behalf and progress_report.draft_upsert are accepted by the schema but answered `unsupported` until F5.' })
 export type SyncItemType = z.infer<typeof SyncItemTypeEnum>
 
 export const SyncClock = z
@@ -109,6 +109,26 @@ export const SyncDraftDeletePayload = z
   .meta({ id: 'SyncDraftDeletePayload', description: 'Soft delete = the draft is cancelled (no hard delete).' })
 export type SyncDraftDelete = z.infer<typeof SyncDraftDeletePayload>
 
+/**
+ * `attendance.check_in` / `attendance.check_out` (F4 slice of US-01/US-02, ADR 0010 decisions 7/8):
+ * own attendance at an ASSIGNED PROJECT only (cost-center geofences QM-1b, PM on-behalf and
+ * corrections are F5). The selfie is uploaded first with POST /api/v1/media/selfies. Enabled by
+ * company-settings.syncAttendanceEnabled (else `rejected FEATURE_DISABLED`).
+ */
+export const SyncAttendancePayload = z
+  .object({
+    project_id: id,
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    accuracy_m: z.number().min(0).max(10_000).nullable().optional().meta({ description: 'GPS accuracy radius (m); up to 50 m is added to the geofence radius.' }),
+    is_mocked: z.boolean().meta({ description: 'Android Position.isMocked of this fix; true → rejected MOCK_LOCATION.' }),
+    selfie_media_id: id.meta({ description: 'media-selfies id uploaded by the caller (POST /api/v1/media/selfies).' }),
+    camera_lens: z.literal('front').optional(),
+  })
+  .strict()
+  .meta({ id: 'SyncAttendancePayload' })
+export type SyncAttendance = z.infer<typeof SyncAttendancePayload>
+
 export const SyncItem = z
   .object({
     client_uuid: z.uuid().meta({ description: 'Idempotency key of this queue item (UUIDv7). Replays return `duplicate` with the stored result.' }),
@@ -132,8 +152,11 @@ export const SyncItem = z
     // Documented as anyOf (components for the Dart client); validated per item type by the
     // service, so a bad payload rejects only its own item (never the whole batch).
     payload: z
-      .union([SyncDraftUpsertPayload, SyncDraftDeletePayload, z.record(z.string(), z.unknown())])
-      .meta({ description: 'Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload; other types: free-form until supported.' }),
+      .union([SyncDraftUpsertPayload, SyncDraftDeletePayload, SyncAttendancePayload, z.record(z.string(), z.unknown())])
+      .meta({
+        description:
+          'Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload; other types: free-form until supported.',
+      }),
   })
   .strict()
   .meta({ id: 'SyncItem' })
@@ -222,7 +245,7 @@ export const SyncResult = z
     flags: z.array(z.string()).meta({ description: 'OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED.' }),
     errors: z.array(
       z.object({
-        code: z.string().meta({ description: 'VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL.' }),
+        code: z.string().meta({ description: 'VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT.' }),
         field: z.string().optional(),
         message: z.string(),
       }),

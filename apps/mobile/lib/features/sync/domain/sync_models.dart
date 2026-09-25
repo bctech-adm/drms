@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:math';
 
-/// Item types of the sync contract (ADR 0010 "Sync contract", schema_version 1). F4a queues drafts
-/// only; attendance types arrive with F5.
+/// Item types of the sync contract (ADR 0010 "Sync contract", schema_version 1): drafts (F4a) and the
+/// own attendance check-in/out (F4b slice; PM on-behalf and progress reports are F5).
 abstract final class SyncItemType {
   static const expenseDraftUpsert = 'expense_request.draft_upsert';
   static const expenseDraftDelete = 'expense_request.draft_delete';
+  static const attendanceCheckIn = 'attendance.check_in';
+  static const attendanceCheckOut = 'attendance.check_out';
+
+  static bool isAttendance(String type) => type == attendanceCheckIn || type == attendanceCheckOut;
 }
 
 enum SyncItemStatus {
@@ -203,7 +207,8 @@ String rejectionMessage(List<SyncError> errors) {
   final e = errors.first;
   final known = switch (e.code) {
     'NOT_EDITABLE' => 'Draft sudah tidak bisa diubah (sudah diajukan atau bukan milik Anda).',
-    'MEDIA_MISSING' => 'Foto nota belum diterima server.',
+    'MEDIA_MISSING' => 'Foto (nota/selfie) belum diterima server.',
+    'MOCK_LOCATION' => 'Lokasi palsu (mock location) terdeteksi. Absensi ditolak.',
     'VALIDATION' => null,
     'FORBIDDEN' => 'Anda tidak berhak mengubah draft ini.',
     'NOT_FOUND' => 'Draft tidak ditemukan di server.',

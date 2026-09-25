@@ -16,6 +16,9 @@ abstract interface class TokenSource {
 
   /// Called when the server still answers 401 after a refresh (revoked device/user).
   Future<void> onUnauthorized();
+
+  /// Called on 401 `DEVICE_REVOKED` (no refresh attempted): end the session immediately.
+  Future<void> onDeviceRevoked();
 }
 
 /// Headers every `/api/v1` call carries (ADR 0003 §4, ADR 0010 "Sync contract").
@@ -27,8 +30,8 @@ abstract interface class ClientHeaders {
 typedef ReachabilityListener = void Function(bool reachable);
 typedef UpgradeListener = void Function(String? minVersion);
 
-/// dio wrapper for `/api/v1`: auth header, device headers, 401 → refresh → retry once,
-/// RFC 9457 problem → [ApiException].
+/// dio wrapper for `/api/v1`: auth header, device headers, 401 → refresh → retry once
+/// (401 `DEVICE_REVOKED` → immediate logout, no refresh), RFC 9457 problem → [ApiException].
 class ApiClient {
   ApiClient({
     required String baseUrl,
@@ -72,12 +75,19 @@ class ApiClient {
   }) async {
     try {
       return await _once(call, parse);
+    } on DeviceRevokedException {
+      // Refreshing cannot help (the device, not the token, is rejected): ≤ 1 request to logout.
+      if (auth) await tokens.onDeviceRevoked();
+      rethrow;
     } on UnauthorizedException {
       if (!auth) rethrow;
       final fresh = await tokens.refreshAccessToken();
       if (fresh == null) rethrow;
       try {
         return await _once(call, parse);
+      } on DeviceRevokedException {
+        await tokens.onDeviceRevoked();
+        rethrow;
       } on UnauthorizedException {
         Log.w('api: 401 after refresh');
         await tokens.onUnauthorized();
@@ -106,7 +116,11 @@ class ApiClient {
     }
     onReachability?.call(true);
     final status = res.statusCode ?? 0;
-    if (status == 401) return const UnauthorizedException();
+    if (status == 401) {
+      final body = res.data;
+      final revoked = body is Map<String, dynamic> && body['code'] == 'DEVICE_REVOKED';
+      return revoked ? const DeviceRevokedException() : const UnauthorizedException();
+    }
     if (status == 426) {
       final body = res.data;
       final min = body is Map<String, dynamic> ? body['minAppVersion'] as String? : null;

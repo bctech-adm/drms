@@ -86,7 +86,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   String? _notice(AppLocalizations t) {
     final auth = ref.watch(authControllerProvider);
-    return auth is AuthSignedOut ? (auth.message == 'session_ended' ? t.sessionEnded : auth.message) : null;
+    return auth is AuthSignedOut
+        ? (switch (auth.message) {
+            'session_ended' => t.sessionEnded,
+            signedOutDeviceRevoked => t.deviceRevoked,
+            final m => m,
+          })
+        : null;
   }
 
   List<Widget> _header(BuildContext context, String subtitle) {

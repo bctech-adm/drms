@@ -18,6 +18,7 @@ class ProfileApi {
     required String model,
     required String appVersion,
     String? fcmToken,
+    Map<String, Object?>? integrity,
   }) => client.run(
     (d) => d.post<dynamic>(
       '/devices/register',
@@ -27,6 +28,7 @@ class ProfileApi {
         'model': model,
         'appVersion': appVersion,
         'fcmToken': ?fcmToken,
+        'integrity': ?integrity,
       },
     ),
     (_) {},

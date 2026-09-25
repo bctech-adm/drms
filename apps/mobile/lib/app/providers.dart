@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/config/app_env.dart';
 import '../core/db/app_database.dart';
 import '../core/device/device_identity.dart';
+import '../core/device/device_integrity.dart';
 import '../core/media/photo_compressor.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/secure_store.dart';
@@ -31,6 +32,12 @@ final deviceIdentityProvider = Provider<DeviceIdentity>((ref) => throw Unimpleme
 final databaseProvider = Provider<AppDatabase>((ref) => throw UnimplementedError('databaseProvider'));
 
 final deviceClockProvider = Provider<DeviceClock>((ref) => AndroidDeviceClock());
+final integrityProbeProvider = Provider<DeviceIntegrityProbe>((ref) => AndroidIntegrityProbe());
+
+/// Last integrity report of this device (null = unknown). Q-43 proposal: warn + flag, never block.
+final integrityReportProvider = FutureProvider<DeviceIntegrityReport?>(
+  (ref) => ref.watch(integrityProbeProvider).check(),
+);
 final oidcBrowserClientProvider = Provider<OidcBrowserClient>((ref) => AppAuthBrowserClient(ref.watch(appEnvProvider)));
 
 /// In-app login (`PK_LOGIN_MODE=password`, staging only — ADR 0012).
@@ -86,9 +93,15 @@ final syncEngineProvider = Provider((ref) {
     clock: ref.watch(deviceClockProvider),
     deviceId: () => device.deviceId,
     lock: ref.watch(syncLockProvider),
+    // Local kind → `POST /media/{kind}`: receipt photos and attendance selfies (F4b).
     uploadMedia: (blob) => ref
         .read(expenseApiProvider)
-        .uploadMedia('receipts', blob.bytes, filename: '${blob.clientUuid}.jpg', mime: blob.mimeType),
+        .uploadMedia(
+          blob.kind == 'selfie' ? 'selfies' : 'receipts',
+          blob.bytes,
+          filename: '${blob.clientUuid}.jpg',
+          mime: blob.mimeType,
+        ),
   );
 });
 
