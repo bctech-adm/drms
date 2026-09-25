@@ -22,8 +22,8 @@ const badge = (tone: 'ok' | 'warn' | 'bad'): React.CSSProperties => ({
   borderRadius: 8,
   fontSize: 11,
   fontWeight: 600,
-  color: '#fff',
-  background: tone === 'ok' ? '#2e7d32' : tone === 'warn' ? '#ef6c00' : '#c62828',
+  color: '#FFFFFF', // ≥ 4.5:1 on every --pk-tone-* (src/theme/tokens.ts)
+  background: tone === 'ok' ? 'var(--pk-tone-ok)' : tone === 'warn' ? 'var(--pk-tone-warn)' : 'var(--pk-tone-bad)',
 })
 
 /** Requester-side actions surfaced in the web panel (F2c). Office actions stay in the work views. */
@@ -104,8 +104,8 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
                   borderRadius: 10,
                   fontSize: 12,
                   fontWeight: s.state === 'current' ? 700 : 400,
-                  background: s.state === 'current' ? 'var(--theme-success-500)' : s.state === 'done' ? 'var(--theme-elevation-150)' : 'transparent',
-                  color: s.state === 'current' ? '#fff' : s.state === 'todo' ? 'var(--theme-elevation-500)' : 'inherit',
+                  background: s.state === 'current' ? 'var(--pk-primary)' : s.state === 'done' ? 'var(--theme-elevation-150)' : 'transparent',
+                  color: s.state === 'current' ? 'var(--pk-on-primary)' : s.state === 'todo' ? 'var(--theme-elevation-500)' : 'inherit',
                   border: s.state === 'todo' ? '1px dashed var(--theme-elevation-300)' : '1px solid transparent',
                 }}
                 aria-current={s.state === 'current' ? 'step' : undefined}

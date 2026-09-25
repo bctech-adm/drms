@@ -65,7 +65,7 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
     lpj = l.totalDocs
   }
   const link: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '4px 0', textDecoration: 'none' }
-  const pill: React.CSSProperties = { background: 'var(--theme-error-500)', color: '#fff', borderRadius: 10, padding: '0 7px', fontSize: 11, fontWeight: 700 }
+  const pill: React.CSSProperties = { background: 'var(--pk-tone-bad)', color: '#FFFFFF', borderRadius: 10, padding: '0 7px', fontSize: 11, fontWeight: 700 }
   return (
     <div style={box}>
       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Alur kerja</div>

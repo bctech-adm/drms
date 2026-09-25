@@ -4,6 +4,8 @@ import { ReadOnlyJson as ReadOnlyJson_08329374a86bb7164f48836797d5c216 } from '@
 import { ResubmitOfField as ResubmitOfField_c0f3cc59bdb1242c0f258beab78a7cba } from '@/admin/components/ResubmitOfField'
 import { RiwayatView as RiwayatView_5fd51ea07b7ad6c5f81167eb6f8e8f96 } from '@/admin/views/RiwayatView'
 import { LogoutButton as LogoutButton_db9ac62598c46d0f1db201f6af05442e } from '@/components/LogoutButton'
+import { Icon as Icon_bbc58174e2e54453bd848c29fea2f58a } from '@/theme/graphics'
+import { Logo as Logo_bbc58174e2e54453bd848c29fea2f58a } from '@/theme/graphics'
 import { F2NavLinks as F2NavLinks_38e074e6119fcd331b882e852809cb24 } from '@/admin/components/F2NavLinks'
 import { SsoLoginButton as SsoLoginButton_e910a89f6cf03666cb4ab2594dae916d } from '@/components/SsoLoginButton'
 import { ApprovalInbox as ApprovalInbox_38358c8fa3c2f08f616ef2728997b5dc } from '@/admin/views/ApprovalInbox'
@@ -23,6 +25,8 @@ export const importMap = {
   "@/admin/components/ResubmitOfField#ResubmitOfField": ResubmitOfField_c0f3cc59bdb1242c0f258beab78a7cba,
   "@/admin/views/RiwayatView#RiwayatView": RiwayatView_5fd51ea07b7ad6c5f81167eb6f8e8f96,
   "@/components/LogoutButton#LogoutButton": LogoutButton_db9ac62598c46d0f1db201f6af05442e,
+  "@/theme/graphics#Icon": Icon_bbc58174e2e54453bd848c29fea2f58a,
+  "@/theme/graphics#Logo": Logo_bbc58174e2e54453bd848c29fea2f58a,
   "@/admin/components/F2NavLinks#F2NavLinks": F2NavLinks_38e074e6119fcd331b882e852809cb24,
   "@/components/SsoLoginButton#SsoLoginButton": SsoLoginButton_e910a89f6cf03666cb4ab2594dae916d,
   "@/admin/views/ApprovalInbox#ApprovalInbox": ApprovalInbox_38358c8fa3c2f08f616ef2728997b5dc,

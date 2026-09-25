@@ -54,6 +54,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `20260924_025115_f4_security` (table `sync_receipts`, immutable `receipts.client_uuid`) — additive.
 
 ### Changed
+- **Admin UI retheme to the web-starter design system** (branch `feat/cms-theme-web-starter`; visual only, no
+  behaviour/data change): trust blue `#2563EB` primary, orange `#EA580C` CTA (SSO login button), slate surfaces with a
+  designed dark palette, Space Grotesk headings / DM Sans body self-hosted via `next/font` (CSP `font-src 'self'`
+  unchanged), radius 0.875rem, glass login card and header, card/table surfaces, visible 2px focus ring (also on
+  Payload's nav group toggle), reduced-motion honoured. Mechanism (Payload 3.90.1): `(payload)/custom.scss` inside
+  `@layer payload`, colour tokens on `<html>` via `RootLayout` `htmlProps`, `admin.components.graphics` Icon/Logo
+  with the ProyekKas DRMS name. Tokens in `apps/web/src/theme/tokens.ts`, WCAG contrast checked by
+  `tests/unit/theme.test.ts`; hard-coded status colours in the work views replaced by tokens (white on the old
+  orange `#ef6c00` was 2.9:1).
 - The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
 ### Fixed

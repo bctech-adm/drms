@@ -104,6 +104,8 @@ export default buildConfig({
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
     components: {
+      // Web-starter retheme: DRMS mark/name instead of the Payload graphics (src/theme/graphics.tsx).
+      graphics: { Icon: '@/theme/graphics#Icon', Logo: '@/theme/graphics#Logo' },
       beforeLogin: ['@/components/SsoLoginButton#SsoLoginButton'],
       logout: { Button: '@/components/LogoutButton#LogoutButton' },
       // F2 work views (approval inbox, transfer queue, LPJ verification) + nav badges.
