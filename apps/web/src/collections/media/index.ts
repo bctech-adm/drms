@@ -84,7 +84,10 @@ export const MediaSelfies = mediaCollection({
   labels: { singular: 'Selfie absensi', plural: 'Selfie absensi' },
   mimeTypes: ['image/jpeg'],
   resizeOptions: { width: 720, height: 720, fit: 'inside', withoutEnlargement: true },
-  formatOptions: { format: 'webp', options: { quality: 70 } },
+  // F4b: was WebP, which Payload validates against mimeTypes ['image/jpeg'] → every selfie upload
+  // failed ("Invalid file type: 'image/webp'", same cause as the F2a thumbnail finding). JPEG also
+  // keeps selfies embeddable in PDF recaps (@react-pdf: JPEG/PNG only).
+  formatOptions: { format: 'jpeg', options: { quality: 75, mozjpeg: true } },
   access: { read: ownOrOffice, create: rolesAllowed('pk-staff', 'pk-pm', 'pk-admin') },
 })
 
