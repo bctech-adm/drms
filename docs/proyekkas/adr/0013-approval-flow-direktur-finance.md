@@ -1,6 +1,6 @@
 # ADR 0013 — Approval flow: "Diketahui" by the Direktur (an approval), then Finance; PM monitors only
 
-- **Status:** proposed (needs GATE 1 answers G1-1…G1-2 in `docs/proyekkas/plans/fase1-golive.md` §9)
+- **Status:** accepted (GATE 1 fase1-golive, user 2026-09-26)
 - **Date:** 2026-09-25
 - **Author:** Analyst (Fase 1 go-live plan, branch `docs/plan-fase1-golive`)
 - **Supersedes (when accepted):** the Q-07 default (PM / cost-center manager fills "Diketahui") and, for new

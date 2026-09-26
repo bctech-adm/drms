@@ -1,6 +1,6 @@
 # ProyekKas / DRMS — Rencana Fase 1 (Go-Live Produksi)
 
-- **Status:** DRAFT untuk GATE 1 (belum ada implementasi) · **Tanggal:** 2026-09-25 · **Penyusun:** Analyst
+- **Status:** APPROVED GATE 1 (user 2026-09-26 "lanjutkan" = rekomendasi G1-1..G1-6; G1-7 PIC klien MENUNGGU nama) — eksekusi S0 dimulai · **Tanggal:** 2026-09-25 · **Penyusun:** Analyst
 - **Basis kode:** `develop` @ `8712964` · **Branch dokumen:** `docs/plan-fase1-golive`
 - **Input:** audit gap `/opt/src/proyekkas-private/proyekkas-gap-audit-20260925.md` (privat, tidak dikutip data
   pribadinya), `requirements-v1.1.md`, `phase-plan.md`, `traceability-matrix.md`, `open-questions-client.md`,
