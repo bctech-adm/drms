@@ -8,6 +8,7 @@ import { Icon as Icon_bbc58174e2e54453bd848c29fea2f58a } from '@/theme/graphics'
 import { Logo as Logo_bbc58174e2e54453bd848c29fea2f58a } from '@/theme/graphics'
 import { F2NavLinks as F2NavLinks_38e074e6119fcd331b882e852809cb24 } from '@/admin/components/F2NavLinks'
 import { SsoLoginButton as SsoLoginButton_e910a89f6cf03666cb4ab2594dae916d } from '@/components/SsoLoginButton'
+import { NotificationBell as NotificationBell_5a38199af7ae30fafbfa4521381c47f5 } from '@/admin/components/NotificationBell'
 import { ApprovalInbox as ApprovalInbox_38358c8fa3c2f08f616ef2728997b5dc } from '@/admin/views/ApprovalInbox'
 import { TransferQueue as TransferQueue_8a6e0f53c8f086ccf31fb1d3d209ace9 } from '@/admin/views/TransferQueue'
 import { LpjVerification as LpjVerification_0e13d2751aafbaa3ddc692019a4025e1 } from '@/admin/views/LpjVerification'
@@ -29,6 +30,7 @@ import { ProgressReportDetail as ProgressReportDetail_a083428db0b5e65b9a4db721d5
 import { AddendumList as AddendumList_06d7ee0480b4dc608c229f2cd74032b3 } from '@/admin/views/Addendum'
 import { AddendumNew as AddendumNew_06d7ee0480b4dc608c229f2cd74032b3 } from '@/admin/views/Addendum'
 import { AddendumDetail as AddendumDetail_06d7ee0480b4dc608c229f2cd74032b3 } from '@/admin/views/Addendum'
+import { NotificationsView as NotificationsView_c3b608bcff53bfc6e9104ed1897a90d5 } from '@/admin/views/Notifikasi'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -43,6 +45,7 @@ export const importMap = {
   "@/theme/graphics#Logo": Logo_bbc58174e2e54453bd848c29fea2f58a,
   "@/admin/components/F2NavLinks#F2NavLinks": F2NavLinks_38e074e6119fcd331b882e852809cb24,
   "@/components/SsoLoginButton#SsoLoginButton": SsoLoginButton_e910a89f6cf03666cb4ab2594dae916d,
+  "@/admin/components/NotificationBell#NotificationBell": NotificationBell_5a38199af7ae30fafbfa4521381c47f5,
   "@/admin/views/ApprovalInbox#ApprovalInbox": ApprovalInbox_38358c8fa3c2f08f616ef2728997b5dc,
   "@/admin/views/TransferQueue#TransferQueue": TransferQueue_8a6e0f53c8f086ccf31fb1d3d209ace9,
   "@/admin/views/LpjVerification#LpjVerification": LpjVerification_0e13d2751aafbaa3ddc692019a4025e1,
@@ -64,5 +67,6 @@ export const importMap = {
   "@/admin/views/Addendum#AddendumList": AddendumList_06d7ee0480b4dc608c229f2cd74032b3,
   "@/admin/views/Addendum#AddendumNew": AddendumNew_06d7ee0480b4dc608c229f2cd74032b3,
   "@/admin/views/Addendum#AddendumDetail": AddendumDetail_06d7ee0480b4dc608c229f2cd74032b3,
+  "@/admin/views/Notifikasi#NotificationsView": NotificationsView_c3b608bcff53bfc6e9104ed1897a90d5,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
