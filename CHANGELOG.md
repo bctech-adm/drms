@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **E2 — web Finance UI for cash** (`apps/web`, fase1-golive §E2, US-23/US-24, ADR 0005; branch
+  `feat/e2-finance-cash-ui`): admin views `/admin/kas` (buku kas with filters akun/periode/project/pusat biaya/arah/
+  status, saldo per akun tiles, void rows kept and linked to their jurnal balik), `/admin/kas/baru` (kas masuk/keluar:
+  tanggal, akun, sumber/kategori, project XOR pusat biaya, nominal, keterangan, bukti upload, kendaraan for kas keluar),
+  `/admin/kas/:id/ubah` (edit before period close, reason required), `/admin/tutup-buku` (close a past month; re-open =
+  Direktur = role `pk-owner`, G1-1). Void (cash entry) and Void transfer (Antrian Transfer + request detail) through a
+  reason dialog. All writes go to the existing `/api/v1` domain endpoints with `Idempotency-Key`; the collections keep
+  `create/update: denyAll`. Menu "Kas"/"Tutup buku" for Finance and Direktur only.
+  - API: `GET /api/v1/cash-entries` filters `projectId`/`costCenterId`; `PATCH /api/v1/cash-entries/{id}` honours
+    `Idempotency-Key`. No migration.
 - **F4b APK completion** (branch `feat/f4b-mobile-completion`; gap analysis `docs/proyekkas/f4/f4-gap-analysis.md`,
   phone test script `docs/proyekkas/f4/f4-e2e-scenario.md`):
   - API: a valid token on a revoked/lost device gets `401` with `code: DEVICE_REVOKED`; the APK logs out on that first
@@ -105,6 +115,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Reimburse receipt revision with a changed grand total now goes back to "Menunggu Diketahui (Direktur)" (new cycle)
   instead of straight to "Menunggu Approval" (ADR 0013 §6); a role-based "Diketahui" without any active holder is
   refused at submit (409) instead of leaving the request stuck in "Menunggu Diketahui".
+- Manual cash entry with a proof (`proofId`) always failed with 400 "Alasan wajib diisi saat mengedit transaksi kas."
+  (the proof was attached by a follow-up update that hit the edit-reason rule); the proof is now set on insert (E2).
 - APK (staging phone test, ADR 0010 "Phone test fixes"): "Offline" shown on working mobile data — a successful API
   answer now always means online and a `GET /api/v1/health` probe recovers from failures and wrong `none` reports;
   logout that never finished — now always returns to the login screen (network part ≤ 5 s, local clean-up always,

@@ -451,6 +451,8 @@ export const CashListQuery = z
   .object({
     period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
     cashAccountId: z.coerce.number().int().positive().optional(),
+    projectId: z.coerce.number().int().positive().optional(),
+    costCenterId: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     cursor: z.string().max(64).optional(),
   })

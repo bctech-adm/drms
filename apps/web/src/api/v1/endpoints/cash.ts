@@ -55,6 +55,8 @@ export const listCashEndpoint = v1({
     const and: Where[] = []
     if (q.data.period) and.push({ period: { equals: q.data.period } })
     if (q.data.cashAccountId) and.push({ cashAccount: { equals: q.data.cashAccountId } })
+    if (q.data.projectId) and.push({ project: { equals: q.data.projectId } })
+    if (q.data.costCenterId) and.push({ costCenter: { equals: q.data.costCenterId } })
     if (q.data.cursor) {
       const n = Number(Buffer.from(q.data.cursor, 'base64url').toString('utf8'))
       if (!Number.isSafeInteger(n) || n <= 0) throw new HttpError(400, 'Bad Request', { detail: 'cursor tidak valid.' })
@@ -98,6 +100,7 @@ export const updateCashEndpoint = v1({
   body: CashEntryUpdate,
   rateLimit: WRITE_LIMIT,
   transactional: true,
+  idempotent: true, // E2: the web form sends Idempotency-Key (retry = replay, never a second edit)
   handler: async ({ req, body, params }) => {
     const id = idParam(params.id)
     const { reason, ...patch } = body

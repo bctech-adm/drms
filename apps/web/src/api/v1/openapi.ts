@@ -243,7 +243,7 @@ export function buildOpenApiDocument(version: string) {
     path: '/cash-entries/{id}',
     summary: 'Finance: edit descriptive fields of a manual entry in an open period (reason)',
     security,
-    request: { params: idParams('id'), body: jsonBody(F.CashEntryUpdate) },
+    request: { headers: idem, params: idParams('id'), body: jsonBody(F.CashEntryUpdate) },
     responses: res(200, 'Updated', F.CashEntry, [400, 401, 403, 404, 409, 429]),
   })
   post('/cash-entries/{id}/void', 'Finance: void = reversal entry + original void (T8, reason)', F.ReasonBody, ['id'], res(200, 'Voided', F.VoidResult, [400, 401, 403, 404, 409, 422, 429]))
@@ -266,7 +266,7 @@ export function buildOpenApiDocument(version: string) {
   registry.registerPath({
     method: 'post',
     path: '/period-closings/{period}/reopen',
-    summary: 'Owner: re-open the latest closed period (reason)',
+    summary: 'Direktur (role pk-owner): re-open the latest closed period (reason)',
     security,
     request: { headers: idem, params: z.object({ period: z.string().regex(/^\d{4}-\d{2}$/) }), body: jsonBody(F.ReasonBody) },
     responses: res(200, 'Re-opened', F.PeriodClosing, [400, 401, 403, 409, 422, 429]),

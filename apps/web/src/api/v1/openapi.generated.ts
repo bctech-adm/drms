@@ -8552,6 +8552,24 @@ export const openapiDocument = {
           {
             "schema": {
               "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "projectId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "costCenterId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
               "minimum": 1,
               "maximum": 100,
               "default": 50
@@ -8750,6 +8768,28 @@ export const openapiDocument = {
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
           }
         ],
         "requestBody": {
@@ -9190,7 +9230,7 @@ export const openapiDocument = {
     },
     "/period-closings/{period}/reopen": {
       "post": {
-        "summary": "Owner: re-open the latest closed period (reason)",
+        "summary": "Direktur (role pk-owner): re-open the latest closed period (reason)",
         "security": [
           {
             "bearer": []
