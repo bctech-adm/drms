@@ -22,8 +22,11 @@ export function proxy(request: NextRequest) {
     insecureCookie: process.env.AUTH_COOKIE_INSECURE === 'true',
   })
   if (login) {
-    // Relative Location (RFC 9110 §10.2.2): the internal origin behind Traefik is never leaked.
-    return new NextResponse(null, { status: 302, headers: { Location: login, 'Cache-Control': 'no-store' } })
+    // Next's proxy runtime rejects a relative Location (TypeError: Invalid URL → 500), so the path is
+    // resolved against the public APP_URL — never request.url, whose origin is the internal one
+    // behind Traefik. Fallback to request.nextUrl only when APP_URL is unset (dev).
+    const location = new URL(login, process.env.APP_URL || request.nextUrl.origin)
+    return new NextResponse(null, { status: 302, headers: { Location: location.toString(), 'Cache-Control': 'no-store' } })
   }
   const nonce = generateNonce()
   const idp = process.env.OIDC_ISSUER ? new URL(process.env.OIDC_ISSUER).origin : undefined
