@@ -142,3 +142,29 @@ requests submitted under ADR 0013 keep their snapshot. Code guards (PM refusal) 
 - **O-2** Enforce different Finance users for approve and transfer when ≥ 2 Finance users exist?
 - **O-3** Addendum RAB: Direktur only (proposal) or Direktur → Finance?
 - **O-4** Thresholds (Q-31): e.g. above Rp X a second Direktur? (Needs a second `pk-owner` holder — one position per person.)
+
+## Implementation notes (E1, branch `feat/e1-approval-direktur-finance`)
+
+- Code: `apps/web/src/domain/expense/decision.ts` (`DECISION_ROLES`, `ruleDecisionError`, `planPositions`,
+  `lacksDecisionRole`), `snapshot.ts` (submit-time plan), `common.ts` (`requireActionAudited` decision-role guard),
+  `workflow.ts` (`approval_skipped` audit, auto-approve when the only approval level was skipped), `receipts.ts`
+  (re-approval via `pending_ack`), `collections/ApprovalRules.ts` (hook + `filterOptions`). Migration
+  `20260926_022918_e1_approval_direktur_finance`.
+- Snapshot marker: snapshots taken since E1 carry `decisionRoles: ['pk-owner','pk-finance']` and `skipped: []`;
+  the decision-role guard applies only to them, so pre-E1 snapshots (PM "Diketahui", F2e delegation, Owner approval)
+  finish with their old guards (AC-8).
+- Decision 4 applied strictly: the rule hook refuses **every** role other than `pk-owner`/`pk-finance` in a decision
+  position (also `pk-admin`, which the service guard would refuse anyway), and named users must hold one of the two.
+- A rule that does not satisfy ADR 0013 (saved before E1, e.g. an admin-created `scope_manager` rule) is refused at
+  submit with **409** instead of being re-interpreted; the migration only rewrites the two seeded rules (by name) and
+  prints a NOTICE with the count of remaining active `scope_manager` rules.
+- Skip rule details: a position with **no active holder at all** is a 409 (configuration), never a skip. A skipped
+  "Diketahui" is stored as `acknowledge: 'none'` + `skipped[]`; skipped approval levels are removed from `steps` and
+  the rest renumbered. When no approval level remains, the Direktur's "Setujui" moves the request through
+  `pending_approval` to `approved` in one transaction (DB rule G3: `approved_amount` only on `pending_approval → approved`).
+- Named approver = requester/creator: previously a 409 (G1), now handled by the same skip rule (it is the only holder).
+- APK support (E3): `GET /api/v1/me` `capabilities.approvalInbox` (Direktur/Finance) / `teamMonitor` (PM); detail
+  `approvalRule.{acknowledgeBy, acknowledgeRole, decisionRoles, skipped}`; inbox items `stepLabel`, `decisionFlow`.
+- Not changed (follow-ups): PM dashboard tile "Menunggu \"Diketahui\" saya" (now 0 for new requests; relabel in E3/E12);
+  "Owner" in developer-facing OpenAPI summaries and the cash re-open message (`domain/cash/ledger.ts`, left to the E2
+  track to avoid conflicts).

@@ -54,6 +54,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `20260924_025115_f4_security` (table `sync_receipts`, immutable `receipts.client_uuid`) — additive.
 
 ### Changed
+- **Approval flow Direktur → Finance, PM monitors only** (Epic E1, ADR 0013 accepted, GATE 1 fase1-golive 2026-09-26;
+  branch `feat/e1-approval-direktur-finance`): the role `pk-owner` is shown as **"Direktur"** (no new Keycloak role).
+  "Diketahui" is now the Direktur's **approval** (inbox "Persetujuan Direktur (Diketahui)", button "Setujui"), followed
+  by **Finance** approval, for every amount. Approval rules refuse PM/Staff/Admin deciders, the retired "PM project /
+  penanggung jawab" acknowledger and an optional Direktur (400); PM/Staff/Admin acknowledge/approve/reject → 403 +
+  `access_denied` audit; the PM keeps read access to team requests and no longer gets approval notifications or the
+  "Persetujuan" link. G1-2: a position whose only holder is the requester/creator is skipped (audit
+  `approval_skipped`, PDF "(tidak berlaku — pemohon)"); no independent decision → submit 409. Status label
+  "Menunggu Diketahui (Direktur)"; notification "… menunggu persetujuan Anda sebagai Direktur". Requests submitted
+  before the change finish on their old snapshot (PM "Diketahui", F2e delegation).
+  - Migration `20260926_022918_e1_approval_direktur_finance` (additive): audit action `approval_skipped`, new
+    `approval_rules` column defaults, the two seeded rules rewritten + renamed with audit rows. Seed and UAT seed
+    (up to two Direktur and two Finance users) follow.
+  - API (additive, for the APK): `GET /api/v1/me` → `capabilities.{approvalInbox,teamMonitor}`; request detail
+    `approvalRule.{acknowledgeBy,acknowledgeRole,decisionRoles,skipped}`; `GET /api/v1/approvals/inbox` items
+    `stepLabel`, `decisionFlow`.
 - **Admin UI retheme to the web-starter design system** (branch `feat/cms-theme-web-starter`; visual only, no
   behaviour/data change): trust blue `#2563EB` primary, orange `#EA580C` CTA (SSO login button), slate surfaces with a
   designed dark palette, Space Grotesk headings / DM Sans body self-hosted via `next/font` (CSP `font-src 'self'`
@@ -86,6 +102,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The F2 PDF semaphore moved to `lib/heavy-gate.ts` (shared with the F3 exports); behaviour unchanged.
 
 ### Fixed
+- Reimburse receipt revision with a changed grand total now goes back to "Menunggu Diketahui (Direktur)" (new cycle)
+  instead of straight to "Menunggu Approval" (ADR 0013 §6); a role-based "Diketahui" without any active holder is
+  refused at submit (409) instead of leaving the request stuck in "Menunggu Diketahui".
 - APK (staging phone test, ADR 0010 "Phone test fixes"): "Offline" shown on working mobile data — a successful API
   answer now always means online and a `GET /api/v1/health` probe recovers from failures and wrong `none` reports;
   logout that never finished — now always returns to the login screen (network part ≤ 5 s, local clean-up always,
