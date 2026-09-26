@@ -350,5 +350,8 @@ export function writeXlsx(sheets: WriteSheet[]): Uint8Array {
   sheets.forEach((s, i) => {
     files[`xl/worksheets/sheet${i + 1}.xml`] = strToU8(sheetXml(s))
   })
-  return zipSync(files, { level: 6, mtime: new Date('2026-01-01T00:00:00Z') })
+  // fflate encodes the zip (DOS) mtime from the Date's LOCAL fields (getHours() etc.), so a UTC
+  // instant would yield different bytes per TZ (CI runs in UTC, dev boxes in WITA/WIB). A date built
+  // from local components is 2026-01-01 00:00 in every TZ → byte-identical output everywhere.
+  return zipSync(files, { level: 6, mtime: new Date(2026, 0, 1, 0, 0, 0) })
 }
