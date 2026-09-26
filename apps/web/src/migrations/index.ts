@@ -17,6 +17,7 @@ import * as migration_20260926_022918_e1_approval_direktur_finance from './20260
 import * as migration_20260926_091848_e6_attendance from './20260926_091848_e6_attendance';
 import * as migration_20260926_095319_e4_progress_reports from './20260926_095319_e4_progress_reports';
 import * as migration_20260926_104606_s2b_attendance_reminders from './20260926_104606_s2b_attendance_reminders';
+import * as migration_20260926_114555_e5_budget_addenda from './20260926_114555_e5_budget_addenda';
 
 export const migrations = [
   {
@@ -112,6 +113,11 @@ export const migrations = [
   {
     up: migration_20260926_104606_s2b_attendance_reminders.up,
     down: migration_20260926_104606_s2b_attendance_reminders.down,
-    name: '20260926_104606_s2b_attendance_reminders'
+    name: '20260926_104606_s2b_attendance_reminders',
+  },
+  {
+    up: migration_20260926_114555_e5_budget_addenda.up,
+    down: migration_20260926_114555_e5_budget_addenda.down,
+    name: '20260926_114555_e5_budget_addenda',
   },
 ];

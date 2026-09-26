@@ -34,7 +34,10 @@ export type RuleInput = {
 }
 
 export type RequestFacts = {
-  type: RequestType
+  /** E5: `budget_addendum` rules are matched for addenda (default: expense requests). */
+  docType?: 'expense_request' | 'budget_addendum'
+  /** Request type; null for addenda (only `requestType: any` rules match). */
+  type: RequestType | null
   grandTotal: number
   categoryIds: number[]
   projectId?: number | null
@@ -91,7 +94,7 @@ function specificity(r: RuleInput): number {
 
 export function ruleMatches(r: RuleInput, f: RequestFacts): boolean {
   if (r.active === false) return false
-  if (r.docType !== 'expense_request') return false
+  if (r.docType !== (f.docType ?? 'expense_request')) return false
   if (r.requestType !== 'any' && r.requestType !== f.type) return false
   if (f.grandTotal < r.minAmount) return false
   if (r.maxAmount !== null && r.maxAmount !== undefined && f.grandTotal > r.maxAmount) return false

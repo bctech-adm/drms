@@ -41,6 +41,12 @@ export const ApprovalRules: CollectionConfig = withAudit(
             approverRole: s.approverRole ?? null,
             approverUser: relId(s.approverUser) ?? null,
           }))
+          const docType = (data.docType ?? originalDoc?.docType ?? 'expense_request') as string
+          if (docType === 'budget_addendum') {
+            // E5: addenda have no request type / expense category — such a rule would never match.
+            if ((data.requestType ?? originalDoc?.requestType ?? 'any') !== 'any') throw new APIError('Aturan Addendum RAB: jenis pengajuan harus "Semua".', 400, null, true)
+            if (relId(data.category !== undefined ? data.category : originalDoc?.category)) throw new APIError('Aturan Addendum RAB tidak memakai kategori biaya.', 400, null, true)
+          }
           const err = stepsError(steps)
           if (err) throw new APIError(err, 400, null, true)
           // ADR 0013 (E1): "Diketahui" = Direktur approval, then Finance; PM/Staff never decide,

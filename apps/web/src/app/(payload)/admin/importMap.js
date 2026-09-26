@@ -22,6 +22,13 @@ import { TutupBuku as TutupBuku_38163a8a76a60c5684b51059a76858a2 } from '@/admin
 import { AbsensiToday as AbsensiToday_eee5013ba73a2fec203c62622a245848 } from '@/admin/views/Absensi'
 import { AbsensiRekap as AbsensiRekap_eee5013ba73a2fec203c62622a245848 } from '@/admin/views/Absensi'
 import { AbsensiJadwal as AbsensiJadwal_eee5013ba73a2fec203c62622a245848 } from '@/admin/views/Absensi'
+import { ProgressOverview as ProgressOverview_a083428db0b5e65b9a4db721d5c49175 } from '@/admin/views/Progress'
+import { ProjectProgressView as ProjectProgressView_a083428db0b5e65b9a4db721d5c49175 } from '@/admin/views/Progress'
+import { ProgressReportList as ProgressReportList_a083428db0b5e65b9a4db721d5c49175 } from '@/admin/views/Progress'
+import { ProgressReportDetail as ProgressReportDetail_a083428db0b5e65b9a4db721d5c49175 } from '@/admin/views/Progress'
+import { AddendumList as AddendumList_06d7ee0480b4dc608c229f2cd74032b3 } from '@/admin/views/Addendum'
+import { AddendumNew as AddendumNew_06d7ee0480b4dc608c229f2cd74032b3 } from '@/admin/views/Addendum'
+import { AddendumDetail as AddendumDetail_06d7ee0480b4dc608c229f2cd74032b3 } from '@/admin/views/Addendum'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -50,5 +57,12 @@ export const importMap = {
   "@/admin/views/Absensi#AbsensiToday": AbsensiToday_eee5013ba73a2fec203c62622a245848,
   "@/admin/views/Absensi#AbsensiRekap": AbsensiRekap_eee5013ba73a2fec203c62622a245848,
   "@/admin/views/Absensi#AbsensiJadwal": AbsensiJadwal_eee5013ba73a2fec203c62622a245848,
+  "@/admin/views/Progress#ProgressOverview": ProgressOverview_a083428db0b5e65b9a4db721d5c49175,
+  "@/admin/views/Progress#ProjectProgressView": ProjectProgressView_a083428db0b5e65b9a4db721d5c49175,
+  "@/admin/views/Progress#ProgressReportList": ProgressReportList_a083428db0b5e65b9a4db721d5c49175,
+  "@/admin/views/Progress#ProgressReportDetail": ProgressReportDetail_a083428db0b5e65b9a4db721d5c49175,
+  "@/admin/views/Addendum#AddendumList": AddendumList_06d7ee0480b4dc608c229f2cd74032b3,
+  "@/admin/views/Addendum#AddendumNew": AddendumNew_06d7ee0480b4dc608c229f2cd74032b3,
+  "@/admin/views/Addendum#AddendumDetail": AddendumDetail_06d7ee0480b4dc608c229f2cd74032b3,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

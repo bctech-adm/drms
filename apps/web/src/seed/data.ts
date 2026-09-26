@@ -99,6 +99,9 @@ export const EMPLOYEE_BANK_ACCOUNTS = [
  * example with a threshold of the same shape. Existing databases get the same content through the
  * data migration `20260926_*_e1_approval_direktur_finance` (renamed from the pre-E1 names below).
  */
+/** Name of the seeded default addendum rule (shared with the E5 migration). */
+export const ADDENDUM_DEFAULT_RULE_NAME = 'Default Addendum RAB — Direktur lalu Finance'
+
 export const DEFAULT_APPROVAL_RULES = [
   {
     name: 'Default — Direktur lalu Finance (semua nominal)',
@@ -129,6 +132,23 @@ export const DEFAULT_APPROVAL_RULES = [
     signDibuat: 'required',
     steps: [{ level: 1, approverRole: 'pk-finance' }],
     active: false,
+  },
+  // E5 (T12, US-30): Addendum RAB through the same engine — Direktur ("Diketahui" = approval) then
+  // Finance (Sprint S2 decision on ADR 0013 O-3). Also inserted by migration e5_budget_addenda.
+  {
+    name: ADDENDUM_DEFAULT_RULE_NAME,
+    docType: 'budget_addendum',
+    requestType: 'any',
+    minAmount: 0,
+    maxAmount: null,
+    priority: 100,
+    acknowledge: 'required',
+    acknowledgeBy: 'role',
+    acknowledgeRole: 'pk-owner',
+    signDiajukan: 'none',
+    signDibuat: 'none',
+    steps: [{ level: 1, approverRole: 'pk-finance' }],
+    active: true,
   },
 ] as const
 

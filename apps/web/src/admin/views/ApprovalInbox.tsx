@@ -5,6 +5,7 @@ import { approvalInbox } from '@/domain/expense/queues'
 import { withReqTransaction } from '@/lib/system-tx'
 
 import { ActionButton } from '../components/ActionButton'
+import { AddendumInboxSection } from './Addendum'
 import { Empty, Shell, badge, docLink, num, rp, table, td, th } from './shared'
 
 /**
@@ -83,6 +84,8 @@ export async function ApprovalInbox(props: AdminViewServerProps) {
           </tbody>
         </table>
       )}
+      {/* E5: Addendum RAB waiting for the caller (Direktur "Setujui" / Finance approval). */}
+      <AddendumInboxSection req={req} />
     </Shell>
   )
 }

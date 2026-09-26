@@ -7,7 +7,7 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
 import { withStaffHiddenGlobals, withStaffPanelVisibility } from './access/panel-visibility'
-import { E2_ADMIN_VIEWS, E6_ADMIN_VIEWS, F2_ADMIN_VIEWS, F3_ADMIN_VIEWS } from './admin/config'
+import { E2_ADMIN_VIEWS, E6_ADMIN_VIEWS, F2_ADMIN_VIEWS, F3_ADMIN_VIEWS, S2A_ADMIN_VIEWS } from './admin/config'
 import { v1Endpoints } from './api/v1'
 import { Attendances } from './collections/Attendances'
 import { AttendanceCorrections } from './collections/AttendanceCorrections'
@@ -15,6 +15,7 @@ import { ApprovalRules } from './collections/ApprovalRules'
 import { Approvals } from './collections/Approvals'
 import { AuditLogs } from './collections/AuditLogs'
 import { Banks } from './collections/Banks'
+import { BudgetAddenda } from './collections/BudgetAddenda'
 import { BudgetLines } from './collections/BudgetLines'
 import { CashAccounts } from './collections/CashAccounts'
 import { CashEntries } from './collections/CashEntries'
@@ -113,7 +114,7 @@ export default buildConfig({
       // F2 work views (approval inbox, transfer queue, LPJ verification) + nav badges.
       afterNavLinks: ['@/admin/components/F2NavLinks#F2NavLinks'],
       // F3: role dashboards (Beranda), reports, global audit log.
-      views: { ...F2_ADMIN_VIEWS, ...F3_ADMIN_VIEWS, ...E2_ADMIN_VIEWS, ...E6_ADMIN_VIEWS },
+      views: { ...F2_ADMIN_VIEWS, ...F3_ADMIN_VIEWS, ...E2_ADMIN_VIEWS, ...E6_ADMIN_VIEWS, ...S2A_ADMIN_VIEWS },
     },
     timezones: { defaultTimezone: 'Asia/Makassar' },
     // Default 'gravatar' sends md5(email) to www.gravatar.com (privacy + CSP img-src), spike f.
@@ -121,7 +122,7 @@ export default buildConfig({
     meta: { titleSuffix: ' — ProyekKas DRMS' },
   },
   // F2c: staff-only users see only their requests, receipts, notifications and profile.
-  collections: withStaffPanelVisibility([Users, ...MASTER_COLLECTIONS, ...FLOW_COLLECTIONS, Attendances, AttendanceCorrections, ProgressReports, Notifications, Devices, WebSessions, AuditLogs, ...MEDIA_COLLECTIONS]),
+  collections: withStaffPanelVisibility([Users, ...MASTER_COLLECTIONS, ...FLOW_COLLECTIONS, Attendances, AttendanceCorrections, ProgressReports, BudgetAddenda, Notifications, Devices, WebSessions, AuditLogs, ...MEDIA_COLLECTIONS]),
   globals: withStaffHiddenGlobals([CompanySettings]),
   // Admin UI in Bahasa Indonesia (ADR 0001 §5; @payloadcms/translations/languages/id @3.90.1).
   i18n: { supportedLanguages: { id }, fallbackLanguage: 'id' },
