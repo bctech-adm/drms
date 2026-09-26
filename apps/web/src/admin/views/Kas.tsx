@@ -59,6 +59,28 @@ const PAGE_STYLE = `
 .pk-f3 .pk-pager { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--pk-muted-fg); }
 .pk-f3 .pk-kpi.dim { opacity: .75; }
 @media (max-width: 559px) { .pk-f3 .pk-dash-head .pk-kact { width: 100%; } .pk-f3 .pk-dash-head .pk-kact > * { flex: 1 1 auto; } }
+/* phones: saldo tiles 2-up and compact; ledger rows become cards (no sideways scrolling) */
+@media (max-width: 559px) {
+  .pk-f3 .pk-kas-tiles .pk-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .pk-f3 .pk-kas-tiles .pk-kpi { padding: 12px; }
+  .pk-f3 .pk-kas-tiles .pk-kpi-v { font-size: 20px; }
+  .pk-f3 .pk-kas-tiles .pk-kpi-l .ic { display: none; }
+  .pk-f3 .pk-kas-tiles .pk-kpi-x + .pk-kpi-x, .pk-f3 .pk-kas-tiles .pk-kpi-more { display: none; }
+}
+@container (max-width: 640px) {
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'], .pk-f3 table.pk-t[data-pk-table='kas-book'] tbody { display: block; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--pk-border); }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] td { display: block; padding: 0; border: 0; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] td:nth-child(1) { grid-column: 1; grid-row: 1; font-size: 12px; color: var(--pk-muted-fg); }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] td:nth-child(5) { grid-column: 2; grid-row: 1; justify-self: end; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] td:nth-child(6) { grid-column: 1; grid-row: 3; text-align: left; font-weight: 700; font-size: 14px; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] td:nth-child(7) { grid-column: 2; grid-row: 3; justify-self: end; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] .sub { max-width: none; white-space: normal; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] .hint { max-width: 16ch; text-align: right; }
+  .pk-f3 table.pk-t[data-pk-table='kas-book'] tbody tr:hover td { background: none; }
+}
 `
 
 const SOURCE: Record<CashEntryDoc['sourceType'], string> = { transfer: 'Transfer', settlement_refund: 'Pengembalian LPJ', manual: 'Manual', reversal: 'Jurnal balik', opening: 'Saldo awal' }
@@ -174,6 +196,7 @@ export async function KasBook(props: AdminViewServerProps) {
           </div>
         ) : null}
 
+        <div className="pk-kas-tiles">
         <Bento label="Saldo per akun">
           <KpiRow cols={4}>
             <KpiTile id="kas-total" icon="wallet" label="Saldo kas total" value={rpShort(total)} title={rp(total)} kpi="kas-total" i={0}>
@@ -193,6 +216,7 @@ export async function KasBook(props: AdminViewServerProps) {
             })}
           </KpiRow>
         </Bento>
+        </div>
 
         <FilterBar q={q} lk={lk} filtered={filtered} />
 
@@ -538,8 +562,9 @@ export async function KasEdit(props: AdminViewServerProps) {
 
 type Closing = { id: number; period: string; status: 'closed' | 'reopened'; note: string | null; closedBy: string | null; closedAt: string | null; reopenedBy: string | null; reopenedAt: string | null; reopenReason: string | null }
 
-function stateTone(s: ReturnType<typeof periodState>): { tone: PillTone; label: string } {
-  return s === 'closed' ? { tone: 'ok', label: 'Ditutup' } : s === 'current' ? { tone: 'progress', label: 'Berjalan' } : { tone: 'wait', label: 'Terbuka' }
+function stateTone(s: ReturnType<typeof periodState>, explicit: boolean): { tone: PillTone; label: string } {
+  // months before the latest close are locked too (lock date = end of the latest closed month)
+  return s === 'closed' ? (explicit ? { tone: 'ok', label: 'Ditutup' } : { tone: 'none', label: 'Terkunci' }) : s === 'current' ? { tone: 'progress', label: 'Berjalan' } : { tone: 'wait', label: 'Terbuka' }
 }
 
 export async function TutupBuku(props: AdminViewServerProps) {
@@ -572,6 +597,7 @@ export async function TutupBuku(props: AdminViewServerProps) {
   })
   const { todayDate, lockDate, periods, sums, closings } = d
   const closable = new Set(closablePeriods(todayDate, lockDate))
+  const closedSet = new Set(closings.filter((c) => c.status === 'closed').map((c) => c.period))
   const latestClosed = closings.filter((c) => c.status === 'closed').map((c) => c.period).sort().at(-1) ?? null
   type Row = { period: string; state: ReturnType<typeof periodState>; n: number; tin: number; tout: number; voids: number }
   const rows: Row[] = periods.map((p) => ({ period: p, state: periodState(p, todayDate, lockDate), ...(sums.get(p) ?? { n: 0, tin: 0, tout: 0, voids: 0 }) }))
@@ -590,7 +616,7 @@ export async function TutupBuku(props: AdminViewServerProps) {
       key: 's',
       label: 'Status',
       cell: (r) => {
-        const t = stateTone(r.state)
+        const t = stateTone(r.state, closedSet.has(r.period))
         return <StatusPill tone={t.tone} label={t.label} />
       },
     },
