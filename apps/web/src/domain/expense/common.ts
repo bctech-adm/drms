@@ -7,6 +7,7 @@ import { DEFAULT_TZ, localDateInTz } from '@/lib/time'
 import { getRequestTx } from '@/lib/tx'
 
 import { allowedActions, FINANCE_SELF_GUARDED, targets, type Action, type ActorContext } from './state'
+import { lacksDecisionRole } from './decision'
 import { matchesAcknowledger, matchesStep, type ApprovalSnapshot } from './rules'
 import { BUDGET_COMMITTED, type RequestStatus, type RequestType } from './types'
 
@@ -164,6 +165,7 @@ export async function actorContext(req: PayloadRequest, doc: RequestDoc): Promis
       !!snap && !acknowledged && (doc.status === 'pending_ack' || (doc.status === 'pending_approval' && snap.acknowledge === 'optional')) && matchesAcknowledger(snap, caller),
     matchesCurrentStep: doc.status === 'pending_approval' && matchesStep(step, caller),
     alreadyDecided: decisions.some((r) => relId(r.actor) === uid && (r.position === 'diketahui' || r.position === 'approval')),
+    lacksDecisionRole: lacksDecisionRole(snap, roles),
   }
 }
 
@@ -186,12 +188,29 @@ export function requireAction(ctx: ActorContext, action: Action): void {
 const G1_DECISIONS: ReadonlySet<Action> = new Set<Action>(['acknowledge', 'approve', 'reject'])
 
 /**
- * `requireAction` + audit of SELF-INVOLVEMENT denials (F2e): a requester/creator attempting a
+ * `requireAction` + audit of decision-role denials (E1, ADR 0013: caller is neither Direktur nor
+ * Finance on a Direktur → Finance request) and of SELF-INVOLVEMENT denials (F2e): a requester/creator attempting a
  * decision (G1) or a Finance user attempting a receipt/flag/LPJ verification on a request it
  * requested or created (FINANCE_SELF_GUARDED) → 403 and an `access_denied` audit row written in its
  * own transaction (the failing operation rolls back, the attempt stays recorded).
  */
 export async function requireActionAudited(req: PayloadRequest, ctx: ActorContext, action: Action, doc: Pick<RequestDoc, 'id' | 'docNo'>): Promise<void> {
+  if (G1_DECISIONS.has(action) && ctx.lacksDecisionRole) {
+    // ADR 0013 (E1): PM / Staff / Admin never decide on a Direktur → Finance request — refused whatever
+    // the status, and the attempt is recorded (defence in depth behind the UI and the rule hook).
+    await writeAuditDetached(req, [
+      {
+        action: 'access_denied',
+        docType: 'expense_request',
+        docId: String(doc.id),
+        docNo: doc.docNo ?? undefined,
+        field: action,
+        newValue: { action, status: ctx.status, roles: ctx.roles },
+        reason: 'hanya Direktur/Finance yang memberi keputusan (ADR 0013; PM hanya memantau)',
+      },
+    ])
+    fail(403, 'Hanya Direktur atau Finance yang dapat menyetujui atau menolak pengajuan (ADR 0013). PM hanya memantau.')
+  }
   try {
     requireAction(ctx, action)
   } catch (err) {

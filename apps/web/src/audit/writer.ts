@@ -47,6 +47,9 @@ export const AUDIT_ACTIONS = [
   // action and the attempt is recorded in its own transaction (e.g. Finance on its own request).
   'acknowledge_delegated',
   'access_denied',
+  // E1 (ADR 0013 G1-2): a decision position was skipped at submit because its only holders are the
+  // requester/creator (e.g. the only Direktur is the requester).
+  'approval_skipped',
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 

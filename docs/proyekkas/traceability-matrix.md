@@ -37,7 +37,7 @@ Conventions:
 | US-23 | M07 | Finance | `cash-entries`, `cash-accounts`, `cash-in-sources`, `expense-categories` | `POST /api/v1/cash-entries` (proposed) | web dashboard | F2 | unit, API (closed period → rejected) |
 | US-24 | M07 | Finance | `cash-reversals`, `cash-entries`, `audit-logs` | `POST /api/v1/cash-entries/{id}/void` (brief) | web dashboard | F2 | unit (reversal entry), API (hard delete → rejected) |
 | US-25 | M13 | Finance, Owner | `cash-entries`, `expense-requests` (lines), `cost-centers` | `GET /api/v1/reports/cash-summary` + export (proposed) | web dashboard | F3 | unit (aggregation by line category), e2e (Excel download) |
-| US-26 | M04 | Owner | `approvals`, `expense-requests`, `receipts`, `media-signatures` | `POST /api/v1/expense-requests/{id}/approve`, `/reject` (brief) | APK, web dashboard | F2 / F4 | unit (budget impact), API (requester approves own → rejected), e2e |
+| US-26 | M04 | Direktur (acknowledge) / Finance (approve), ADR 0013 | `approvals`, `expense-requests`, `receipts`, `media-signatures` | `POST /api/v1/expense-requests/{id}/approve`, `/reject` (brief) | APK, web dashboard | F2 / F4 | unit (budget impact), API (requester approves own → rejected), e2e |
 | US-27 | M02 | Owner | `cash-entries`, `cash-accounts`, `expense-requests`, `settlements` | `GET /api/v1/dashboard/owner` (proposed) | web dashboard, APK | F3 / F4 | API, e2e; layout: prototype not available → manual |
 | US-28 | M02, M13 | Owner | `cash-entries` | `GET /api/v1/reports/cash-monthly` (proposed) | web dashboard | F3 | unit, e2e |
 | US-29 | M08 | Owner | `projects`, `project-stages`, `stage-templates` | Payload REST `/api/projects` (web admin) + archive action `POST /api/v1/projects/{id}/archive` (proposed) | web admin | F1 (masters) / F5 (stages) | unit (weights = 100%), API (delete with transactions → rejected) |
@@ -53,7 +53,7 @@ Conventions:
 | US-39 | M06 | Finance | `receipts`, `expense-requests` | `POST /api/v1/expense-requests/{id}/receipts/verify`, `/request-receipt-revision` (proposed) | web dashboard | F2 | unit (open flags block "Nota Terverifikasi"), API |
 | US-40 | M03 | Staff, Admin | `expense-requests`, `employees` | submit (brief) | APK, web dashboard | F2 / F4 | unit (requester set), API (any requester approves → rejected) |
 | US-41 | M03 | Admin, Finance (per Q-09) | `expense-requests`, `users` | Payload REST create **TBD-architecture**; submit (brief) | web admin or web dashboard **TBD-architecture** | F2 | API (client-supplied creator ignored), unit |
-| US-42 | M04 | PM / cost-center head (per Q-07) | `approvals`, `approval-rules`, `media-signatures` | `POST /api/v1/expense-requests/{id}/acknowledge` (proposed) | APK, web dashboard | F2 / F4 | unit (step ordering), API (non-designated user → rejected) |
+| US-42 | M04 | Direktur (`pk-owner`, ADR 0013; was PM / cost-center head per Q-07) | `approvals`, `approval-rules`, `media-signatures` | `POST /api/v1/expense-requests/{id}/acknowledge` (proposed) | APK, web dashboard | F2 / F4 | unit (step ordering), API (non-designated user → rejected) |
 | US-43 | M04, M01 | All signers | `approvals`, `media-signatures`, `users` | multipart on approve/acknowledge (proposed) | APK, web dashboard | F2 / F4 | unit (snapshot immutability), API, manual (draw on screen) |
 | US-44 | M03 | Staff, Admin | `employee-bank-accounts`, `banks`, `expense-requests` | submit (brief) | APK, web dashboard | F2 / F4 | API (non-requester account → rejected), unit (snapshot) |
 | US-45 | M14 | Admin | `document-sequences` | Payload REST `/api/document-sequences` (web admin); number issued inside submit | web admin | F1 | unit (token rendering → `228/PB-DRMS/20/IX/2026`), API (50 parallel submits → unique numbers) |
@@ -92,7 +92,7 @@ Manual UAT by the user is in progress for all rows (F2 gate pending).
 | US-06 | implemented (API + web) | `…/{id}/resubmit` → new Draft with `resubmitOf`, new number | API (`expense-flow`, `f2c-requester-web`) |
 | US-07 | implemented (API + web) | `POST /api/v1/media/receipts` + `POST …/{id}/receipts`; receipts `PATCH`/`remove` | API (`expense-flow`, `f2c-requester-web`, `media`) |
 | US-08 | implemented (API + web) | `…/{id}/receipts-complete`, `…/lpj/submit` (Uang Muka only) | API (`lpj`, `f2c-requester-web`) |
-| US-17 | implemented (API) | `GET /api/v1/expense-requests?scope=team`; PM cannot approve (rule step) | API (`expense-flow`, `f2-authz-db`) |
+| US-17 | implemented (API) | `GET /api/v1/expense-requests?scope=team`; PM never decides (E1/ADR 0013: acknowledge/approve/reject → 403 + `access_denied`) | API (`expense-flow`, `f2-authz-db`, `e1-approval-direktur`) |
 | US-19 | implemented (API + web) | `GET /api/v1/transfer-queue`, `/admin/antrian-transfer` | API (`expense-flow`) |
 | US-20 | implemented (API + web) | `POST …/{id}/transfer` (amount = approved, one KK), `…/transfers/{tid}/void` | unit + API + DB (`expense-flow`, `f2-authz-db`) |
 | US-21 | implemented (API + web) | `…/lpj/request-revision`, `…/lpj/verify`, `/admin/verifikasi-lpj` | API + DB (`lpj`) |
@@ -107,7 +107,7 @@ Manual UAT by the user is in progress for all rows (F2 gate pending).
 | US-39 | implemented (API + web) | `…/receipts/{rid}/verify`, `/reject`, `…/verify-receipts`, `…/flags/{fid}/review` | unit + API (`expense-flow`, `form-228`) |
 | US-40 | implemented (API) | several requesters; no requester/creator may decide (G1, DB) | unit + API + DB (`expense-flow`, `f2-authz-db`) |
 | US-41 | implemented (API + web) | on-behalf create by Admin/Finance (Q-09), also in the admin form (F2c) | API (`expense-flow`, `f2c-requester-web`, `form-228`) |
-| US-42 | implemented (API) | `…/{id}/acknowledge` (PM / cost-center manager, Q-07) | unit + API (`expense-flow`, `form-228`) |
+| US-42 | implemented (API) | `…/{id}/acknowledge` = Direktur approval (E1/ADR 0013; legacy snapshots: PM) | unit + API (`expense-flow`, `form-228`, `e1-approval-direktur`) |
 | US-43 | implemented (API + web) | signature on submit/acknowledge/approve; self-service profile signature (F2c) | unit + API (`expense-flow`, `f2c-requester-web`, `files`) |
 | US-44 | implemented (API) | bank account must belong to a requester (G9), snapshot | API (`expense-flow`, `f2c-requester-web`) |
 | US-46 | implemented (web) | `GET …/{id}/pdf[?variant=internal]` (ADR 0008); layout approved by the user 2026-09-24, logo pending (Q-32) | unit (`pdf`), API golden + RSS (`form-228`), manual (layout approved) |

@@ -1412,7 +1412,8 @@ export interface AuditLog {
     | 'reject'
     | 'verify'
     | 'acknowledge_delegated'
-    | 'access_denied';
+    | 'access_denied'
+    | 'approval_skipped';
   field?: string | null;
   lineNo?: number | null;
   oldValue?:

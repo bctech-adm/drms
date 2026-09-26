@@ -57,7 +57,7 @@ const ORDER: Array<[Layout, Role]> = [
   ['admin', 'pk-admin'],
   ['staff', 'pk-staff'],
 ]
-const LABEL: Record<Layout, string> = { owner: 'Owner', finance: 'Finance', pm: 'PM', admin: 'Admin', staff: 'Staff' }
+const LABEL: Record<Layout, string> = { owner: 'Direktur', finance: 'Finance', pm: 'PM', admin: 'Admin', staff: 'Staff' }
 
 const ER = '/admin/collections/expense-requests'
 const where = (q: Record<string, string>) => new URLSearchParams(q).toString()
@@ -415,7 +415,7 @@ function BudgetCard({ id, projects, warnPct, span, i, pm }: { id: string; projec
     >
       <div id="anggaran" />
       {projects.length > 0 ? <BulletLegend warnPct={warnPct} /> : null}
-      <BulletRows id={id} rows={bulletRows(projects, limit)} warnPct={warnPct} empty={pm ? 'Anda belum ditetapkan sebagai PM project mana pun. Hubungi Owner/Admin.' : 'Belum ada project.'} />
+      <BulletRows id={id} rows={bulletRows(projects, limit)} warnPct={warnPct} empty={pm ? 'Anda belum ditetapkan sebagai PM project mana pun. Hubungi Direktur/Admin.' : 'Belum ada project.'} />
       {projects.length > 0 ? (
         <TableView>
           <ProjectTable projects={projects} pm={pm} />
@@ -524,7 +524,7 @@ async function Owner({ req, months }: { req: PayloadRequest; months: 6 | 12 }) {
       <p className="pk-note" style={{ margin: '-8px 0 16px' }}>
         Per {d.asOf} (WITA) · grafik {d.cashFlow.months} bulan terakhir · warna anggaran dari Komitmen.
       </p>
-      <Bento label="Ringkasan Owner">
+      <Bento label="Ringkasan Direktur">
         <KpiRow>
           <KpiTile id="cash" hero icon="wallet" label="Saldo kas total" value={rpShort(d.cash.total)} title={rp(d.cash.total)} kpi="k01-total" href={rekapKasMonth(d.month)} more="Rekap Kas" i={0}>
             <p className="pk-kpi-x">{rp(d.cash.total)}</p>

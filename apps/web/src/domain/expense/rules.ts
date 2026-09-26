@@ -5,6 +5,7 @@
  */
 import type { Role } from '@/access/roles'
 
+import type { SkippedPosition } from './decision'
 import type { RequestType } from './types'
 
 export type AckMode = 'required' | 'optional' | 'none'
@@ -63,6 +64,18 @@ export type ApprovalSnapshot = {
   acknowledgeDelegateUserIds?: number[]
   /** The originally resolved person (PM / cost-center manager / rule user) that was skipped, if any. */
   acknowledgeOriginalUserId?: number | null
+  /**
+   * ADR 0013 (E1): roles that may decide (acknowledge / approve / reject) — `pk-owner` (Direktur) and
+   * `pk-finance`. Absent on snapshots taken before E1 (legacy flow, e.g. PM "Diketahui"): those keep
+   * their old guards until they are closed (US-34, AC-8).
+   */
+  decisionRoles?: Role[]
+  /**
+   * ADR 0013 G1-2: decision positions left out at submit because their only holders are requester/
+   * creator (a skipped "Diketahui" also sets `acknowledge: 'none'`; skipped approval levels are
+   * removed from `steps`, the rest renumbered 1..m). Printed "(tidak berlaku — pemohon)".
+   */
+  skipped?: SkippedPosition[]
 }
 
 export type AckDelegate = 'owner' | 'admin'

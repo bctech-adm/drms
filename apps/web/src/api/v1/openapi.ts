@@ -182,9 +182,9 @@ export function buildOpenApiDocument(version: string) {
   post('/expense-requests/{id}/withdraw', 'Withdraw to Draft before any decision (reason)', F.ReasonBody, ['id'], detailOk())
   post('/expense-requests/{id}/cancel', 'Cancel (reason)', F.ReasonBody, ['id'], detailOk())
   post('/expense-requests/{id}/resubmit', 'Clone a rejected request into a new Draft (US-06)', F.EmptyBody, ['id'], res(201, 'New draft', F.ExpenseRequestDetail, [401, 403, 404, 409, 422, 426, 429]))
-  post('/expense-requests/{id}/acknowledge', '"Diketahui Oleh" (US-42)', F.SignBody, ['id'], detailOk())
-  post('/expense-requests/{id}/approve', 'Approve the current level (G1/G2; budget % before → after)', F.SignBody, ['id'], detailOk())
-  post('/expense-requests/{id}/reject', 'Reject (reason)', F.RejectBody, ['id'], detailOk())
+  post('/expense-requests/{id}/acknowledge', '"Diketahui Oleh" = Direktur approval (US-42, ADR 0013); PM/Staff/Admin → 403 (audited)', F.SignBody, ['id'], detailOk())
+  post('/expense-requests/{id}/approve', 'Approve the current level — Finance by default (G1/G2, ADR 0013; budget % before → after); PM/Staff/Admin → 403 (audited)', F.SignBody, ['id'], detailOk())
+  post('/expense-requests/{id}/reject', 'Reject (reason) at "Diketahui" (Direktur) or an approval level (Finance); PM/Staff/Admin → 403 (audited)', F.RejectBody, ['id'], detailOk())
   post('/expense-requests/{id}/complete', 'Reimburse: Ditransfer → Selesai', F.EmptyBody, ['id'], detailOk())
   post('/expense-requests/{id}/receipts', 'Add a receipt to a line (image from POST /media/receipts)', F.ReceiptCreate, ['id'], res(201, 'Request with receipts and flags', F.ExpenseRequestDetail, [400, 401, 403, 404, 409, 422, 426, 429]))
   registry.registerPath({

@@ -13,6 +13,7 @@ import * as migration_20260924_110138_f3_reports from './20260924_110138_f3_repo
 import * as migration_20260925_015425_f4b_device_integrity from './20260925_015425_f4b_device_integrity';
 import * as migration_20260925_023715_f4b_attendance from './20260925_023715_f4b_attendance';
 import * as migration_20260925_023716_f4b_attendance_security from './20260925_023716_f4b_attendance_security';
+import * as migration_20260926_022918_e1_approval_direktur_finance from './20260926_022918_e1_approval_direktur_finance';
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20260925_023716_f4b_attendance_security.up,
     down: migration_20260925_023716_f4b_attendance_security.down,
     name: '20260925_023716_f4b_attendance_security',
+  },
+  {
+    up: migration_20260926_022918_e1_approval_direktur_finance.up,
+    down: migration_20260926_022918_e1_approval_direktur_finance.down,
+    name: '20260926_022918_e1_approval_direktur_finance',
   },
 ];
