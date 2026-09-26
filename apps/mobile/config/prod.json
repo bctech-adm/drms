@@ -5,5 +5,5 @@
   "PK_OIDC_CLIENT_ID": "proyekkas-mobile",
   "PK_OIDC_REDIRECT_URI": "https://drms-kas.bimacreative.tech/app/callback",
   "PK_PUSH_ENABLED": "false",
-  "PK_LOGIN_MODE": "browser"
+  "PK_LOGIN_MODE": "password"
 }
