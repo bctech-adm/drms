@@ -193,8 +193,9 @@ describe('403 before 409 (UAT 5.2)', () => {
     expect(statusOf(() => requireAction(ctx({ roles: ['pk-finance'], status: 'lpj_verified' }), 'settle_reverse'))).toBe(409)
   })
 
-  it('owner withdrawing after a decision → 409 (state), owner editing a submitted request → 409', () => {
-    expect(statusOf(() => requireAction(ctx({ isCreator: true, status: 'pending_approval', hasDecision: true }), 'withdraw'))).toBe(409)
+  it('owner withdrawing/cancelling after a decision → 403 (unchanged: only office roles may then cancel); owner editing a submitted request → 409', () => {
+    expect(statusOf(() => requireAction(ctx({ isCreator: true, status: 'pending_approval', hasDecision: true }), 'withdraw'))).toBe(403)
+    expect(statusOf(() => requireAction(ctx({ isCreator: true, status: 'approved', hasDecision: true }), 'cancel'))).toBe(403)
     expect(statusOf(() => requireAction(ctx({ isCreator: true, status: 'pending_approval' }), 'edit'))).toBe(409)
   })
 

@@ -185,8 +185,6 @@ export function requireAction(ctx: ActorContext, action: Action): void {
     if (own && action === 'edit') fail(409, 'Pengajuan hanya dapat diubah saat Draft (tarik kembali dulu).')
     if (own && action === 'add_receipt') fail(409, 'Nota tidak dapat diubah pada status pengajuan saat ini.')
     if (own && action === 'resubmit') fail(409, 'Hanya pengajuan yang ditolak yang dapat diajukan ulang.')
-    // E9: a decision already recorded is a STATE of the document (the owner may withdraw/cancel in principle).
-    if (own && (action === 'withdraw' || action === 'cancel') && ctx.hasDecision) fail(409, 'Pengajuan sudah mendapat keputusan; tidak dapat ditarik kembali atau dibatalkan oleh pemohon.')
     fail(403, 'Anda tidak berhak melakukan aksi ini pada pengajuan ini.')
   }
 }

@@ -229,7 +229,7 @@ describe('authz negatives and DB guards (T5)', () => {
     expect((await api('POST', `${E}/${id2}/lpj/verify`, w.users.owner, {})).status).toBe(403)
     expect((await api('POST', `${E}/${id2}/settle`, w.users.owner, { cashAccountId: w.cashAccount })).status).toBe(403) // roles: Finance only
     expect((await api('POST', `${E}/${id2}/lpj/verify`, w.users.otherPm, {})).status).toBe(404)
-    expect((await api('POST', `${E}/${id2}/lpj/submit`, w.users.finance, {})).status).toBe(409) // already submitted
+    expect((await api('POST', `${E}/${id2}/lpj/submit`, w.users.finance, {})).status).toBe(403) // E9: Finance never submits an LPJ (403 before the 409 state check)
     expect((await api('POST', `${E}/${id2}/receipts-complete`, w.users.staffB, {})).status).toBe(404) // not own, not visible
   })
 
