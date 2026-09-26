@@ -23,6 +23,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
     Keycloak event log = source of truth for wrong passwords (ADR 0003 §7). Hash chain deferred (ADR 0006 §5).
   - CI: unit-test coverage gate (`npm run test:coverage`, thresholds in `apps/web/vitest.config.ts`).
   - Docs: ASVS L1 self-checklist `docs/proyekkas/security/asvs-l1-checklist.md`.
+- **S3 web B — E11 data go-live: template Excel + impor idempoten + cut-over** (`apps/web`, fase1-golive §E11,
+  Q-17/19/20/22/23/36/37/40; branch `feat/s3b-e11-data-import`):
+  - Workbook `docs/proyekkas/templates/drms-impor-golive-template.xlsx` (sheet Petunjuk + Pengaturan, Bank, Satuan,
+    Kategori, Karyawan, Pengguna, Rekening, PusatBiaya, Project, Tahapan, RAB, Kendaraan, Penugasan, AkunKas; header
+    check, dropdowns, number ranges, input hints) and a FICTIONAL sample, both generated reproducibly by
+    `npm run gen:import-template` (`check:import-template` guards drift).
+  - Import CLI `payload run src/import/cli.ts -- (--dry-run|--commit) --file … [--kc-map …] [--out …]` (migrate image,
+    APP role): errors per sheet/row/column; dry-run executes every write in one transaction that is always rolled
+    back; commit = one transaction per master, upsert on natural keys (second run = no-op), audit action `import`.
+    Keycloak is not called: users without a `username → id` mapping are skipped and exported
+    (`…-keycloak-users.json/csv`, no passwords) for the infra Lead.
+  - Cut-over: opening balance + `openingBalanceDate` = go-live date, month before go-live closed, PB `startAt` from the
+    workbook (229, Q-17; counter raised upward only, audited).
+  - Opening balance lock after the first close on/after the opening month (hook 409 + DB trigger); no cash entry
+    before an account's opening date (ADR 0005 "As implemented (S3b)"). Runbook `docs/proyekkas/runbooks/import-data-golive.md`.
+  - Migration `20260926_133934_s3b_data_import` (additive: enum value `import`, `cash_accounts.opening_balance_date`,
+    CHECK + two triggers).
 - **APK S2 — laporan progress (E4) + absensi lengkap (E6)** (`apps/mobile`, branch
   `feat/mobile-s2-progress-attendance`). Progress: offline-first reports (project/stage, % never below the stage %,
   ≤ 5 rear-camera photos compressed on the phone, `progress_report.draft_upsert` or online POST/PATCH when

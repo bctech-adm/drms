@@ -214,7 +214,8 @@ Agen: **nextjs-developer** (web), **flutter-developer** (`.claude/agents/flutter
   tidak menggandakan data.
 - **Catatan:** saldo awal saat ini = field `openingBalance` (bisa diubah dengan alasan) — usul: kunci field setelah periode
   pertama ditutup, dan revisi ADR 0005 §3 agar sesuai implementasi (atau ubah ke entri `opening`). Keputusan analyst+Lead
-  di S1, tidak memblokir.
+  di S1, tidak memblokir. **S3b (2026-09-26):** tetap field + `openingBalanceDate`; dikunci setelah periode sejak tanggal
+  saldo awal ditutup (hook + trigger DB) — ADR 0005 "As implemented (S3b)"; runbook `runbooks/import-data-golive.md`.
 - Estimasi: nextjs 2–4 · analyst 1 · qa 0,5 · docs 0,5 → **4–6**.
 
 ### E12 — UAT & dokumentasi pengguna
