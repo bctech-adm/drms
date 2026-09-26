@@ -403,9 +403,9 @@ export function GeofenceForm({ costCenterId, name, lat, lng, radiusM, defaultRad
     >
       {(
         [
-          ['lat', 'Latitude', '-2.2100'],
-          ['lng', 'Longitude', '113.9100'],
-          ['r', 'Radius (m)', String(defaultRadius)],
+          ['lat', 'Latitude', 'mis. -2.21'],
+          ['lng', 'Longitude', 'mis. 113.91'],
+          ['r', 'Radius (m)', `mis. ${defaultRadius}`],
         ] as const
       ).map(([k, label, ph]) => (
         <div key={k} className="pk-fld">
