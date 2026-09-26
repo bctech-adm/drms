@@ -61,7 +61,8 @@ export async function correctionHistory(req: PayloadRequest, employeeId: number,
   })
   return res.docs.map((d) => {
     const x = d as unknown as { id: number; attendance: unknown; kind: 'check_in' | 'check_out'; localDate: string; oldTime: string; newTime: string; reason: string; correctedBy?: { name?: string | null; id?: number } | number | null; correctedAt: string }
-    const by = typeof x.correctedBy === 'object' && x.correctedBy ? (x.correctedBy.name ?? `user#${x.correctedBy.id}`) : `user#${String(x.correctedBy ?? '')}`
+    // Staff cannot read other users (depth 1 → id only): show the role instead of an internal id.
+    const by = typeof x.correctedBy === 'object' && x.correctedBy?.name ? x.correctedBy.name : 'PM tim / Admin'
     return { id: x.id, attendanceId: relId(x.attendance) ?? 0, kind: x.kind, localDate: x.localDate, oldTime: x.oldTime, newTime: x.newTime, reason: x.reason, by, at: x.correctedAt }
   })
 }
