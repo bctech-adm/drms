@@ -29,6 +29,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
     (**dry run**: counts candidates, never face reference photos; file deletion = S2).
   - Masters for the APK: cost centers with lat/lng/radius, work schedules with `workDays`.
   - Migration `20260926_091848_e6_attendance` (additive; staging-safe: no existing row rewritten).
+- **E4 backend — project stages + progress reports** (`apps/web`, fase1-golive §E4, T11, US-10/11/12/29/31; branch
+  `feat/e4-progress-backend`; web views = Sprint S2, APK screens = E4-APK):
+  - Collection `progress-reports` (`LP/YYMM/####`; project, stage, % before → after, project % before → after, pekerjaan,
+    kendala, pelapor, ≤ 5 photos in `media-progress-photos`, offline/time-trust flags). Written only by the domain
+    service; HTTP collection writes closed. Read: PM team, Direktur/Finance all (Staff/Admin none).
+  - API: `POST/GET /api/v1/progress-reports`, `GET/PATCH /api/v1/progress-reports/{id}` (edit ≤ 24 h by the reporter,
+    reason required), `GET/PUT /api/v1/projects/{id}/stages` (stage editor: whole set = 100 %, G11), `GET
+    /api/v1/projects/progress` (K-09 progress fisik vs anggaran), media kind/file collection `progress-photos`,
+    `/me` capability `progressReportCreate`, masters `projects.progressPct`, `project-stages.active`. Problem responses
+    of E4 carry a `code` (e.g. `WEIGHTS_INCOMPLETE`, `PROGRESS_DECREASED`, `PHOTO_LIMIT`). OpenAPI regenerated.
+  - Project physical progress `projects.progressPct` = Σ(weight × stage %) / 100, recalculated in the same transaction
+    as the report / stage edit, audited before → after; stage/project % cannot be written directly (403 + DB guard).
+  - Sync: `progress_report.draft_upsert` is processed (was `unsupported`): create or edit (base_rev, conflict +
+    `server_report`), idempotent by `client_uuid`; `GET /app/config` `features.syncProgressReports` from the new
+    company setting `syncProgressReportsEnabled` (default on).
+  - E7 hook points: `lateProgressProjects()` / `notifyLateProgressReport()` (no schedule).
+  - Migration `20260926_095319_e4_progress_reports` (additive: new table + 4 defaulted/nullable columns; DB guards:
+    progress_pct guard, report 24 h window, no delete, immutable identity columns, ≤ 5 photos per report).
 - **E1 APK + E3 APK parity** (`apps/mobile`, fase1-golive §E1 AC-10, §E3-b/c/d; branch `feat/mobile-e1-e3`):
   - Approval inbox/tab from `GET /api/v1/me` `capabilities.approvalInbox` (Direktur + Finance, ADR 0013), no longer
     `owner || pm`; PM gets a read-only **team monitor** (home KPIs from `/dashboard/pm`, "Tim" tab = `scope=team`).

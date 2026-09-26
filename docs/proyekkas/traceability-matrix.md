@@ -132,3 +132,17 @@ settlement reversal (F6 backlog).
   counts candidates, face reference photos excluded); deleting files = S2. Selfie viewer
   `GET /api/v1/attendance/{id}/selfie` (audited `view_sensitive`).
 - Web views (rekap, tim hari ini, laporan UI beyond the generic report page) and APK screens: sprint S2.
+
+### E4 backend status (fase1-golive §E4, Sprint S1 — branch `feat/e4-progress-backend`)
+
+Backend only; web views (report list/viewer, stage editor screen, dashboard US-12 widget) are Sprint S2 and the APK
+screens are E4-APK. Admin panel: `progress-reports` (read-only list/detail), `project-stages` (+ `active`),
+`projects.progressPct` (read-only). Tests: `unit/e4-progress.test.ts`, `integration/e4-progress.int.test.ts`.
+
+| US | Status | Implemented as | Test type (files) |
+|---|---|---|---|
+| US-10 | implemented (API + sync) | `POST/PATCH /api/v1/progress-reports`, `POST /api/v1/media/progress-photos` (≤ 5, 1600 px JPEG, EXIF stripped), sync `progress_report.draft_upsert`; stage % before → after and project % = Σ(weight × %) in the same transaction; PM (team) / Direktur only | unit + API + DB + sync (`e4-progress`) |
+| US-11 | hook points (E7 schedules) | `domain/progress/reminders.ts`: `lateProgressProjects()` + `notifyLateProgressReport()` (event `progress.late_report`); no job yet | API/domain (`e4-progress`) |
+| US-12 | data (API) | K-09 `GET /api/v1/projects/progress` (`domain/reports/progress.ts`): K-08 − progress, colours from `progressWarnGapPct`/`progressBadGapPct`; widget in S2 | unit (colours) + API SQL reconciliation (`e4-progress`) |
+| US-29 | implemented (API; admin partial) | `GET/PUT /api/v1/projects/{id}/stages` (whole set = 100 %, reason for re-weighting, template apply); admin single-stage writes cannot break a complete set; no delete (deactivate) | unit + API + DB (`e4-progress`) |
+| US-31 | implemented (API) | `GET /api/v1/progress-reports[?project=&stage=&from=&to=&mine=]` newest first + `GET …/{id}` with photos (`/api/v1/media/progress-photos/{id}/file`) | API (`e4-progress`) |

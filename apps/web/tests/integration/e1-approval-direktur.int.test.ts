@@ -242,9 +242,9 @@ describe('AC-8: requests submitted before E1 finish on their old snapshot', () =
 describe('APK needs (E3 / AC-10 server side)', () => {
   it('/me capabilities: approval inbox for Direktur and Finance, not for a PM-only user', async () => {
     const cap = async (u: FlowUser) => (await api('GET', '/api/v1/me', u)).body.capabilities
-    expect(await cap(w.users.owner)).toEqual({ approvalInbox: true, teamMonitor: false })
-    expect(await cap(w.users.finance)).toEqual({ approvalInbox: true, teamMonitor: false })
-    expect(await cap(w.users.pm)).toEqual({ approvalInbox: false, teamMonitor: true })
-    expect(await cap(w.users.staffA)).toEqual({ approvalInbox: false, teamMonitor: false })
+    expect(await cap(w.users.owner)).toEqual({ approvalInbox: true, teamMonitor: false, progressReportCreate: true })
+    expect(await cap(w.users.finance)).toEqual({ approvalInbox: true, teamMonitor: false, progressReportCreate: false })
+    expect(await cap(w.users.pm)).toEqual({ approvalInbox: false, teamMonitor: true, progressReportCreate: true })
+    expect(await cap(w.users.staffA)).toEqual({ approvalInbox: false, teamMonitor: false, progressReportCreate: false })
   })
 })

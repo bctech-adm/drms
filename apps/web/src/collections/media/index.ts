@@ -3,6 +3,7 @@ import type { Access, Where } from 'payload'
 import { anyRole } from '@/access/roles'
 import { anyOf, byRole, ownUser, rolesAllowed, type Rule } from '@/access/policies'
 import { visibleRequestIds } from '@/domain/expense/access'
+import { reportPhotoWhere } from '@/domain/progress/access'
 
 import { mediaCollection } from './factory'
 
@@ -39,6 +40,19 @@ const ownerLinked: Access = byRole({
   'pk-finance': true,
   'pk-pm': anyOf(ownUser('uploadedBy'), ownerRequestRule),
   'pk-staff': anyOf(ownUser('uploadedBy'), ownerRequestRule),
+})
+
+/**
+ * E4: progress photos are readable by their uploader, office roles, and everyone who may read the
+ * owning progress report (PM team; owner link set by the report service, immutable — DB trigger).
+ */
+const reportPhotoRule: Rule = async ({ req }) => reportPhotoWhere(req)
+const progressPhotoRead: Access = byRole({
+  'pk-admin': true,
+  'pk-owner': true,
+  'pk-finance': true,
+  'pk-pm': anyOf(ownUser('uploadedBy'), reportPhotoRule),
+  'pk-staff': ownUser('uploadedBy'),
 })
 
 const thumb = {
@@ -99,7 +113,8 @@ export const MediaProgressPhotos = mediaCollection({
   // JPEG so PDF reports can embed it (@react-pdf/image: JPEG/PNG/SVG only, ADR 0004 §Context).
   formatOptions: { format: 'jpeg', options: { quality: 78, mozjpeg: true } },
   imageSizes: [thumbJpeg],
-  access: { read: ownOrOffice, create: rolesAllowed('pk-pm', 'pk-owner') },
+  // E4 (US-10): PM / Direktur upload; ≤ 5 per report (report service); EXIF/GPS stripped by re-encode.
+  access: { read: progressPhotoRead, create: rolesAllowed('pk-pm', 'pk-owner') },
 })
 
 export const MediaSignatures = mediaCollection({

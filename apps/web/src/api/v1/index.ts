@@ -11,6 +11,7 @@ import { mediaFileEndpoint, uploadMediaEndpoint } from './endpoints/media'
 import { NOTIFICATION_ENDPOINTS } from './endpoints/notifications'
 import { meEndpoint } from './endpoints/me'
 import { openapiEndpoint } from './endpoints/openapi'
+import { PROGRESS_ENDPOINTS } from './endpoints/progress'
 import { REPORT_ENDPOINTS } from './endpoints/reports'
 import { appConfigEndpoint } from './endpoints/app'
 import { syncBatchEndpoint } from './endpoints/sync'
@@ -41,4 +42,6 @@ export const v1Endpoints: Endpoint[] = [
   ...REPORT_ENDPOINTS,
   // E6: attendance recap (US-09), team today (US-13), T10 correction (US-15), selfie viewer (Q-33)
   ...ATTENDANCE_ENDPOINTS,
+  // E4: project stages (G11 editor), progress reports (T11), K-09 progress vs budget
+  ...PROGRESS_ENDPOINTS,
 ]

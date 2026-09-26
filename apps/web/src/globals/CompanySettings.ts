@@ -133,6 +133,13 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         ...intField('selfieRetentionMonths', 'Retensi selfie absensi (bulan)', 12, 1, 120),
         admin: { description: 'Selfie lebih tua dari ini akan dihapus dari penyimpanan (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).' },
       },
+      {
+        name: 'syncProgressReportsEnabled',
+        type: 'checkbox',
+        label: 'Laporan progress dari APK (termasuk offline) aktif',
+        defaultValue: true,
+        admin: { description: 'E4: laporan progress harian + foto dari APK. Nonaktif → item laporan ditolak FEATURE_DISABLED (rollback).' },
+      },
       intField('offlineMaxAgeDays', 'Umur maksimal sesi offline APK (hari)', 30, 1, 30),
       {
         name: 'imageTargets',

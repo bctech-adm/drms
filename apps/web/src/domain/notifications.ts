@@ -175,7 +175,8 @@ export function renderTemplate(tpl: string, doc: Doc): string {
   return tpl.replace(/\{(docNo|title|amount|status|type)\}/g, (_, k: string) => vars[k] ?? '')
 }
 
-async function template(req: PayloadRequest, event: NotifyEvent): Promise<{ title: string; body: string }> {
+/** Active `notification-templates` text of `event`, else `fallback` (also used by E4/E7 reminders). */
+export async function notificationTemplate(req: PayloadRequest, event: string, fallback: { title: string; body: string }): Promise<{ title: string; body: string }> {
   const res = await req.payload.find({
     collection: 'notification-templates',
     where: { and: [{ event: { equals: event } }, { active: { equals: true } }] },
@@ -185,7 +186,11 @@ async function template(req: PayloadRequest, event: NotifyEvent): Promise<{ titl
     req,
   })
   const t = res.docs[0] as { title?: string; body?: string; channel?: string } | undefined
-  return t?.title && t.body ? { title: t.title, body: t.body } : DEFAULTS[event]
+  return t?.title && t.body ? { title: t.title, body: t.body } : fallback
+}
+
+async function template(req: PayloadRequest, event: NotifyEvent): Promise<{ title: string; body: string }> {
+  return notificationTemplate(req, event, DEFAULTS[event])
 }
 
 export function pushEnabled(): boolean {

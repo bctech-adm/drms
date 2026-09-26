@@ -41,6 +41,8 @@ export const meEndpoint = v1({
       capabilities: {
         approvalInbox: userRoles(req).some((r) => r === 'pk-owner' || r === 'pk-finance'),
         teamMonitor: userRoles(req).includes('pk-pm'),
+        // E4 (requirements §4): progress reports are created by the PM (team projects) or the Direktur.
+        progressReportCreate: userRoles(req).some((r) => r === 'pk-pm' || r === 'pk-owner'),
       },
       employee: employee ? { id: employee.id, code: employee.code, name: employee.name } : null,
       authMethod: u._strategy ?? 'oidcSession',

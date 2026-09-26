@@ -102,11 +102,16 @@
               "teamMonitor": {
                 "type": "boolean",
                 "description": "Holds pk-pm → team list/dashboard (monitoring only, no decisions)."
+              },
+              "progressReportCreate": {
+                "type": "boolean",
+                "description": "E4: holds pk-pm (team projects) or pk-owner (all) → may create progress reports."
               }
             },
             "required": [
               "approvalInbox",
-              "teamMonitor"
+              "teamMonitor",
+              "progressReportCreate"
             ],
             "description": "UI hints for the APK (E1); the server guards stay authoritative."
           },
@@ -2564,7 +2569,8 @@
           "transfer-proofs",
           "signatures",
           "attachments",
-          "selfies"
+          "selfies",
+          "progress-photos"
         ]
       },
       "CashEntryList": {
@@ -3453,7 +3459,8 @@
           "transfer-proofs",
           "signatures",
           "attachments",
-          "company"
+          "company",
+          "progress-photos"
         ]
       },
       "AppConfig": {
@@ -3626,7 +3633,7 @@
               "string",
               "null"
             ],
-            "description": "Server id (numeric, as string) of the expense request / attendance."
+            "description": "Server id (numeric, as string) of the expense request / attendance / progress report."
           },
           "rev": {
             "type": [
@@ -3651,7 +3658,7 @@
             "items": {
               "type": "string"
             },
-            "description": "OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED."
+            "description": "OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED, DEVICE_TIME_ONLY."
           },
           "errors": {
             "type": "array",
@@ -3660,7 +3667,7 @@
               "properties": {
                 "code": {
                   "type": "string",
-                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT (on_behalf also FORBIDDEN: not a PM / not a team location / own attendance)."
+                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT (on_behalf also FORBIDDEN: not a PM / not a team location / own attendance); progress reports: WEIGHTS_INCOMPLETE, PROGRESS_DECREASED, PHOTO_LIMIT, MEDIA_IN_USE."
                 },
                 "field": {
                   "type": "string"
@@ -3677,6 +3684,9 @@
           },
           "server_copy": {
             "$ref": "#/components/schemas/SyncDraftCopy"
+          },
+          "server_report": {
+            "$ref": "#/components/schemas/SyncProgressReportCopy"
           }
         },
         "required": [
@@ -3980,6 +3990,106 @@
         ],
         "description": "Server version of the draft (server wins on conflict)."
       },
+      "SyncProgressReportCopy": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "client_uuid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rev": {
+            "type": "integer"
+          },
+          "doc_no": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "project_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "stage_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "report_date": {
+            "type": "string"
+          },
+          "pct_before": {
+            "type": "number"
+          },
+          "pct_after": {
+            "type": "number"
+          },
+          "project_pct_after": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "work": {
+            "type": "string"
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "photo_media_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            }
+          },
+          "offline": {
+            "type": "boolean"
+          },
+          "editable_until": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "client_uuid",
+          "rev",
+          "doc_no",
+          "project_id",
+          "stage_id",
+          "report_date",
+          "pct_before",
+          "pct_after",
+          "project_pct_after",
+          "work",
+          "issues",
+          "photo_media_ids",
+          "offline",
+          "editable_until",
+          "updated_at"
+        ],
+        "description": "Server version of a progress report (server wins on conflict)."
+      },
       "SyncBatch": {
         "type": "object",
         "properties": {
@@ -4124,11 +4234,14 @@
                 "$ref": "#/components/schemas/SyncOnBehalfPayload"
               },
               {
+                "$ref": "#/components/schemas/SyncProgressReportPayload"
+              },
+              {
                 "type": "object",
                 "additionalProperties": {}
               }
             ],
-            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload, attendance.on_behalf → SyncOnBehalfPayload; other types: free-form until supported."
+            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload, attendance.on_behalf → SyncOnBehalfPayload, progress_report.draft_upsert → SyncProgressReportPayload; other types: free-form until supported."
           }
         },
         "required": [
@@ -4152,7 +4265,7 @@
           "expense_request.draft_delete",
           "progress_report.draft_upsert"
         ],
-        "description": "progress_report.draft_upsert is accepted by the schema but answered `unsupported` until F5. attendance.on_behalf (US-14, E6): PM only."
+        "description": "attendance.on_behalf (US-14, E6): PM only. progress_report.draft_upsert (E4) = create or edit (≤ 24 h) of a progress report (company-settings.syncProgressReportsEnabled)."
       },
       "SyncDraftUpsertPayload": {
         "type": "object",
@@ -4554,6 +4667,693 @@
           "lng",
           "is_mocked",
           "selfie_media_id",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "SyncProgressReportPayload": {
+        "type": "object",
+        "properties": {
+          "report_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Server id of a report created online (edit)."
+          },
+          "report_client_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "APK id of the report (default: the client_uuid of the item that created it)."
+          },
+          "project_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Required for a new report."
+          },
+          "stage_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Required for a new report; a stage of project_id."
+          },
+          "pct_after": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Stage % after the work (required for a new report; never below the server stage %)."
+          },
+          "work": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 2000,
+            "description": "Pekerjaan (required for a new report)."
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000,
+            "description": "Kendala."
+          },
+          "photo_media_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "maxItems": 5,
+            "description": "media-progress-photos ids uploaded by the caller. On an edit: ids not yet on the report are added (photos are never removed)."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000,
+            "description": "Required when editing an existing report."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProjectProgressList": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string"
+          },
+          "warnGapPct": {
+            "type": "number"
+          },
+          "badGapPct": {
+            "type": "number"
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectProgressItem"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "warnGapPct",
+          "badGapPct",
+          "projects"
+        ]
+      },
+      "ProjectProgressItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "budget": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "committed": {
+            "type": "number",
+            "description": "K-07 Komitmen (Rp)."
+          },
+          "budgetPct": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "K-08 % of RAB (null = no RAB)."
+          },
+          "budgetTone": {
+            "type": "string",
+            "enum": [
+              "none",
+              "ok",
+              "warn",
+              "over"
+            ]
+          },
+          "progressPct": {
+            "type": "number",
+            "description": "Physical progress (%)."
+          },
+          "weightSum": {
+            "type": "number"
+          },
+          "stagesComplete": {
+            "type": "boolean"
+          },
+          "gap": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "K-09 selisih = budgetPct − progressPct (null = not computable)."
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "none",
+              "ok",
+              "warn",
+              "bad"
+            ],
+            "description": "ok (hijau) ≤ warnGapPct · warn (kuning) ≤ badGapPct · bad (merah) > badGapPct."
+          },
+          "toneLabel": {
+            "type": "string"
+          },
+          "lastReportDate": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reportCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "status",
+          "budget",
+          "committed",
+          "budgetPct",
+          "budgetTone",
+          "progressPct",
+          "weightSum",
+          "stagesComplete",
+          "gap",
+          "tone",
+          "toneLabel",
+          "lastReportDate",
+          "reportCount"
+        ]
+      },
+      "ProjectStageSet": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "weightSum": {
+            "type": "number",
+            "description": "Σ weights of active stages."
+          },
+          "complete": {
+            "type": "boolean",
+            "description": "weightSum = 100 → progress reports can be created."
+          },
+          "progressPct": {
+            "type": "number",
+            "description": "Project physical progress = Σ(weight × stage %) / 100."
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectStage"
+            }
+          }
+        },
+        "required": [
+          "projectId",
+          "weightSum",
+          "complete",
+          "progressPct",
+          "stages"
+        ]
+      },
+      "ProjectStage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "weightPct": {
+            "type": "number"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "progressPct": {
+            "type": "number"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "weightPct",
+          "sequence",
+          "progressPct",
+          "active"
+        ]
+      },
+      "StageSetBody": {
+        "type": "object",
+        "properties": {
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageInput"
+            },
+            "minItems": 1,
+            "maxItems": 100,
+            "description": "The whole active set. Existing stages missing here are deactivated (Direktur only)."
+          },
+          "templateId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Apply a stage template to a project without stages (instead of `stages`)."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000,
+            "description": "Required when a weight changes or a stage is (de)activated (G7)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "StageInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Existing stage id; omit for a new stage (Direktur only)."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "weightPct": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Bobot (%); the ACTIVE set must total exactly 100."
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999
+          }
+        },
+        "required": [
+          "name",
+          "weightPct",
+          "sequence"
+        ],
+        "additionalProperties": false
+      },
+      "ProgressReportList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgressReport"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "nextCursor"
+        ]
+      },
+      "ProgressReport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "uuid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "docNo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "LP/YYMM/####"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "code",
+              "name"
+            ]
+          },
+          "stage": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "weightPct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "weightPct"
+            ]
+          },
+          "reportDate": {
+            "type": "string",
+            "description": "Business date (company TZ) of the time that counts."
+          },
+          "pctBefore": {
+            "type": "number"
+          },
+          "pctAfter": {
+            "type": "number"
+          },
+          "projectPctBefore": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "projectPctAfter": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "work": {
+            "type": "string"
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporter": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProgressPhoto"
+            }
+          },
+          "offline": {
+            "type": "boolean"
+          },
+          "timeTrust": {
+            "type": "string",
+            "enum": [
+              "server",
+              "estimated",
+              "device_only"
+            ]
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "web",
+              "apk",
+              null
+            ]
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "receivedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "editableUntil": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "editable": {
+            "type": "boolean",
+            "description": "The caller is the reporter and the 24 h window is open."
+          },
+          "rev": {
+            "type": "integer",
+            "description": "Content revision (sync base_rev)."
+          },
+          "clientUuid": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "uuid",
+          "docNo",
+          "project",
+          "stage",
+          "reportDate",
+          "pctBefore",
+          "pctAfter",
+          "projectPctBefore",
+          "projectPctAfter",
+          "work",
+          "issues",
+          "reporter",
+          "photos",
+          "offline",
+          "timeTrust",
+          "source",
+          "flags",
+          "receivedAt",
+          "editableUntil",
+          "editable",
+          "rev",
+          "clientUuid",
+          "createdAt"
+        ]
+      },
+      "ProgressPhoto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "width": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "height": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "filesize": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "GET (auth) — /api/v1/media/progress-photos/{id}/file"
+          },
+          "thumbUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "width",
+          "height",
+          "filesize",
+          "url",
+          "thumbUrl"
+        ]
+      },
+      "ProgressReportCreate": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "stageId": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "pctAfter": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Stage progress after this report (%); never below the current stage %."
+          },
+          "work": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 2000,
+            "description": "Pekerjaan."
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000,
+            "description": "Kendala."
+          },
+          "photoIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "maxItems": 5,
+            "description": "media-progress-photos ids uploaded by the caller (POST /media/progress-photos), max 5."
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client id; a replay returns the existing report (200)."
+          }
+        },
+        "required": [
+          "projectId",
+          "stageId",
+          "pctAfter",
+          "work"
+        ],
+        "additionalProperties": false
+      },
+      "ProgressReportUpdate": {
+        "type": "object",
+        "properties": {
+          "pctAfter": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Correction; only on the latest report of the stage, never below pctBefore."
+          },
+          "work": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 2000
+          },
+          "issues": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "addPhotoIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "maxItems": 5,
+            "description": "Photos to add (total per report ≤ 5)."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 1000,
+            "description": "Required for every edit (requirements §8 T11)."
+          }
+        },
+        "required": [
           "reason"
         ],
         "additionalProperties": false
@@ -11555,7 +12355,7 @@
     "/sync/batch": {
       "post": {
         "summary": "APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.",
-        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload: project_id OR cost_center_id; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN), attendance.on_behalf (payload SyncOnBehalfPayload, US-14: PM only, team location, not own, reason required; GPS + photo from the PM phone); progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
+        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload: project_id OR cost_center_id; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN), attendance.on_behalf (payload SyncOnBehalfPayload, US-14: PM only, team location, not own, reason required; GPS + photo from the PM phone); progress_report.draft_upsert (payload SyncProgressReportPayload; photos first with POST /media/progress-photos, ≤ 5; new report = PM of a team project or Direktur; edit = reporter within 24 h with base_rev + reason, else conflict/NOT_EDITABLE with server_report; company-settings.syncProgressReportsEnabled, else FEATURE_DISABLED; codes WEIGHTS_INCOMPLETE, PROGRESS_DECREASED, PHOTO_LIMIT, MEDIA_IN_USE, MEDIA_MISSING, FORBIDDEN). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
         "security": [
           {
             "bearer": []
@@ -11646,6 +12446,885 @@
             }
           },
           "413": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/progress": {
+      "get": {
+        "summary": "K-09 progress fisik vs anggaran per project (Finance/Direktur all, PM team): K-08 % vs Σ(weight × stage %), selisih + colour",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "project",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ya"
+              ],
+              "description": "Include archived projects."
+            },
+            "required": false,
+            "description": "Include archived projects.",
+            "name": "arsip",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectProgressList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{id}/stages": {
+      "get": {
+        "summary": "Stage set of a readable project: weights, stage %, active total and project progress",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectStageSet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Stage editor: save the whole active set (total weight = 100 %, G11); Direktur any project (add/deactivate), PM team projects (rename/reorder/re-weight); reason for weight changes (G7)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StageSetBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectStageSet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress-reports": {
+      "get": {
+        "summary": "Progress reports in the caller scope (PM team, Direktur/Finance all), newest first (US-31), filter project/stage/date, cursor paging",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "project",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "stage",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1",
+                "true"
+              ],
+              "description": "Only reports created by the caller."
+            },
+            "required": false,
+            "description": "Only reports created by the caller.",
+            "name": "mine",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressReportList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a progress report (US-10): PM of the project or Direktur; photos from POST /media/progress-photos (≤ 5); stage % before → after and project progress in the same transaction. Replayed clientUuid → 200",
+        "description": "Problem `code`: FORBIDDEN (not PM of the project / Staff), WEIGHTS_INCOMPLETE (active stage weights ≠ 100 %), PROGRESS_DECREASED, PHOTO_LIMIT, MEDIA_MISSING, MEDIA_IN_USE, VALIDATION, STATE_CONFLICT (archived project / inactive stage).",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressReportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing report for this clientUuid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressReport"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress-reports/{id}": {
+      "get": {
+        "summary": "Report detail with photos (file URLs under /media/progress-photos/{id}/file)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edit within 24 h by the reporter (reason required): work/issues, add photos (total ≤ 5), correct pctAfter on the latest report of the stage",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressReportUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report after the edit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
             "description": "Problem",
             "content": {
               "application/problem+json": {

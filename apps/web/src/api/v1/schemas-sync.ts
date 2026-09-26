@@ -32,7 +32,7 @@ export const SyncItemTypeEnum = z
     'expense_request.draft_delete',
     'progress_report.draft_upsert',
   ])
-  .meta({ id: 'SyncItemType', description: 'progress_report.draft_upsert is accepted by the schema but answered `unsupported` until F5. attendance.on_behalf (US-14, E6): PM only.' })
+  .meta({ id: 'SyncItemType', description: 'attendance.on_behalf (US-14, E6): PM only. progress_report.draft_upsert (E4) = create or edit (≤ 24 h) of a progress report (company-settings.syncProgressReportsEnabled).' })
 export type SyncItemType = z.infer<typeof SyncItemTypeEnum>
 
 export const SyncClock = z
@@ -161,6 +161,35 @@ export const SyncOnBehalfPayload = z
   .meta({ id: 'SyncOnBehalfPayload' })
 export type SyncOnBehalf = z.infer<typeof SyncOnBehalfPayload>
 
+const pct = z
+  .number()
+  .min(0)
+  .max(100)
+  .refine((v) => Math.abs(Math.round(v * 100) - v * 100) < 1e-6, 'maks. 2 desimal')
+
+/**
+ * `progress_report.draft_upsert` (E4, T11/US-10): creates a progress report (PM of a team project or
+ * Direktur) or edits one within 24 h (reporter only, `base_rev` = server rev, `reason` required).
+ * Photos are uploaded first with POST /api/v1/media/progress-photos (≤ 5 per report). The report date
+ * is the company-TZ date of the time that counts (server / monotonic estimate / device clock flagged
+ * DEVICE_TIME_ONLY). Enabled by company-settings.syncProgressReportsEnabled (else FEATURE_DISABLED).
+ */
+export const SyncProgressReportPayload = z
+  .object({
+    report_id: id.optional().meta({ description: 'Server id of a report created online (edit).' }),
+    report_client_uuid: z.uuid().optional().meta({ description: 'APK id of the report (default: the client_uuid of the item that created it).' }),
+    project_id: id.optional().meta({ description: 'Required for a new report.' }),
+    stage_id: id.optional().meta({ description: 'Required for a new report; a stage of project_id.' }),
+    pct_after: pct.optional().meta({ description: 'Stage % after the work (required for a new report; never below the server stage %).' }),
+    work: z.string().trim().min(3).max(2000).optional().meta({ description: 'Pekerjaan (required for a new report).' }),
+    issues: z.string().trim().max(2000).nullable().optional().meta({ description: 'Kendala.' }),
+    photo_media_ids: z.array(id).max(5).optional().meta({ description: 'media-progress-photos ids uploaded by the caller. On an edit: ids not yet on the report are added (photos are never removed).' }),
+    reason: z.string().trim().min(3).max(1000).optional().meta({ description: 'Required when editing an existing report.' }),
+  })
+  .strict()
+  .meta({ id: 'SyncProgressReportPayload' })
+export type SyncProgressReport = z.infer<typeof SyncProgressReportPayload>
+
 export const SyncItem = z
   .object({
     client_uuid: z.uuid().meta({ description: 'Idempotency key of this queue item (UUIDv7). Replays return `duplicate` with the stored result.' }),
@@ -184,10 +213,10 @@ export const SyncItem = z
     // Documented as anyOf (components for the Dart client); validated per item type by the
     // service, so a bad payload rejects only its own item (never the whole batch).
     payload: z
-      .union([SyncDraftUpsertPayload, SyncDraftDeletePayload, SyncAttendancePayload, SyncOnBehalfPayload, z.record(z.string(), z.unknown())])
+      .union([SyncDraftUpsertPayload, SyncDraftDeletePayload, SyncAttendancePayload, SyncOnBehalfPayload, SyncProgressReportPayload, z.record(z.string(), z.unknown())])
       .meta({
         description:
-          'Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload, attendance.on_behalf → SyncOnBehalfPayload; other types: free-form until supported.',
+          'Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload, attendance.on_behalf → SyncOnBehalfPayload, progress_report.draft_upsert → SyncProgressReportPayload; other types: free-form until supported.',
       }),
   })
   .strict()
@@ -259,6 +288,28 @@ export const SyncDraftCopy = z
   .meta({ id: 'SyncDraftCopy', description: 'Server version of the draft (server wins on conflict).' })
 export type SyncDraftCopyOut = z.infer<typeof SyncDraftCopy>
 
+export const SyncProgressReportCopy = z
+  .object({
+    id,
+    client_uuid: z.string().nullable(),
+    rev: z.number().int(),
+    doc_no: z.string().nullable(),
+    project_id: id,
+    stage_id: id,
+    report_date: z.string(),
+    pct_before: z.number(),
+    pct_after: z.number(),
+    project_pct_after: z.number().nullable(),
+    work: z.string(),
+    issues: z.string().nullable(),
+    photo_media_ids: z.array(id),
+    offline: z.boolean(),
+    editable_until: z.string().nullable(),
+    updated_at: z.string().nullable(),
+  })
+  .meta({ id: 'SyncProgressReportCopy', description: 'Server version of a progress report (server wins on conflict).' })
+export type SyncProgressReportCopyOut = z.infer<typeof SyncProgressReportCopy>
+
 export const SYNC_STATUSES = ['applied', 'duplicate', 'rejected', 'conflict', 'deferred', 'unsupported'] as const
 export type SyncStatus = (typeof SYNC_STATUSES)[number]
 
@@ -270,19 +321,21 @@ export const SyncResult = z
         'applied | duplicate (replay; original result below) | rejected (business rule, never retry) | conflict (stale base_rev, server wins, see server_copy) | deferred (retry later) | unsupported (item type not enabled on this server yet — keep it queued, do not count as an attempt; see GET /app/config features).',
     }),
     original_status: z.enum(['applied', 'rejected', 'conflict']).nullable().meta({ description: 'For duplicate: the status of the first processing.' }),
-    server_id: z.string().nullable().meta({ description: 'Server id (numeric, as string) of the expense request / attendance.' }),
+    server_id: z.string().nullable().meta({ description: 'Server id (numeric, as string) of the expense request / attendance / progress report.' }),
     rev: z.number().int().nullable(),
     received_at: z.string().meta({ description: 'Authoritative server time of (first) processing, UTC.' }),
     time_trust: z.enum(['server', 'estimated', 'device_only']),
-    flags: z.array(z.string()).meta({ description: 'OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED.' }),
+    flags: z.array(z.string()).meta({ description: 'OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED, DEVICE_TIME_ONLY.' }),
     errors: z.array(
       z.object({
-        code: z.string().meta({ description: 'VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT (on_behalf also FORBIDDEN: not a PM / not a team location / own attendance).' }),
+        code: z.string().meta({ description: 'VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT (on_behalf also FORBIDDEN: not a PM / not a team location / own attendance); progress reports: WEIGHTS_INCOMPLETE, PROGRESS_DECREASED, PHOTO_LIMIT, MEDIA_IN_USE.' }),
         field: z.string().optional(),
         message: z.string(),
       }),
     ),
     server_copy: SyncDraftCopy.nullable(),
+    // progress_report.draft_upsert only: server version of the report (applied, conflict, NOT_EDITABLE).
+    server_report: SyncProgressReportCopy.nullable().optional(),
   })
   .meta({ id: 'SyncResult' })
 export type SyncResultOut = z.infer<typeof SyncResult>
