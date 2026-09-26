@@ -1,15 +1,30 @@
 import 'dart:convert';
 import 'dart:math';
 
-/// Item types of the sync contract (ADR 0010 "Sync contract", schema_version 1): drafts (F4a) and the
-/// own attendance check-in/out (F4b slice; PM on-behalf and progress reports are F5).
+/// Item types of the sync contract (ADR 0010 "Sync contract", schema_version 1): drafts (F4a), own
+/// attendance check-in/out (F4b), PM on-behalf attendance (E6, US-14) and progress reports (E4, US-10).
 abstract final class SyncItemType {
   static const expenseDraftUpsert = 'expense_request.draft_upsert';
   static const expenseDraftDelete = 'expense_request.draft_delete';
   static const attendanceCheckIn = 'attendance.check_in';
   static const attendanceCheckOut = 'attendance.check_out';
+  static const attendanceOnBehalf = 'attendance.on_behalf';
+  static const progressReportUpsert = 'progress_report.draft_upsert';
 
-  static bool isAttendance(String type) => type == attendanceCheckIn || type == attendanceCheckOut;
+  static bool isAttendance(String type) =>
+      type == attendanceCheckIn || type == attendanceCheckOut || type == attendanceOnBehalf;
+
+  static bool isProgress(String type) => type == progressReportUpsert;
+
+  /// Short Indonesian label for the queue screen.
+  static String label(String type) => switch (type) {
+    attendanceCheckIn => 'Absen masuk',
+    attendanceCheckOut => 'Absen pulang',
+    attendanceOnBehalf => 'Absen oleh PM',
+    progressReportUpsert => 'Laporan progress',
+    expenseDraftDelete => 'Hapus draft',
+    _ => 'Draft pengajuan',
+  };
 }
 
 enum SyncItemStatus {
@@ -42,6 +57,7 @@ class SyncItemResult {
     this.flags = const [],
     this.errors = const [],
     this.serverCopy,
+    this.serverReport,
   });
 
   final String clientUuid;
@@ -52,6 +68,9 @@ class SyncItemResult {
   final List<String> flags;
   final List<SyncError> errors;
   final Map<String, dynamic>? serverCopy;
+
+  /// E4: server version of a progress report (`server_report`, on conflict / NOT_EDITABLE / applied).
+  final Map<String, dynamic>? serverReport;
 
   /// A `duplicate` replays the first result; a replayed rejection/conflict keeps that meaning.
   factory SyncItemResult.fromJson(Map<String, dynamic> j) => SyncItemResult(
@@ -72,6 +91,7 @@ class SyncItemResult {
           SyncError(code: e['code'] as String?, field: e['field'] as String?, message: e['message'] as String?),
     ],
     serverCopy: j['server_copy'] is Map<String, dynamic> ? j['server_copy'] as Map<String, dynamic> : null,
+    serverReport: j['server_report'] is Map<String, dynamic> ? j['server_report'] as Map<String, dynamic> : null,
   );
 }
 
@@ -202,9 +222,15 @@ Duration backoffFor(int attempt, {Random? random}) {
 const maxSyncAttempts = 20;
 
 /// Bahasa Indonesia text for rejection codes (ADR 0010 "Per-item rules").
-String rejectionMessage(List<SyncError> errors) {
+/// For attendance and progress items the server's own (Indonesian) message is preferred: the draft
+/// texts below speak about expense drafts.
+String rejectionMessage(List<SyncError> errors, {String? type}) {
   if (errors.isEmpty) return 'Ditolak server.';
   final e = errors.first;
+  if (type != null && (SyncItemType.isAttendance(type) || SyncItemType.isProgress(type))) {
+    final m = e.message;
+    if (m != null && m.isNotEmpty && e.code != 'MOCK_LOCATION') return m;
+  }
   final known = switch (e.code) {
     'NOT_EDITABLE' => 'Draft sudah tidak bisa diubah (sudah diajukan atau bukan milik Anda).',
     'MEDIA_MISSING' => 'Foto (nota/selfie) belum diterima server.',
@@ -215,7 +241,19 @@ String rejectionMessage(List<SyncError> errors) {
     'CLIENT_UUID_CONFLICT' => 'ID data bentrok dengan data lain. Buat draft baru.',
     'NOT_ASSIGNED' => 'Anda tidak ditugaskan di project/pusat biaya ini.',
     'FEATURE_DISABLED' => 'Sinkronisasi offline sedang dinonaktifkan. Kirim saat online.',
+    'OUTSIDE_GEOFENCE' || 'NO_GEOFENCE' || 'ALREADY_CHECKED_IN' || 'NO_CHECK_IN' || 'ALREADY_CHECKED_OUT' => null,
+    'WEIGHTS_INCOMPLETE' => 'Bobot tahapan project belum 100%. Minta Direktur/PM melengkapi tahapan.',
+    'PROGRESS_DECREASED' => 'Progress tahapan tidak boleh turun dari nilai sebelumnya.',
+    'PHOTO_LIMIT' => 'Maksimal 5 foto per laporan.',
+    'MEDIA_IN_USE' => 'Foto sudah dipakai di laporan lain. Ambil foto baru.',
     _ => null,
   };
   return known ?? (e.message?.isNotEmpty == true ? e.message! : 'Ditolak server (${e.code ?? 'tanpa kode'}).');
 }
+
+/// Local media kind (`media_blobs.kind`) → `POST /api/v1/media/{kind}` path segment (openapi MediaKind).
+String mediaUploadPath(String localKind) => switch (localKind) {
+  'selfie' => 'selfies',
+  'progress' => 'progress-photos',
+  _ => 'receipts',
+};

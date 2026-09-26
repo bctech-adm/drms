@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../../shared/widgets/big_action_button.dart';
+import '../../addendum/presentation/addendum_providers.dart';
 import '../../app_config/application/app_config_providers.dart';
 import '../../app_config/domain/app_config.dart';
 import '../../approvals/application/inbox_providers.dart';
@@ -14,6 +15,8 @@ import '../../dashboard/presentation/kpi_home.dart';
 import '../../expense/domain/request_status.dart';
 import '../../notifications/application/notifications_providers.dart';
 import '../../notifications/presentation/notifications_screen.dart';
+import '../../progress/application/progress_providers.dart';
+import '../../progress/presentation/widgets/project_progress_summary.dart';
 
 /// Role home: KPI summary (Direktur / Finance, US-27; PM team monitor, US-17) above big action buttons.
 class HomeScreen extends ConsumerWidget {
@@ -28,7 +31,10 @@ class HomeScreen extends ConsumerWidget {
     final latest = ref.watch(appConfigProvider).value?.latestAppVersion;
     final kind = profile.homeKind;
     final attendanceOn = ref.watch(appConfigProvider).value?.syncAttendance ?? false;
-    final inboxCount = profile.hasApprovalInbox ? ref.watch(inboxProvider).value?.items.length : null;
+    final openProgress = profile.canReadProgress ? (ref.watch(openProgressDraftsProvider).value?.length ?? 0) : 0;
+    final expenseInbox = profile.hasApprovalInbox ? ref.watch(inboxProvider).value?.items.length : null;
+    final addendumInbox = profile.hasApprovalInbox ? (ref.watch(addendumInboxProvider).value?.length ?? 0) : 0;
+    final inboxCount = expenseInbox == null ? null : expenseInbox + addendumInbox;
 
     final actions = <Widget>[
       if (profile.hasApprovalInbox)
@@ -59,12 +65,35 @@ class HomeScreen extends ConsumerWidget {
         label: kind == HomeKind.direktur || kind == HomeKind.finance ? t.actionAllRequests : t.actionMyRequests,
         onPressed: () => context.go('/requests'),
       ),
-      if (profile.has(Role.staff) || profile.has(Role.pm))
+      if (profile.canReadProgress)
+        BigActionButton(
+          key: const Key('home-progress'),
+          icon: Icons.construction,
+          label: profile.canCreateProgress ? t.actionProgress : t.actionProgressRead,
+          subtitle: openProgress > 0 ? t.progressPendingCount(openProgress) : null,
+          badge: openProgress > 0 ? '$openProgress' : null,
+          onPressed: () => context.push('/progress'),
+        ),
+      // E5 Addendum RAB: PM creates (team projects), Direktur/Finance follow all (decisions via the inbox).
+      if (profile.has(Role.pm) || profile.hasApprovalInbox)
+        BigActionButton(
+          key: const Key('home-addenda'),
+          icon: Icons.request_quote,
+          label: t.addendumTitle,
+          subtitle: addendumInbox > 0 ? t.addendumWaitingCount(addendumInbox) : null,
+          onPressed: () => context.push('/addenda'),
+        ),
+      // E6: the recap (own month) and "Tim hari ini" are online reads and stay available when the company
+      // setting "Absensi dari APK" is off; only check-in / on-behalf follow the flag.
+      if (profile.hasOwnAttendance || profile.canSeeTeamAttendance)
         BigActionButton(
           key: const Key('home-attendance'),
           icon: Icons.fingerprint,
-          label: attendanceOn ? t.actionAttendance : t.actionAttendanceOff,
-          onPressed: attendanceOn ? () => context.push('/attendance') : null,
+          label: t.actionAttendance,
+          subtitle: profile.hasOwnAttendance
+              ? (attendanceOn ? t.actionAttendanceSub : t.actionAttendanceOffSub)
+              : t.actionAttendanceTeamSub,
+          onPressed: () => context.push(profile.hasOwnAttendance ? '/attendance' : '/attendance?tab=team'),
         ),
     ];
     final kpis = switch (kind) {
@@ -90,10 +119,12 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(authControllerProvider.notifier).refreshProfile();
           ref.invalidate(inboxProvider);
+          ref.invalidate(addendumInboxProvider);
           ref.invalidate(notificationsProvider);
           ref.invalidate(direkturDashboardProvider);
           ref.invalidate(financeDashboardProvider);
           ref.invalidate(pmDashboardProvider);
+          ref.invalidate(projectProgressProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -120,6 +151,10 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 8),
             ],
             for (final a in actions) Padding(padding: const EdgeInsets.only(bottom: 12), child: a),
+            if (profile.has(Role.pm) || profile.has(Role.owner)) ...[
+              const SizedBox(height: 4),
+              const ProjectProgressSummary(),
+            ],
           ],
         ),
       ),

@@ -4129,6 +4129,1394 @@ class KvEntriesCompanion extends UpdateCompanion<KvEntry> {
   }
 }
 
+class $LocalProgressReportsTable extends LocalProgressReports
+    with TableInfo<$LocalProgressReportsTable, LocalProgressReport> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalProgressReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _clientUuidMeta = const VerificationMeta(
+    'clientUuid',
+  );
+  @override
+  late final GeneratedColumn<String> clientUuid = GeneratedColumn<String>(
+    'client_uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userSubMeta = const VerificationMeta(
+    'userSub',
+  );
+  @override
+  late final GeneratedColumn<String> userSub = GeneratedColumn<String>(
+    'user_sub',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectIdMeta = const VerificationMeta(
+    'projectId',
+  );
+  @override
+  late final GeneratedColumn<int> projectId = GeneratedColumn<int>(
+    'project_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _projectLabelMeta = const VerificationMeta(
+    'projectLabel',
+  );
+  @override
+  late final GeneratedColumn<String> projectLabel = GeneratedColumn<String>(
+    'project_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _stageIdMeta = const VerificationMeta(
+    'stageId',
+  );
+  @override
+  late final GeneratedColumn<int> stageId = GeneratedColumn<int>(
+    'stage_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stageLabelMeta = const VerificationMeta(
+    'stageLabel',
+  );
+  @override
+  late final GeneratedColumn<String> stageLabel = GeneratedColumn<String>(
+    'stage_label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _pctBeforeMeta = const VerificationMeta(
+    'pctBefore',
+  );
+  @override
+  late final GeneratedColumn<double> pctBefore = GeneratedColumn<double>(
+    'pct_before',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pctAfterMeta = const VerificationMeta(
+    'pctAfter',
+  );
+  @override
+  late final GeneratedColumn<double> pctAfter = GeneratedColumn<double>(
+    'pct_after',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workMeta = const VerificationMeta('work');
+  @override
+  late final GeneratedColumn<String> work = GeneratedColumn<String>(
+    'work',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _issuesMeta = const VerificationMeta('issues');
+  @override
+  late final GeneratedColumn<String> issues = GeneratedColumn<String>(
+    'issues',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _photoUuidsJsonMeta = const VerificationMeta(
+    'photoUuidsJson',
+  );
+  @override
+  late final GeneratedColumn<String> photoUuidsJson = GeneratedColumn<String>(
+    'photo_uuids_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _serverPhotoCountMeta = const VerificationMeta(
+    'serverPhotoCount',
+  );
+  @override
+  late final GeneratedColumn<int> serverPhotoCount = GeneratedColumn<int>(
+    'server_photo_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
+  @override
+  late final GeneratedColumn<int> serverId = GeneratedColumn<int>(
+    'server_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverRevMeta = const VerificationMeta(
+    'serverRev',
+  );
+  @override
+  late final GeneratedColumn<int> serverRev = GeneratedColumn<int>(
+    'server_rev',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _docNoMeta = const VerificationMeta('docNo');
+  @override
+  late final GeneratedColumn<String> docNo = GeneratedColumn<String>(
+    'doc_no',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _editableUntilMeta = const VerificationMeta(
+    'editableUntil',
+  );
+  @override
+  late final GeneratedColumn<String> editableUntil = GeneratedColumn<String>(
+    'editable_until',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverPctAfterMeta = const VerificationMeta(
+    'serverPctAfter',
+  );
+  @override
+  late final GeneratedColumn<double> serverPctAfter = GeneratedColumn<double>(
+    'server_pct_after',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncStateMeta = const VerificationMeta(
+    'syncState',
+  );
+  @override
+  late final GeneratedColumn<String> syncState = GeneratedColumn<String>(
+    'sync_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('local'),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastErrorCodeMeta = const VerificationMeta(
+    'lastErrorCode',
+  );
+  @override
+  late final GeneratedColumn<String> lastErrorCode = GeneratedColumn<String>(
+    'last_error_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _conflictCopyJsonMeta = const VerificationMeta(
+    'conflictCopyJson',
+  );
+  @override
+  late final GeneratedColumn<String> conflictCopyJson = GeneratedColumn<String>(
+    'conflict_copy_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _offlineMeta = const VerificationMeta(
+    'offline',
+  );
+  @override
+  late final GeneratedColumn<bool> offline = GeneratedColumn<bool>(
+    'offline',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("offline" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    clientUuid,
+    userSub,
+    projectId,
+    projectLabel,
+    stageId,
+    stageLabel,
+    pctBefore,
+    pctAfter,
+    work,
+    issues,
+    photoUuidsJson,
+    serverPhotoCount,
+    reason,
+    serverId,
+    serverRev,
+    docNo,
+    editableUntil,
+    serverPctAfter,
+    syncState,
+    lastError,
+    lastErrorCode,
+    conflictCopyJson,
+    offline,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_progress_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalProgressReport> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('client_uuid')) {
+      context.handle(
+        _clientUuidMeta,
+        clientUuid.isAcceptableOrUnknown(data['client_uuid']!, _clientUuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientUuidMeta);
+    }
+    if (data.containsKey('user_sub')) {
+      context.handle(
+        _userSubMeta,
+        userSub.isAcceptableOrUnknown(data['user_sub']!, _userSubMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userSubMeta);
+    }
+    if (data.containsKey('project_id')) {
+      context.handle(
+        _projectIdMeta,
+        projectId.isAcceptableOrUnknown(data['project_id']!, _projectIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_projectIdMeta);
+    }
+    if (data.containsKey('project_label')) {
+      context.handle(
+        _projectLabelMeta,
+        projectLabel.isAcceptableOrUnknown(
+          data['project_label']!,
+          _projectLabelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stage_id')) {
+      context.handle(
+        _stageIdMeta,
+        stageId.isAcceptableOrUnknown(data['stage_id']!, _stageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stageIdMeta);
+    }
+    if (data.containsKey('stage_label')) {
+      context.handle(
+        _stageLabelMeta,
+        stageLabel.isAcceptableOrUnknown(data['stage_label']!, _stageLabelMeta),
+      );
+    }
+    if (data.containsKey('pct_before')) {
+      context.handle(
+        _pctBeforeMeta,
+        pctBefore.isAcceptableOrUnknown(data['pct_before']!, _pctBeforeMeta),
+      );
+    }
+    if (data.containsKey('pct_after')) {
+      context.handle(
+        _pctAfterMeta,
+        pctAfter.isAcceptableOrUnknown(data['pct_after']!, _pctAfterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pctAfterMeta);
+    }
+    if (data.containsKey('work')) {
+      context.handle(
+        _workMeta,
+        work.isAcceptableOrUnknown(data['work']!, _workMeta),
+      );
+    }
+    if (data.containsKey('issues')) {
+      context.handle(
+        _issuesMeta,
+        issues.isAcceptableOrUnknown(data['issues']!, _issuesMeta),
+      );
+    }
+    if (data.containsKey('photo_uuids_json')) {
+      context.handle(
+        _photoUuidsJsonMeta,
+        photoUuidsJson.isAcceptableOrUnknown(
+          data['photo_uuids_json']!,
+          _photoUuidsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_photo_count')) {
+      context.handle(
+        _serverPhotoCountMeta,
+        serverPhotoCount.isAcceptableOrUnknown(
+          data['server_photo_count']!,
+          _serverPhotoCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('server_id')) {
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
+    }
+    if (data.containsKey('server_rev')) {
+      context.handle(
+        _serverRevMeta,
+        serverRev.isAcceptableOrUnknown(data['server_rev']!, _serverRevMeta),
+      );
+    }
+    if (data.containsKey('doc_no')) {
+      context.handle(
+        _docNoMeta,
+        docNo.isAcceptableOrUnknown(data['doc_no']!, _docNoMeta),
+      );
+    }
+    if (data.containsKey('editable_until')) {
+      context.handle(
+        _editableUntilMeta,
+        editableUntil.isAcceptableOrUnknown(
+          data['editable_until']!,
+          _editableUntilMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_pct_after')) {
+      context.handle(
+        _serverPctAfterMeta,
+        serverPctAfter.isAcceptableOrUnknown(
+          data['server_pct_after']!,
+          _serverPctAfterMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sync_state')) {
+      context.handle(
+        _syncStateMeta,
+        syncState.isAcceptableOrUnknown(data['sync_state']!, _syncStateMeta),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('last_error_code')) {
+      context.handle(
+        _lastErrorCodeMeta,
+        lastErrorCode.isAcceptableOrUnknown(
+          data['last_error_code']!,
+          _lastErrorCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('conflict_copy_json')) {
+      context.handle(
+        _conflictCopyJsonMeta,
+        conflictCopyJson.isAcceptableOrUnknown(
+          data['conflict_copy_json']!,
+          _conflictCopyJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('offline')) {
+      context.handle(
+        _offlineMeta,
+        offline.isAcceptableOrUnknown(data['offline']!, _offlineMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {clientUuid};
+  @override
+  LocalProgressReport map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalProgressReport(
+      clientUuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_uuid'],
+      )!,
+      userSub: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_sub'],
+      )!,
+      projectId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}project_id'],
+      )!,
+      projectLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}project_label'],
+      )!,
+      stageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}stage_id'],
+      )!,
+      stageLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_label'],
+      )!,
+      pctBefore: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pct_before'],
+      ),
+      pctAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}pct_after'],
+      )!,
+      work: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}work'],
+      )!,
+      issues: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}issues'],
+      ),
+      photoUuidsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_uuids_json'],
+      )!,
+      serverPhotoCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_photo_count'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_id'],
+      ),
+      serverRev: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_rev'],
+      ),
+      docNo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}doc_no'],
+      ),
+      editableUntil: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}editable_until'],
+      ),
+      serverPctAfter: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}server_pct_after'],
+      ),
+      syncState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_state'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      lastErrorCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error_code'],
+      ),
+      conflictCopyJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conflict_copy_json'],
+      ),
+      offline: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}offline'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalProgressReportsTable createAlias(String alias) {
+    return $LocalProgressReportsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalProgressReport extends DataClass
+    implements Insertable<LocalProgressReport> {
+  final String clientUuid;
+  final String userSub;
+  final int projectId;
+  final String projectLabel;
+  final int stageId;
+  final String stageLabel;
+
+  /// Stage % known when the report was written (client guard: pctAfter ≥ pctBefore).
+  final double? pctBefore;
+  final double pctAfter;
+  final String work;
+  final String? issues;
+
+  /// Local photo ids (media_blobs, kind `progress`) not yet on the server.
+  final String photoUuidsJson;
+
+  /// Photos already on the server report (edit: total ≤ 5).
+  final int serverPhotoCount;
+
+  /// Edit reason (required once the server knows the report).
+  final String? reason;
+  final int? serverId;
+  final int? serverRev;
+  final String? docNo;
+  final String? editableUntil;
+
+  /// Server pct_after of the report at the time the edit started (pct_after is only sent when changed).
+  final double? serverPctAfter;
+
+  /// local | queued | synced | conflict | rejected
+  final String syncState;
+  final String? lastError;
+  final String? lastErrorCode;
+
+  /// `server_report` of a conflict / NOT_EDITABLE (server wins; the local version is kept beside it).
+  final String? conflictCopyJson;
+  final bool offline;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const LocalProgressReport({
+    required this.clientUuid,
+    required this.userSub,
+    required this.projectId,
+    required this.projectLabel,
+    required this.stageId,
+    required this.stageLabel,
+    this.pctBefore,
+    required this.pctAfter,
+    required this.work,
+    this.issues,
+    required this.photoUuidsJson,
+    required this.serverPhotoCount,
+    this.reason,
+    this.serverId,
+    this.serverRev,
+    this.docNo,
+    this.editableUntil,
+    this.serverPctAfter,
+    required this.syncState,
+    this.lastError,
+    this.lastErrorCode,
+    this.conflictCopyJson,
+    required this.offline,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['client_uuid'] = Variable<String>(clientUuid);
+    map['user_sub'] = Variable<String>(userSub);
+    map['project_id'] = Variable<int>(projectId);
+    map['project_label'] = Variable<String>(projectLabel);
+    map['stage_id'] = Variable<int>(stageId);
+    map['stage_label'] = Variable<String>(stageLabel);
+    if (!nullToAbsent || pctBefore != null) {
+      map['pct_before'] = Variable<double>(pctBefore);
+    }
+    map['pct_after'] = Variable<double>(pctAfter);
+    map['work'] = Variable<String>(work);
+    if (!nullToAbsent || issues != null) {
+      map['issues'] = Variable<String>(issues);
+    }
+    map['photo_uuids_json'] = Variable<String>(photoUuidsJson);
+    map['server_photo_count'] = Variable<int>(serverPhotoCount);
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    if (!nullToAbsent || serverId != null) {
+      map['server_id'] = Variable<int>(serverId);
+    }
+    if (!nullToAbsent || serverRev != null) {
+      map['server_rev'] = Variable<int>(serverRev);
+    }
+    if (!nullToAbsent || docNo != null) {
+      map['doc_no'] = Variable<String>(docNo);
+    }
+    if (!nullToAbsent || editableUntil != null) {
+      map['editable_until'] = Variable<String>(editableUntil);
+    }
+    if (!nullToAbsent || serverPctAfter != null) {
+      map['server_pct_after'] = Variable<double>(serverPctAfter);
+    }
+    map['sync_state'] = Variable<String>(syncState);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    if (!nullToAbsent || lastErrorCode != null) {
+      map['last_error_code'] = Variable<String>(lastErrorCode);
+    }
+    if (!nullToAbsent || conflictCopyJson != null) {
+      map['conflict_copy_json'] = Variable<String>(conflictCopyJson);
+    }
+    map['offline'] = Variable<bool>(offline);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LocalProgressReportsCompanion toCompanion(bool nullToAbsent) {
+    return LocalProgressReportsCompanion(
+      clientUuid: Value(clientUuid),
+      userSub: Value(userSub),
+      projectId: Value(projectId),
+      projectLabel: Value(projectLabel),
+      stageId: Value(stageId),
+      stageLabel: Value(stageLabel),
+      pctBefore: pctBefore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pctBefore),
+      pctAfter: Value(pctAfter),
+      work: Value(work),
+      issues: issues == null && nullToAbsent
+          ? const Value.absent()
+          : Value(issues),
+      photoUuidsJson: Value(photoUuidsJson),
+      serverPhotoCount: Value(serverPhotoCount),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+      serverId: serverId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverId),
+      serverRev: serverRev == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverRev),
+      docNo: docNo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(docNo),
+      editableUntil: editableUntil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(editableUntil),
+      serverPctAfter: serverPctAfter == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverPctAfter),
+      syncState: Value(syncState),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      lastErrorCode: lastErrorCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastErrorCode),
+      conflictCopyJson: conflictCopyJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(conflictCopyJson),
+      offline: Value(offline),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LocalProgressReport.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalProgressReport(
+      clientUuid: serializer.fromJson<String>(json['clientUuid']),
+      userSub: serializer.fromJson<String>(json['userSub']),
+      projectId: serializer.fromJson<int>(json['projectId']),
+      projectLabel: serializer.fromJson<String>(json['projectLabel']),
+      stageId: serializer.fromJson<int>(json['stageId']),
+      stageLabel: serializer.fromJson<String>(json['stageLabel']),
+      pctBefore: serializer.fromJson<double?>(json['pctBefore']),
+      pctAfter: serializer.fromJson<double>(json['pctAfter']),
+      work: serializer.fromJson<String>(json['work']),
+      issues: serializer.fromJson<String?>(json['issues']),
+      photoUuidsJson: serializer.fromJson<String>(json['photoUuidsJson']),
+      serverPhotoCount: serializer.fromJson<int>(json['serverPhotoCount']),
+      reason: serializer.fromJson<String?>(json['reason']),
+      serverId: serializer.fromJson<int?>(json['serverId']),
+      serverRev: serializer.fromJson<int?>(json['serverRev']),
+      docNo: serializer.fromJson<String?>(json['docNo']),
+      editableUntil: serializer.fromJson<String?>(json['editableUntil']),
+      serverPctAfter: serializer.fromJson<double?>(json['serverPctAfter']),
+      syncState: serializer.fromJson<String>(json['syncState']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      lastErrorCode: serializer.fromJson<String?>(json['lastErrorCode']),
+      conflictCopyJson: serializer.fromJson<String?>(json['conflictCopyJson']),
+      offline: serializer.fromJson<bool>(json['offline']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'clientUuid': serializer.toJson<String>(clientUuid),
+      'userSub': serializer.toJson<String>(userSub),
+      'projectId': serializer.toJson<int>(projectId),
+      'projectLabel': serializer.toJson<String>(projectLabel),
+      'stageId': serializer.toJson<int>(stageId),
+      'stageLabel': serializer.toJson<String>(stageLabel),
+      'pctBefore': serializer.toJson<double?>(pctBefore),
+      'pctAfter': serializer.toJson<double>(pctAfter),
+      'work': serializer.toJson<String>(work),
+      'issues': serializer.toJson<String?>(issues),
+      'photoUuidsJson': serializer.toJson<String>(photoUuidsJson),
+      'serverPhotoCount': serializer.toJson<int>(serverPhotoCount),
+      'reason': serializer.toJson<String?>(reason),
+      'serverId': serializer.toJson<int?>(serverId),
+      'serverRev': serializer.toJson<int?>(serverRev),
+      'docNo': serializer.toJson<String?>(docNo),
+      'editableUntil': serializer.toJson<String?>(editableUntil),
+      'serverPctAfter': serializer.toJson<double?>(serverPctAfter),
+      'syncState': serializer.toJson<String>(syncState),
+      'lastError': serializer.toJson<String?>(lastError),
+      'lastErrorCode': serializer.toJson<String?>(lastErrorCode),
+      'conflictCopyJson': serializer.toJson<String?>(conflictCopyJson),
+      'offline': serializer.toJson<bool>(offline),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LocalProgressReport copyWith({
+    String? clientUuid,
+    String? userSub,
+    int? projectId,
+    String? projectLabel,
+    int? stageId,
+    String? stageLabel,
+    Value<double?> pctBefore = const Value.absent(),
+    double? pctAfter,
+    String? work,
+    Value<String?> issues = const Value.absent(),
+    String? photoUuidsJson,
+    int? serverPhotoCount,
+    Value<String?> reason = const Value.absent(),
+    Value<int?> serverId = const Value.absent(),
+    Value<int?> serverRev = const Value.absent(),
+    Value<String?> docNo = const Value.absent(),
+    Value<String?> editableUntil = const Value.absent(),
+    Value<double?> serverPctAfter = const Value.absent(),
+    String? syncState,
+    Value<String?> lastError = const Value.absent(),
+    Value<String?> lastErrorCode = const Value.absent(),
+    Value<String?> conflictCopyJson = const Value.absent(),
+    bool? offline,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => LocalProgressReport(
+    clientUuid: clientUuid ?? this.clientUuid,
+    userSub: userSub ?? this.userSub,
+    projectId: projectId ?? this.projectId,
+    projectLabel: projectLabel ?? this.projectLabel,
+    stageId: stageId ?? this.stageId,
+    stageLabel: stageLabel ?? this.stageLabel,
+    pctBefore: pctBefore.present ? pctBefore.value : this.pctBefore,
+    pctAfter: pctAfter ?? this.pctAfter,
+    work: work ?? this.work,
+    issues: issues.present ? issues.value : this.issues,
+    photoUuidsJson: photoUuidsJson ?? this.photoUuidsJson,
+    serverPhotoCount: serverPhotoCount ?? this.serverPhotoCount,
+    reason: reason.present ? reason.value : this.reason,
+    serverId: serverId.present ? serverId.value : this.serverId,
+    serverRev: serverRev.present ? serverRev.value : this.serverRev,
+    docNo: docNo.present ? docNo.value : this.docNo,
+    editableUntil: editableUntil.present
+        ? editableUntil.value
+        : this.editableUntil,
+    serverPctAfter: serverPctAfter.present
+        ? serverPctAfter.value
+        : this.serverPctAfter,
+    syncState: syncState ?? this.syncState,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    lastErrorCode: lastErrorCode.present
+        ? lastErrorCode.value
+        : this.lastErrorCode,
+    conflictCopyJson: conflictCopyJson.present
+        ? conflictCopyJson.value
+        : this.conflictCopyJson,
+    offline: offline ?? this.offline,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LocalProgressReport copyWithCompanion(LocalProgressReportsCompanion data) {
+    return LocalProgressReport(
+      clientUuid: data.clientUuid.present
+          ? data.clientUuid.value
+          : this.clientUuid,
+      userSub: data.userSub.present ? data.userSub.value : this.userSub,
+      projectId: data.projectId.present ? data.projectId.value : this.projectId,
+      projectLabel: data.projectLabel.present
+          ? data.projectLabel.value
+          : this.projectLabel,
+      stageId: data.stageId.present ? data.stageId.value : this.stageId,
+      stageLabel: data.stageLabel.present
+          ? data.stageLabel.value
+          : this.stageLabel,
+      pctBefore: data.pctBefore.present ? data.pctBefore.value : this.pctBefore,
+      pctAfter: data.pctAfter.present ? data.pctAfter.value : this.pctAfter,
+      work: data.work.present ? data.work.value : this.work,
+      issues: data.issues.present ? data.issues.value : this.issues,
+      photoUuidsJson: data.photoUuidsJson.present
+          ? data.photoUuidsJson.value
+          : this.photoUuidsJson,
+      serverPhotoCount: data.serverPhotoCount.present
+          ? data.serverPhotoCount.value
+          : this.serverPhotoCount,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      serverRev: data.serverRev.present ? data.serverRev.value : this.serverRev,
+      docNo: data.docNo.present ? data.docNo.value : this.docNo,
+      editableUntil: data.editableUntil.present
+          ? data.editableUntil.value
+          : this.editableUntil,
+      serverPctAfter: data.serverPctAfter.present
+          ? data.serverPctAfter.value
+          : this.serverPctAfter,
+      syncState: data.syncState.present ? data.syncState.value : this.syncState,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      lastErrorCode: data.lastErrorCode.present
+          ? data.lastErrorCode.value
+          : this.lastErrorCode,
+      conflictCopyJson: data.conflictCopyJson.present
+          ? data.conflictCopyJson.value
+          : this.conflictCopyJson,
+      offline: data.offline.present ? data.offline.value : this.offline,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalProgressReport(')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('userSub: $userSub, ')
+          ..write('projectId: $projectId, ')
+          ..write('projectLabel: $projectLabel, ')
+          ..write('stageId: $stageId, ')
+          ..write('stageLabel: $stageLabel, ')
+          ..write('pctBefore: $pctBefore, ')
+          ..write('pctAfter: $pctAfter, ')
+          ..write('work: $work, ')
+          ..write('issues: $issues, ')
+          ..write('photoUuidsJson: $photoUuidsJson, ')
+          ..write('serverPhotoCount: $serverPhotoCount, ')
+          ..write('reason: $reason, ')
+          ..write('serverId: $serverId, ')
+          ..write('serverRev: $serverRev, ')
+          ..write('docNo: $docNo, ')
+          ..write('editableUntil: $editableUntil, ')
+          ..write('serverPctAfter: $serverPctAfter, ')
+          ..write('syncState: $syncState, ')
+          ..write('lastError: $lastError, ')
+          ..write('lastErrorCode: $lastErrorCode, ')
+          ..write('conflictCopyJson: $conflictCopyJson, ')
+          ..write('offline: $offline, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    clientUuid,
+    userSub,
+    projectId,
+    projectLabel,
+    stageId,
+    stageLabel,
+    pctBefore,
+    pctAfter,
+    work,
+    issues,
+    photoUuidsJson,
+    serverPhotoCount,
+    reason,
+    serverId,
+    serverRev,
+    docNo,
+    editableUntil,
+    serverPctAfter,
+    syncState,
+    lastError,
+    lastErrorCode,
+    conflictCopyJson,
+    offline,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalProgressReport &&
+          other.clientUuid == this.clientUuid &&
+          other.userSub == this.userSub &&
+          other.projectId == this.projectId &&
+          other.projectLabel == this.projectLabel &&
+          other.stageId == this.stageId &&
+          other.stageLabel == this.stageLabel &&
+          other.pctBefore == this.pctBefore &&
+          other.pctAfter == this.pctAfter &&
+          other.work == this.work &&
+          other.issues == this.issues &&
+          other.photoUuidsJson == this.photoUuidsJson &&
+          other.serverPhotoCount == this.serverPhotoCount &&
+          other.reason == this.reason &&
+          other.serverId == this.serverId &&
+          other.serverRev == this.serverRev &&
+          other.docNo == this.docNo &&
+          other.editableUntil == this.editableUntil &&
+          other.serverPctAfter == this.serverPctAfter &&
+          other.syncState == this.syncState &&
+          other.lastError == this.lastError &&
+          other.lastErrorCode == this.lastErrorCode &&
+          other.conflictCopyJson == this.conflictCopyJson &&
+          other.offline == this.offline &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LocalProgressReportsCompanion
+    extends UpdateCompanion<LocalProgressReport> {
+  final Value<String> clientUuid;
+  final Value<String> userSub;
+  final Value<int> projectId;
+  final Value<String> projectLabel;
+  final Value<int> stageId;
+  final Value<String> stageLabel;
+  final Value<double?> pctBefore;
+  final Value<double> pctAfter;
+  final Value<String> work;
+  final Value<String?> issues;
+  final Value<String> photoUuidsJson;
+  final Value<int> serverPhotoCount;
+  final Value<String?> reason;
+  final Value<int?> serverId;
+  final Value<int?> serverRev;
+  final Value<String?> docNo;
+  final Value<String?> editableUntil;
+  final Value<double?> serverPctAfter;
+  final Value<String> syncState;
+  final Value<String?> lastError;
+  final Value<String?> lastErrorCode;
+  final Value<String?> conflictCopyJson;
+  final Value<bool> offline;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LocalProgressReportsCompanion({
+    this.clientUuid = const Value.absent(),
+    this.userSub = const Value.absent(),
+    this.projectId = const Value.absent(),
+    this.projectLabel = const Value.absent(),
+    this.stageId = const Value.absent(),
+    this.stageLabel = const Value.absent(),
+    this.pctBefore = const Value.absent(),
+    this.pctAfter = const Value.absent(),
+    this.work = const Value.absent(),
+    this.issues = const Value.absent(),
+    this.photoUuidsJson = const Value.absent(),
+    this.serverPhotoCount = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.serverRev = const Value.absent(),
+    this.docNo = const Value.absent(),
+    this.editableUntil = const Value.absent(),
+    this.serverPctAfter = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.lastErrorCode = const Value.absent(),
+    this.conflictCopyJson = const Value.absent(),
+    this.offline = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalProgressReportsCompanion.insert({
+    required String clientUuid,
+    required String userSub,
+    required int projectId,
+    this.projectLabel = const Value.absent(),
+    required int stageId,
+    this.stageLabel = const Value.absent(),
+    this.pctBefore = const Value.absent(),
+    required double pctAfter,
+    this.work = const Value.absent(),
+    this.issues = const Value.absent(),
+    this.photoUuidsJson = const Value.absent(),
+    this.serverPhotoCount = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.serverId = const Value.absent(),
+    this.serverRev = const Value.absent(),
+    this.docNo = const Value.absent(),
+    this.editableUntil = const Value.absent(),
+    this.serverPctAfter = const Value.absent(),
+    this.syncState = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.lastErrorCode = const Value.absent(),
+    this.conflictCopyJson = const Value.absent(),
+    this.offline = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : clientUuid = Value(clientUuid),
+       userSub = Value(userSub),
+       projectId = Value(projectId),
+       stageId = Value(stageId),
+       pctAfter = Value(pctAfter),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<LocalProgressReport> custom({
+    Expression<String>? clientUuid,
+    Expression<String>? userSub,
+    Expression<int>? projectId,
+    Expression<String>? projectLabel,
+    Expression<int>? stageId,
+    Expression<String>? stageLabel,
+    Expression<double>? pctBefore,
+    Expression<double>? pctAfter,
+    Expression<String>? work,
+    Expression<String>? issues,
+    Expression<String>? photoUuidsJson,
+    Expression<int>? serverPhotoCount,
+    Expression<String>? reason,
+    Expression<int>? serverId,
+    Expression<int>? serverRev,
+    Expression<String>? docNo,
+    Expression<String>? editableUntil,
+    Expression<double>? serverPctAfter,
+    Expression<String>? syncState,
+    Expression<String>? lastError,
+    Expression<String>? lastErrorCode,
+    Expression<String>? conflictCopyJson,
+    Expression<bool>? offline,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (clientUuid != null) 'client_uuid': clientUuid,
+      if (userSub != null) 'user_sub': userSub,
+      if (projectId != null) 'project_id': projectId,
+      if (projectLabel != null) 'project_label': projectLabel,
+      if (stageId != null) 'stage_id': stageId,
+      if (stageLabel != null) 'stage_label': stageLabel,
+      if (pctBefore != null) 'pct_before': pctBefore,
+      if (pctAfter != null) 'pct_after': pctAfter,
+      if (work != null) 'work': work,
+      if (issues != null) 'issues': issues,
+      if (photoUuidsJson != null) 'photo_uuids_json': photoUuidsJson,
+      if (serverPhotoCount != null) 'server_photo_count': serverPhotoCount,
+      if (reason != null) 'reason': reason,
+      if (serverId != null) 'server_id': serverId,
+      if (serverRev != null) 'server_rev': serverRev,
+      if (docNo != null) 'doc_no': docNo,
+      if (editableUntil != null) 'editable_until': editableUntil,
+      if (serverPctAfter != null) 'server_pct_after': serverPctAfter,
+      if (syncState != null) 'sync_state': syncState,
+      if (lastError != null) 'last_error': lastError,
+      if (lastErrorCode != null) 'last_error_code': lastErrorCode,
+      if (conflictCopyJson != null) 'conflict_copy_json': conflictCopyJson,
+      if (offline != null) 'offline': offline,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalProgressReportsCompanion copyWith({
+    Value<String>? clientUuid,
+    Value<String>? userSub,
+    Value<int>? projectId,
+    Value<String>? projectLabel,
+    Value<int>? stageId,
+    Value<String>? stageLabel,
+    Value<double?>? pctBefore,
+    Value<double>? pctAfter,
+    Value<String>? work,
+    Value<String?>? issues,
+    Value<String>? photoUuidsJson,
+    Value<int>? serverPhotoCount,
+    Value<String?>? reason,
+    Value<int?>? serverId,
+    Value<int?>? serverRev,
+    Value<String?>? docNo,
+    Value<String?>? editableUntil,
+    Value<double?>? serverPctAfter,
+    Value<String>? syncState,
+    Value<String?>? lastError,
+    Value<String?>? lastErrorCode,
+    Value<String?>? conflictCopyJson,
+    Value<bool>? offline,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalProgressReportsCompanion(
+      clientUuid: clientUuid ?? this.clientUuid,
+      userSub: userSub ?? this.userSub,
+      projectId: projectId ?? this.projectId,
+      projectLabel: projectLabel ?? this.projectLabel,
+      stageId: stageId ?? this.stageId,
+      stageLabel: stageLabel ?? this.stageLabel,
+      pctBefore: pctBefore ?? this.pctBefore,
+      pctAfter: pctAfter ?? this.pctAfter,
+      work: work ?? this.work,
+      issues: issues ?? this.issues,
+      photoUuidsJson: photoUuidsJson ?? this.photoUuidsJson,
+      serverPhotoCount: serverPhotoCount ?? this.serverPhotoCount,
+      reason: reason ?? this.reason,
+      serverId: serverId ?? this.serverId,
+      serverRev: serverRev ?? this.serverRev,
+      docNo: docNo ?? this.docNo,
+      editableUntil: editableUntil ?? this.editableUntil,
+      serverPctAfter: serverPctAfter ?? this.serverPctAfter,
+      syncState: syncState ?? this.syncState,
+      lastError: lastError ?? this.lastError,
+      lastErrorCode: lastErrorCode ?? this.lastErrorCode,
+      conflictCopyJson: conflictCopyJson ?? this.conflictCopyJson,
+      offline: offline ?? this.offline,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (clientUuid.present) {
+      map['client_uuid'] = Variable<String>(clientUuid.value);
+    }
+    if (userSub.present) {
+      map['user_sub'] = Variable<String>(userSub.value);
+    }
+    if (projectId.present) {
+      map['project_id'] = Variable<int>(projectId.value);
+    }
+    if (projectLabel.present) {
+      map['project_label'] = Variable<String>(projectLabel.value);
+    }
+    if (stageId.present) {
+      map['stage_id'] = Variable<int>(stageId.value);
+    }
+    if (stageLabel.present) {
+      map['stage_label'] = Variable<String>(stageLabel.value);
+    }
+    if (pctBefore.present) {
+      map['pct_before'] = Variable<double>(pctBefore.value);
+    }
+    if (pctAfter.present) {
+      map['pct_after'] = Variable<double>(pctAfter.value);
+    }
+    if (work.present) {
+      map['work'] = Variable<String>(work.value);
+    }
+    if (issues.present) {
+      map['issues'] = Variable<String>(issues.value);
+    }
+    if (photoUuidsJson.present) {
+      map['photo_uuids_json'] = Variable<String>(photoUuidsJson.value);
+    }
+    if (serverPhotoCount.present) {
+      map['server_photo_count'] = Variable<int>(serverPhotoCount.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (serverId.present) {
+      map['server_id'] = Variable<int>(serverId.value);
+    }
+    if (serverRev.present) {
+      map['server_rev'] = Variable<int>(serverRev.value);
+    }
+    if (docNo.present) {
+      map['doc_no'] = Variable<String>(docNo.value);
+    }
+    if (editableUntil.present) {
+      map['editable_until'] = Variable<String>(editableUntil.value);
+    }
+    if (serverPctAfter.present) {
+      map['server_pct_after'] = Variable<double>(serverPctAfter.value);
+    }
+    if (syncState.present) {
+      map['sync_state'] = Variable<String>(syncState.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (lastErrorCode.present) {
+      map['last_error_code'] = Variable<String>(lastErrorCode.value);
+    }
+    if (conflictCopyJson.present) {
+      map['conflict_copy_json'] = Variable<String>(conflictCopyJson.value);
+    }
+    if (offline.present) {
+      map['offline'] = Variable<bool>(offline.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalProgressReportsCompanion(')
+          ..write('clientUuid: $clientUuid, ')
+          ..write('userSub: $userSub, ')
+          ..write('projectId: $projectId, ')
+          ..write('projectLabel: $projectLabel, ')
+          ..write('stageId: $stageId, ')
+          ..write('stageLabel: $stageLabel, ')
+          ..write('pctBefore: $pctBefore, ')
+          ..write('pctAfter: $pctAfter, ')
+          ..write('work: $work, ')
+          ..write('issues: $issues, ')
+          ..write('photoUuidsJson: $photoUuidsJson, ')
+          ..write('serverPhotoCount: $serverPhotoCount, ')
+          ..write('reason: $reason, ')
+          ..write('serverId: $serverId, ')
+          ..write('serverRev: $serverRev, ')
+          ..write('docNo: $docNo, ')
+          ..write('editableUntil: $editableUntil, ')
+          ..write('serverPctAfter: $serverPctAfter, ')
+          ..write('syncState: $syncState, ')
+          ..write('lastError: $lastError, ')
+          ..write('lastErrorCode: $lastErrorCode, ')
+          ..write('conflictCopyJson: $conflictCopyJson, ')
+          ..write('offline: $offline, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4138,6 +5526,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $MediaBlobsTable mediaBlobs = $MediaBlobsTable(this);
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $KvEntriesTable kvEntries = $KvEntriesTable(this);
+  late final $LocalProgressReportsTable localProgressReports =
+      $LocalProgressReportsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4149,6 +5539,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     mediaBlobs,
     outbox,
     kvEntries,
+    localProgressReports,
   ];
 }
 
@@ -6726,6 +8117,631 @@ typedef $$KvEntriesTableProcessedTableManager =
       KvEntry,
       PrefetchHooks Function()
     >;
+typedef $$LocalProgressReportsTableCreateCompanionBuilder =
+    LocalProgressReportsCompanion Function({
+      required String clientUuid,
+      required String userSub,
+      required int projectId,
+      Value<String> projectLabel,
+      required int stageId,
+      Value<String> stageLabel,
+      Value<double?> pctBefore,
+      required double pctAfter,
+      Value<String> work,
+      Value<String?> issues,
+      Value<String> photoUuidsJson,
+      Value<int> serverPhotoCount,
+      Value<String?> reason,
+      Value<int?> serverId,
+      Value<int?> serverRev,
+      Value<String?> docNo,
+      Value<String?> editableUntil,
+      Value<double?> serverPctAfter,
+      Value<String> syncState,
+      Value<String?> lastError,
+      Value<String?> lastErrorCode,
+      Value<String?> conflictCopyJson,
+      Value<bool> offline,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalProgressReportsTableUpdateCompanionBuilder =
+    LocalProgressReportsCompanion Function({
+      Value<String> clientUuid,
+      Value<String> userSub,
+      Value<int> projectId,
+      Value<String> projectLabel,
+      Value<int> stageId,
+      Value<String> stageLabel,
+      Value<double?> pctBefore,
+      Value<double> pctAfter,
+      Value<String> work,
+      Value<String?> issues,
+      Value<String> photoUuidsJson,
+      Value<int> serverPhotoCount,
+      Value<String?> reason,
+      Value<int?> serverId,
+      Value<int?> serverRev,
+      Value<String?> docNo,
+      Value<String?> editableUntil,
+      Value<double?> serverPctAfter,
+      Value<String> syncState,
+      Value<String?> lastError,
+      Value<String?> lastErrorCode,
+      Value<String?> conflictCopyJson,
+      Value<bool> offline,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalProgressReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalProgressReportsTable> {
+  $$LocalProgressReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userSub => $composableBuilder(
+    column: $table.userSub,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get projectLabel => $composableBuilder(
+    column: $table.projectLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stageId => $composableBuilder(
+    column: $table.stageId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stageLabel => $composableBuilder(
+    column: $table.stageLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get pctBefore => $composableBuilder(
+    column: $table.pctBefore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get pctAfter => $composableBuilder(
+    column: $table.pctAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get work => $composableBuilder(
+    column: $table.work,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get issues => $composableBuilder(
+    column: $table.issues,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoUuidsJson => $composableBuilder(
+    column: $table.photoUuidsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverPhotoCount => $composableBuilder(
+    column: $table.serverPhotoCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverRev => $composableBuilder(
+    column: $table.serverRev,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get docNo => $composableBuilder(
+    column: $table.docNo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get editableUntil => $composableBuilder(
+    column: $table.editableUntil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get serverPctAfter => $composableBuilder(
+    column: $table.serverPctAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastErrorCode => $composableBuilder(
+    column: $table.lastErrorCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conflictCopyJson => $composableBuilder(
+    column: $table.conflictCopyJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get offline => $composableBuilder(
+    column: $table.offline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalProgressReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalProgressReportsTable> {
+  $$LocalProgressReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userSub => $composableBuilder(
+    column: $table.userSub,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get projectId => $composableBuilder(
+    column: $table.projectId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get projectLabel => $composableBuilder(
+    column: $table.projectLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get stageId => $composableBuilder(
+    column: $table.stageId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stageLabel => $composableBuilder(
+    column: $table.stageLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get pctBefore => $composableBuilder(
+    column: $table.pctBefore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get pctAfter => $composableBuilder(
+    column: $table.pctAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get work => $composableBuilder(
+    column: $table.work,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get issues => $composableBuilder(
+    column: $table.issues,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoUuidsJson => $composableBuilder(
+    column: $table.photoUuidsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverPhotoCount => $composableBuilder(
+    column: $table.serverPhotoCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverRev => $composableBuilder(
+    column: $table.serverRev,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get docNo => $composableBuilder(
+    column: $table.docNo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get editableUntil => $composableBuilder(
+    column: $table.editableUntil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get serverPctAfter => $composableBuilder(
+    column: $table.serverPctAfter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncState => $composableBuilder(
+    column: $table.syncState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastErrorCode => $composableBuilder(
+    column: $table.lastErrorCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conflictCopyJson => $composableBuilder(
+    column: $table.conflictCopyJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get offline => $composableBuilder(
+    column: $table.offline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalProgressReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalProgressReportsTable> {
+  $$LocalProgressReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get clientUuid => $composableBuilder(
+    column: $table.clientUuid,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userSub =>
+      $composableBuilder(column: $table.userSub, builder: (column) => column);
+
+  GeneratedColumn<int> get projectId =>
+      $composableBuilder(column: $table.projectId, builder: (column) => column);
+
+  GeneratedColumn<String> get projectLabel => $composableBuilder(
+    column: $table.projectLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get stageId =>
+      $composableBuilder(column: $table.stageId, builder: (column) => column);
+
+  GeneratedColumn<String> get stageLabel => $composableBuilder(
+    column: $table.stageLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get pctBefore =>
+      $composableBuilder(column: $table.pctBefore, builder: (column) => column);
+
+  GeneratedColumn<double> get pctAfter =>
+      $composableBuilder(column: $table.pctAfter, builder: (column) => column);
+
+  GeneratedColumn<String> get work =>
+      $composableBuilder(column: $table.work, builder: (column) => column);
+
+  GeneratedColumn<String> get issues =>
+      $composableBuilder(column: $table.issues, builder: (column) => column);
+
+  GeneratedColumn<String> get photoUuidsJson => $composableBuilder(
+    column: $table.photoUuidsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverPhotoCount => $composableBuilder(
+    column: $table.serverPhotoCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
+
+  GeneratedColumn<int> get serverRev =>
+      $composableBuilder(column: $table.serverRev, builder: (column) => column);
+
+  GeneratedColumn<String> get docNo =>
+      $composableBuilder(column: $table.docNo, builder: (column) => column);
+
+  GeneratedColumn<String> get editableUntil => $composableBuilder(
+    column: $table.editableUntil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get serverPctAfter => $composableBuilder(
+    column: $table.serverPctAfter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncState =>
+      $composableBuilder(column: $table.syncState, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<String> get lastErrorCode => $composableBuilder(
+    column: $table.lastErrorCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get conflictCopyJson => $composableBuilder(
+    column: $table.conflictCopyJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get offline =>
+      $composableBuilder(column: $table.offline, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LocalProgressReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalProgressReportsTable,
+          LocalProgressReport,
+          $$LocalProgressReportsTableFilterComposer,
+          $$LocalProgressReportsTableOrderingComposer,
+          $$LocalProgressReportsTableAnnotationComposer,
+          $$LocalProgressReportsTableCreateCompanionBuilder,
+          $$LocalProgressReportsTableUpdateCompanionBuilder,
+          (
+            LocalProgressReport,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalProgressReportsTable,
+              LocalProgressReport
+            >,
+          ),
+          LocalProgressReport,
+          PrefetchHooks Function()
+        > {
+  $$LocalProgressReportsTableTableManager(
+    _$AppDatabase db,
+    $LocalProgressReportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalProgressReportsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalProgressReportsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalProgressReportsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> clientUuid = const Value.absent(),
+                Value<String> userSub = const Value.absent(),
+                Value<int> projectId = const Value.absent(),
+                Value<String> projectLabel = const Value.absent(),
+                Value<int> stageId = const Value.absent(),
+                Value<String> stageLabel = const Value.absent(),
+                Value<double?> pctBefore = const Value.absent(),
+                Value<double> pctAfter = const Value.absent(),
+                Value<String> work = const Value.absent(),
+                Value<String?> issues = const Value.absent(),
+                Value<String> photoUuidsJson = const Value.absent(),
+                Value<int> serverPhotoCount = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<int?> serverId = const Value.absent(),
+                Value<int?> serverRev = const Value.absent(),
+                Value<String?> docNo = const Value.absent(),
+                Value<String?> editableUntil = const Value.absent(),
+                Value<double?> serverPctAfter = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<String?> lastErrorCode = const Value.absent(),
+                Value<String?> conflictCopyJson = const Value.absent(),
+                Value<bool> offline = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalProgressReportsCompanion(
+                clientUuid: clientUuid,
+                userSub: userSub,
+                projectId: projectId,
+                projectLabel: projectLabel,
+                stageId: stageId,
+                stageLabel: stageLabel,
+                pctBefore: pctBefore,
+                pctAfter: pctAfter,
+                work: work,
+                issues: issues,
+                photoUuidsJson: photoUuidsJson,
+                serverPhotoCount: serverPhotoCount,
+                reason: reason,
+                serverId: serverId,
+                serverRev: serverRev,
+                docNo: docNo,
+                editableUntil: editableUntil,
+                serverPctAfter: serverPctAfter,
+                syncState: syncState,
+                lastError: lastError,
+                lastErrorCode: lastErrorCode,
+                conflictCopyJson: conflictCopyJson,
+                offline: offline,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String clientUuid,
+                required String userSub,
+                required int projectId,
+                Value<String> projectLabel = const Value.absent(),
+                required int stageId,
+                Value<String> stageLabel = const Value.absent(),
+                Value<double?> pctBefore = const Value.absent(),
+                required double pctAfter,
+                Value<String> work = const Value.absent(),
+                Value<String?> issues = const Value.absent(),
+                Value<String> photoUuidsJson = const Value.absent(),
+                Value<int> serverPhotoCount = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<int?> serverId = const Value.absent(),
+                Value<int?> serverRev = const Value.absent(),
+                Value<String?> docNo = const Value.absent(),
+                Value<String?> editableUntil = const Value.absent(),
+                Value<double?> serverPctAfter = const Value.absent(),
+                Value<String> syncState = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<String?> lastErrorCode = const Value.absent(),
+                Value<String?> conflictCopyJson = const Value.absent(),
+                Value<bool> offline = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalProgressReportsCompanion.insert(
+                clientUuid: clientUuid,
+                userSub: userSub,
+                projectId: projectId,
+                projectLabel: projectLabel,
+                stageId: stageId,
+                stageLabel: stageLabel,
+                pctBefore: pctBefore,
+                pctAfter: pctAfter,
+                work: work,
+                issues: issues,
+                photoUuidsJson: photoUuidsJson,
+                serverPhotoCount: serverPhotoCount,
+                reason: reason,
+                serverId: serverId,
+                serverRev: serverRev,
+                docNo: docNo,
+                editableUntil: editableUntil,
+                serverPctAfter: serverPctAfter,
+                syncState: syncState,
+                lastError: lastError,
+                lastErrorCode: lastErrorCode,
+                conflictCopyJson: conflictCopyJson,
+                offline: offline,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LocalProgressReportsTable, LocalProgressReport>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $LocalProgressReportsTable,
+                    LocalProgressReport
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalProgressReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalProgressReportsTable,
+      LocalProgressReport,
+      $$LocalProgressReportsTableFilterComposer,
+      $$LocalProgressReportsTableOrderingComposer,
+      $$LocalProgressReportsTableAnnotationComposer,
+      $$LocalProgressReportsTableCreateCompanionBuilder,
+      $$LocalProgressReportsTableUpdateCompanionBuilder,
+      (
+        LocalProgressReport,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalProgressReportsTable,
+          LocalProgressReport
+        >,
+      ),
+      LocalProgressReport,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6742,4 +8758,6 @@ class $AppDatabaseManager {
       $$OutboxTableTableManager(_db, _db.outbox);
   $$KvEntriesTableTableManager get kvEntries =>
       $$KvEntriesTableTableManager(_db, _db.kvEntries);
+  $$LocalProgressReportsTableTableManager get localProgressReports =>
+      $$LocalProgressReportsTableTableManager(_db, _db.localProgressReports);
 }

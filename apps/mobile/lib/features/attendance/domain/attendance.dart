@@ -17,20 +17,48 @@ enum AttendanceKind {
   static AttendanceKind? fromItemType(String t) => AttendanceKind.values.where((k) => k.itemType == t).firstOrNull;
 }
 
-/// Geofence of an assigned project from the cached masters (`projects`: lat, lng, radiusM).
+/// Attendance location type (E6, Q-40): a project or a cost center ("pusat biaya", e.g. an office).
+enum SiteKind {
+  project('project_id', 'project'),
+  costCenter('cost_center_id', 'cost_center');
+
+  const SiteKind(this.payloadKey, this.code);
+
+  /// Key in `SyncAttendancePayload` / `SyncOnBehalfPayload` (exactly one of the two is sent).
+  final String payloadKey;
+
+  /// `AttendanceLocationRef.type`.
+  final String code;
+
+  static SiteKind fromCode(String? c) => c == 'cost_center' ? costCenter : project;
+}
+
+/// Geofence of an assigned location from the cached masters (`projects` / `cost-centers`: lat, lng,
+/// radiusM).
 class ProjectSite {
-  const ProjectSite({required this.id, required this.label, this.lat, this.lng, this.radiusM});
+  const ProjectSite({
+    required this.id,
+    required this.label,
+    this.lat,
+    this.lng,
+    this.radiusM,
+    this.kind = SiteKind.project,
+  });
   final int id;
   final String label;
   final double? lat;
   final double? lng;
   final double? radiusM;
+  final SiteKind kind;
 
   bool get hasGeofence => lat != null && lng != null && radiusM != null;
 
-  static ProjectSite fromMaster(MasterItem m) {
+  /// Unique across both kinds (`p7`, `c3`) — dropdown value.
+  String get key => '${kind == SiteKind.project ? 'p' : 'c'}$id';
+
+  static ProjectSite fromMaster(MasterItem m, {SiteKind kind = SiteKind.project}) {
     double? d(String k) => (m.extra[k] as num?)?.toDouble();
-    return ProjectSite(id: m.id, label: m.label, lat: d('lat'), lng: d('lng'), radiusM: d('radiusM'));
+    return ProjectSite(id: m.id, label: m.label, lat: d('lat'), lng: d('lng'), radiusM: d('radiusM'), kind: kind);
   }
 }
 
@@ -59,16 +87,43 @@ enum SiteCheck { ok, outside, noGeofence, mocked }
 
 /// `SyncAttendancePayload` (openapi) with the local selfie id in [selfiePlaceholderKey]; the sync engine
 /// uploads the selfie (`POST /media/selfies`) and replaces it with `selfie_media_id` just before sending.
+/// Exactly one of `project_id` / `cost_center_id` (E6).
 Map<String, dynamic> attendancePayload({
-  required int projectId,
+  required ProjectSite site,
   required LocationFix fix,
   required String selfieUuid,
 }) => {
-  'project_id': projectId,
+  site.kind.payloadKey: site.id,
   'lat': fix.lat,
   'lng': fix.lng,
   'accuracy_m': double.parse(fix.accuracyM.toStringAsFixed(1)),
   'is_mocked': fix.isMocked,
   'camera_lens': 'front',
   selfiePlaceholderKey: selfieUuid,
+};
+
+/// Camera used by the PM for an on-behalf photo (the employee may stand in front of the PM's phone).
+enum CameraLens { front, back }
+
+/// `SyncOnBehalfPayload` (US-14, PM only): the employee's photo is taken and uploaded by the PM; the
+/// GPS fix is the PM's phone; the reason is mandatory (3–500 characters).
+Map<String, dynamic> onBehalfPayload({
+  required int employeeId,
+  required AttendanceKind kind,
+  required ProjectSite site,
+  required LocationFix fix,
+  required String photoUuid,
+  required CameraLens lens,
+  required String reason,
+}) => {
+  'employee_id': employeeId,
+  'kind': kind == AttendanceKind.checkIn ? 'check_in' : 'check_out',
+  site.kind.payloadKey: site.id,
+  'lat': fix.lat,
+  'lng': fix.lng,
+  'accuracy_m': double.parse(fix.accuracyM.toStringAsFixed(1)),
+  'is_mocked': fix.isMocked,
+  'camera_lens': lens.name,
+  'reason': reason.trim(),
+  selfiePlaceholderKey: photoUuid,
 };

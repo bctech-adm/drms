@@ -17,7 +17,7 @@ class MastersRepository {
   Future<bool> refresh(String sub) async {
     try {
       final data = await client.run(
-        (d) => d.get<dynamic>('/masters', queryParameters: {'types': MasterTypes.forExpense.join(',')}),
+        (d) => d.get<dynamic>('/masters', queryParameters: {'types': MasterTypes.forApp.join(',')}),
         (data) => data as Map<String, dynamic>,
       );
       await db.kvPut(_key(sub), jsonEncode(data['types'] ?? const {}));
@@ -37,7 +37,7 @@ class MastersRepository {
 
     final bankNames = {for (final b in rows(MasterTypes.banks)) (b['id'] as num).toInt(): '${b['name'] ?? ''}'};
     return {
-      for (final t in MasterTypes.forExpense)
+      for (final t in MasterTypes.forApp)
         t: [for (final r in rows(t)) masterFromJson(t, r, bankNames: bankNames)].where((m) => m.active).toList(),
     };
   }

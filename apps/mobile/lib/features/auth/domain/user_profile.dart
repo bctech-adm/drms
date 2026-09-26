@@ -42,6 +42,9 @@ abstract class Capabilities with _$Capabilities {
 
     /// PM (`pk-pm`): team list / team dashboard, monitoring only (no decisions).
     @Default(false) bool teamMonitor,
+
+    /// E4: PM (team projects) or Direktur (all) may create progress reports; Staff cannot.
+    @Default(false) bool progressReportCreate,
   }) = _Capabilities;
 
   /// Fallback for a `/me` cached by an app version before E1 (no `capabilities` field): the same
@@ -49,6 +52,7 @@ abstract class Capabilities with _$Capabilities {
   factory Capabilities.fromRoles(Set<Role> roles) => Capabilities(
     approvalInbox: roles.contains(Role.owner) || roles.contains(Role.finance),
     teamMonitor: roles.contains(Role.pm),
+    progressReportCreate: roles.contains(Role.pm) || roles.contains(Role.owner),
   );
 }
 
@@ -105,4 +109,22 @@ abstract class UserProfile with _$UserProfile {
 
   /// Who may create requests on the APK (requirements §4: Staff and PM create own requests).
   bool get canCreateRequests => has(Role.staff) || has(Role.pm) || has(Role.admin);
+
+  /// E4: progress reports are readable by PM (team), Direktur and Finance (all); Staff/Admin none.
+  bool get canReadProgress => has(Role.pm) || has(Role.owner) || has(Role.finance);
+
+  /// E4: create a progress report (server capability `progressReportCreate`).
+  bool get canCreateProgress => capabilities.progressReportCreate;
+
+  /// E6: own check-in/out and own monthly recap (employees in the field: Staff and PM).
+  bool get hasOwnAttendance => has(Role.staff) || has(Role.pm);
+
+  /// E6: "Tim hari ini" (PM team; Admin/Direktur/Finance all).
+  bool get canSeeTeamAttendance => has(Role.pm) || has(Role.owner) || has(Role.finance) || has(Role.admin);
+
+  /// E6 US-14: record attendance on behalf of a team member (PM only).
+  bool get canAttendOnBehalf => has(Role.pm);
+
+  /// E6 US-15 (T10): correct a team member's attendance time (PM of the location or Admin).
+  bool get canCorrectAttendance => has(Role.pm) || has(Role.admin);
 }

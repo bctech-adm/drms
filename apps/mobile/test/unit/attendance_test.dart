@@ -71,7 +71,7 @@ void main() {
     });
 
     test('payload: selfie placeholder replaced by selfie_media_id; missing upload → null', () {
-      final p = attendancePayload(projectId: 7, fix: fixAt(0.0001, accuracy: 12.54), selfieUuid: 'sel-1');
+      final p = attendancePayload(site: site, fix: fixAt(0.0001, accuracy: 12.54), selfieUuid: 'sel-1');
       expect(p['accuracy_m'], 12.5);
       expect(p['camera_lens'], 'front');
       final resolved = resolveMediaIds(p, {'sel-1': 55})!;

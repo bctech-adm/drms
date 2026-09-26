@@ -48,11 +48,30 @@ Until then the home screen bell polls `GET /api/v1/notifications` (every 2 minut
 
 ## Attendance (F4 slice)
 
-`/attendance` (home button "Absensi", enabled when `/app/config` `features.syncAttendance` is true = company setting
-"Absensi dari APK"): pick an assigned project, tap Absen masuk/pulang → GPS fix (geolocator 14.0.3, while-in-use
+`/attendance` (home button "Absensi"; check-in enabled when `/app/config` `features.syncAttendance` is true = company
+setting "Absensi dari APK"): pick an assigned project or cost center, tap Absen masuk/pulang → GPS fix (geolocator 14.0.3, while-in-use
 permission only) → the phone checks the radius and refuses mock locations → front-camera selfie (no gallery)
 compressed to 720 px / ≤ 150 KB → queued in the encrypted outbox → `POST /media/selfies` + `attendance.check_*`
 sync item. Works offline; the server decides and stamps the time (ADR 0010 decisions 7/8).
+
+## Attendance E6 & progress reports E4 (S2)
+
+- **Absensi** (`/attendance`, tabs by role): *Absen* at an assigned project **or** cost center ("pusat biaya", masters
+  `cost-centers` lat/lng/radiusM) with a distance card (distance vs radius + GPS allowance ≤ 50 m); *Rekap* = own month
+  (`GET /attendance/me`, calendar + totals); *Tim* = `GET /attendance/team-today` for PM/Direktur/Finance/Admin.
+  PM **on-behalf** (`attendance.on_behalf`: employee from cached `team-assignments`, reason, front/back camera, queued
+  offline) and **corrections** (`POST /attendance/{id}/correct`, online, reason). Check-in and on-behalf follow
+  `features.syncAttendance`; recap/team/corrections are online reads and work with the flag off.
+- **Laporan progress** (`/progress`, PM/Direktur create, Finance reads): project/stage picker (stages from
+  `GET /projects/{id}/stages`, offline from cached `project-stages`), stage % never below the current %, ≤ 5 rear-camera
+  photos (1600 px / ≤ 400 KB JPEG, EXIF dropped, encrypted in `media_blobs` kind `progress`), edit ≤ 24 h with reason,
+  conflict screen (server version vs phone version). With `features.syncProgressReports` the report goes through the
+  queue (`progress_report.draft_upsert`, table `local_progress_reports`, drift schema v2); without it the app posts
+  online (`POST/PATCH /progress-reports`, Idempotency-Key). K-09 cards: `GET /projects/progress`.
+- **Addendum RAB** (E5, `/addenda`): PM creates/submits for a team project; Direktur ("Setujui") and Finance
+  (approval) decide from the **Persetujuan** inbox section (`GET /budget-addenda/inbox`) or the detail, whose buttons
+  follow `allowedActions`. All writes online with an Idempotency-Key (server rate limit 30/min); the server uses the
+  profile signature.
 
 ## APK secret scan
 

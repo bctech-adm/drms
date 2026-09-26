@@ -9,6 +9,7 @@ class AppConfig {
     this.pushEnabled = false,
     this.syncExpenseDrafts = true,
     this.syncAttendance = false,
+    this.syncProgressReports = false,
   });
   final String? minAppVersion;
   final String? latestAppVersion;
@@ -20,6 +21,10 @@ class AppConfig {
 
   /// Own check-in/out from the APK (company-settings.syncAttendanceEnabled, F4b).
   final bool syncAttendance;
+
+  /// Progress reports through the offline queue (company-settings.syncProgressReportsEnabled, E4). When
+  /// false (or an older server without the flag) reports are sent online only (POST /progress-reports).
+  final bool syncProgressReports;
 
   factory AppConfig.fromJson(Map<String, dynamic> j) {
     String? s(String k) => j[k] is String && (j[k] as String).isNotEmpty ? j[k] as String : null;
@@ -34,6 +39,7 @@ class AppConfig {
       pushEnabled: features['pushEnabled'] == true,
       syncExpenseDrafts: features['syncExpenseDrafts'] != false,
       syncAttendance: features['syncAttendance'] == true,
+      syncProgressReports: features['syncProgressReports'] == true,
     );
   }
 }

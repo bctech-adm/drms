@@ -10,6 +10,11 @@ import 'package:proyekkas/core/connectivity/connectivity_controller.dart';
 import 'package:proyekkas/core/storage/secure_store.dart';
 import 'package:proyekkas/features/auth/application/auth_controller.dart';
 import 'package:proyekkas/features/auth/domain/user_profile.dart';
+import 'package:proyekkas/core/network/api_exception.dart';
+import 'package:proyekkas/features/addendum/domain/addendum.dart';
+import 'package:proyekkas/features/addendum/presentation/addendum_providers.dart';
+import 'package:proyekkas/features/progress/application/progress_providers.dart';
+import 'package:proyekkas/features/progress/domain/progress.dart';
 import 'package:proyekkas/l10n/gen/app_localizations.dart';
 
 import 'harness.dart';
@@ -52,6 +57,7 @@ Future<void> pumpScreen(
   List<Override> overrides = const [],
   AppEnv? env,
   AuthController Function()? authController,
+  bool stubProgress = true,
 }) async {
   await initializeDateFormatting('id');
   tester.view.physicalSize = const Size(1200, 3200);
@@ -71,6 +77,13 @@ Future<void> pumpScreen(
         authControllerProvider.overrideWith(
           authController ?? () => FakeAuth(auth ?? AuthSignedIn(profile: profile({Role.staff}), sub: 'user-sub-1')),
         ),
+        // E4: the home reads local progress drafts (drift stream) and /projects/progress; stubbed so tests
+        // that do not care stay free of DB timers and network.
+        if (stubProgress) ...[
+          openProgressDraftsProvider.overrideWith((ref) => Stream.value(const <ProgressDraft>[])),
+          projectProgressProvider.overrideWith((ref) async => throw const NetworkException()),
+          addendumInboxProvider.overrideWith((ref) async => const <Addendum>[]),
+        ],
         ...overrides,
       ],
       child: MaterialApp(

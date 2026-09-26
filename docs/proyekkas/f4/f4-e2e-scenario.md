@@ -5,6 +5,13 @@
 > **Approval**; **PM hanya memantau** (tanpa inbox, tanpa tombol keputusan). Ditambah langkah kesetaraan APK
 > (tarik kembali / batalkan / ajukan ulang, daftar tim PM, Riwayat, ringkasan KPI Beranda) dan sinkron latar
 > belakang (WorkManager). Bagian yang berubah: 0.5, B.3, C, D, J.2; bagian baru: M–R.
+>
+> **Revisi 2026-09-26 (S2, branch `feat/mobile-s2-progress-attendance`, `plans/fase1-golive.md` §E4 & §E6):** layar APK
+> **laporan progress** (offline, foto kamera belakang, edit ≤ 24 jam, konflik) dan **absensi lengkap** (project **atau**
+> pusat biaya, jarak ke titik, rekap bulanan, Tim hari ini, diabsenkan PM, koreksi). Persiapan baru 0.7–0.10; bagian
+> baru **S** (progress) dan **T** (absensi E6); teks pesan I.2 / I.7 berubah ("radius lokasi"). APK: artefak CI dari
+> branch tersebut. Bagian baru **U**: **Addendum RAB (E5)** — PM mengajukan, Direktur/Finance memutuskan dari Persetujuan
+> (backend E5 = `develop` 47819f6).
 
 Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` §F4):
 
@@ -39,6 +46,10 @@ Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` �
 | 0.4 | **Penugasan tim**: tambahkan `Staff Uji` ke project uji (peran Staff, tanggal mulai hari ini atau kosong). Pastikan `PM Uji` adalah PM project tersebut. | Admin, laptop | Penugasan tersimpan. | | |
 | 0.5 | Periksa **Aturan approval** aktif (ADR 0013): "Diketahui" oleh **Direktur** (`pk-owner`, wajib), Approval level 1 oleh **Finance** (`pk-finance`). Pastikan pengajuan staging lama yang masih `Menunggu Diketahui/Approval` sudah diselesaikan atau dibatalkan (ADR 0013 "Data migration"). | Admin, laptop | Aturan aktif sesuai; tidak ada pengajuan lama yang menunggu PM. | | |
 | 0.6 | Pasang APK uji di HP (hapus versi lama bila perlu). Izinkan pemasangan dari sumber ini. | Anda, HP | Ikon **ProyekKas STG** muncul. | | |
+| 0.7 | (S2) Staging menjalankan `develop` dengan E4 + E6 (migrasi `e4_progress_reports`, `20260926_091848_e6_attendance`). **Setting perusahaan**: centang **"Laporan progress dari APK (termasuk offline) aktif"**; biarkan **"Absensi dari APK (termasuk offline) aktif"** tercentang (0.2). | Admin, laptop | Tersimpan. | | |
+| 0.8 | (S2) Project uji: tahapan dengan **total bobot 100%** (mis. Persiapan 20%, Struktur 30%, Finishing 50%). Project uji punya **Nilai RAB** agar kartu "Progress fisik vs anggaran" bisa menghitung selisih. | Admin/Direktur, laptop | Tahapan tersimpan; total 100%. | | |
+| 0.9 | (S2) **Pusat biaya** uji (mis. "Kantor Uji"): isi **Latitude**, **Longitude**, **Radius geofence (m)** = `100` di titik kedua yang bisa Anda datangi. **Penugasan tim**: `Staff Uji` juga ke pusat biaya ini. | Admin, laptop | Tersimpan. | | |
+| 0.10 | (S2) Karyawan tanpa akun, mis. **"Karyawan Tanpa HP"** (fiktif): buat di **Karyawan**, tugaskan ke project uji (penugasan tim). `PM Uji` = PM project uji. | Admin, laptop | Karyawan & penugasan tersimpan. | | |
 
 ## A. Masuk & perangkat
 
@@ -117,12 +128,12 @@ Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` �
 | No | Langkah | Aktor & perangkat | Hasil yang diharapkan | PASS/FAIL | Catatan |
 |---|---|---|---|---|---|
 | I.1 | Berdiri di titik project (≤ 100 m). **Nyalakan GPS**. Aktifkan **mode pesawat** (data mati, GPS tetap nyala). Catat jam sekarang: `__:__ WITA`. | Staff Uji, HP | — | | |
-| I.2 | Beranda → **Absensi** → pilih **Project Uji F4** → **Absen masuk**. Izinkan lokasi & kamera bila diminta. Ambil selfie dengan kamera depan. | Staff Uji, HP (offline) | Pesan "Di dalam radius project (… m dari titik)." lalu "Absen tersimpan di HP (offline)…". Riwayat: "Absen masuk · Project Uji F4 · offline · Menunggu". Galeri tidak bisa dipakai untuk selfie. | | |
+| I.2 | Beranda → **Absensi** → pilih **Project Uji F4** → **Absen masuk**. Izinkan lokasi & kamera bila diminta. Ambil selfie dengan kamera depan. | Staff Uji, HP (offline) | Pesan "Di dalam radius lokasi (… m dari titik, radius 100 m)." lalu "Absen tersimpan di HP (offline)…". Riwayat: "Absen masuk · Project Uji F4 · offline · Menunggu". Galeri tidak bisa dipakai untuk selfie. | | |
 | I.3 | Tunggu ≥ 5 menit, lalu matikan mode pesawat. Buka **Antrean kirim** → **Kirim sekarang** (atau tunggu otomatis). | Staff Uji, HP | Riwayat absen berubah jadi **Terkirim**. | | |
 | I.4 | Web Admin → **Proyek → Absensi** → baris terbaru Staff Uji. | Admin, laptop | **Offline** tercentang; **Sumber jam** = "Perkiraan server"; **Jam absensi** ≈ jam I.1 (bukan jam kirim I.3); **Diterima server** = jam kirim I.3; **Jam HP** terisi; jarak ≤ 100 m; selfie ada. | | |
 | I.5 | (Negatif) Tekan **Absen masuk** lagi di hari yang sama (online). | Staff Uji, HP | Terkirim lalu **Ditolak** dengan pesan "Sudah absen masuk di project ini hari ini." | | |
 | I.6 | **Absen pulang** (online). | Staff Uji, HP | "Absen tersimpan dan sedang dikirim." → **Terkirim**; di web Sumber jam = "Server (online)". | | |
-| I.7 | (Opsional, negatif) Dari lokasi > 150 m dari titik, tekan **Absen masuk** di project lain yang juga diberi titik. | Staff Uji, HP | Di HP: "Anda di luar radius project (… m dari titik)…"; selfie tidak diminta; tidak ada data terkirim. | | |
+| I.7 | (Opsional, negatif) Dari lokasi > 150 m dari titik, tekan **Absen masuk** di project lain yang juga diberi titik. | Staff Uji, HP | Di HP: "Anda di luar radius lokasi (… m dari titik, radius … m)…"; selfie tidak diminta; tidak ada data terkirim. | | |
 | I.8 | (Opsional, negatif) Dengan aplikasi lokasi palsu (Opsi pengembang → aplikasi lokasi tiruan), tekan **Absen masuk**. | Staff Uji, HP | "Lokasi palsu (mock location) terdeteksi…"; absen ditolak. | | |
 
 ## J. Cabut perangkat (≤ 1 request)
@@ -190,6 +201,54 @@ Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` �
 |---|---|---|---|---|---|
 | Q.1 | (Tim, opsional) Buka tautan `id.co.drms.proyekkas:/tidak-ada` dari HP (mis. lewat `adb shell am start -a android.intent.action.VIEW -d …`). | Tim, HP | Layar "Halaman tidak bisa dibuka" dengan tombol **Ke beranda**, bukan layar kosong. | | |
 
+## S. Laporan progress harian (E4, US-10/12/31) — PM di lokasi project uji
+
+| No | Langkah | Aktor & perangkat | Hasil yang diharapkan | PASS/FAIL | Catatan |
+|---|---|---|---|---|---|
+| S.1 | Masuk sebagai **Staff Uji**. Lihat Beranda. | Staff Uji, HP | Tidak ada tombol **Laporan progress** (Staff tidak bisa membuat/melihat laporan). | | |
+| S.2 | Masuk sebagai **PM Uji**. Beranda → **Laporan progress**. Tab **Project**. | PM Uji, HP | Kartu project uji: batang **Progress fisik** dan **Anggaran terpakai** (angka % tertulis), label warna + ikon (Sesuai / Perlu dicek / merah), "Selisih …%". Bila bobot < 100%: "Bobot tahapan baru …% (harus 100%)". | | |
+| S.3 | **Mode pesawat**. Tab **Laporan** → **Laporan baru**. Pilih project uji → tahapan **Struktur**. | PM Uji, HP (offline) | Info "Offline: tahapan dan % dari data terakhir di HP…"; "Sebelum laporan: X%". Penggeser tidak bisa di bawah X. | | |
+| S.4 | Ketik angka **di bawah X** di kotak %, isi Pekerjaan, tekan **Simpan & kirim**. | PM Uji, HP | Pesan "Progress tidak boleh turun (sebelumnya X%)." — tidak tersimpan. | | |
+| S.5 | Isi % = X + 10, Pekerjaan "Uji S — pengecoran", Kendala "hujan". Tambah **3 foto** (kamera belakang; galeri tidak ada). Coba tambah sampai 5: tombol Foto hilang setelah 5. Hapus 2 foto (ikon ×). **Simpan & kirim**. Catat jam: `__:__`. | PM Uji, HP (offline) | "Laporan tersimpan di HP (offline)…". Di tab Laporan bagian "Di HP ini": status **Menunggu kirim**, "3 foto". Antrean: "Laporan progress · Menunggu". | | |
+| S.6 | Matikan mode pesawat (atau **Antrean → Kirim sekarang**). Tarik daftar Laporan ke bawah. | PM Uji, HP | Item "Di HP ini" hilang; laporan muncul di **Laporan terbaru** paling atas dengan nomor `LP/YYMM/####`, thumbnail foto, "offline". Antrean: **Terkirim**. | | |
+| S.7 | Buka laporan → periksa detail. Ketuk foto. | PM Uji, HP | Tahapan X% → X+10%, progress project sebelum → sesudah, Pekerjaan/Kendala, 3 foto (layar penuh bisa di-zoom), "Diterima server" = jam kirim, "dibuat offline (waktu: estimated)". Tombol **Edit laporan (≤ 24 jam)**. | | |
+| S.8 | Web Admin → laporan progress yang sama; unduh 1 foto dan periksa ukuran/EXIF (mis. `exiftool`). | Admin, laptop | Isi sama; foto JPEG sisi terpanjang ≤ 1600 px, tanpa GPS/EXIF lokasi; progress project naik = bobot × kenaikan (mis. 30% × 10 = 3 poin). | | |
+| S.9 | HP: **Edit laporan** → ubah Pekerjaan, tambah 1 foto, **tanpa alasan** → Simpan. Lalu isi alasan "Uji edit" → Simpan. | PM Uji, HP | Tanpa alasan: "Alasan edit wajib diisi…". Dengan alasan: terkirim; detail menampilkan teks baru & 4 foto; audit di web berisi alasan. | | |
+| S.10 | (Konflik) HP **mode pesawat** → Edit laporan yang sama (alasan "HP"). Sementara itu edit laporan yang sama di **web** (alasan "web"). Matikan mode pesawat → Antrean → Kirim sekarang. | PM Uji, HP + laptop | Laporan di "Di HP ini" berstatus **Konflik**. Ketuk → layar **Konflik laporan**: kolom **Server** vs **HP ini** berdampingan. | | |
+| S.11 | Pilih **Kirim versi HP (dengan alasan)** → isi alasan → Lanjut. (Ulangi S.10 lalu pilih **Pakai versi server**.) | PM Uji, HP | Versi HP terkirim sebagai edit (web menampilkan teks HP). "Pakai versi server": salinan HP dihapus, antrean tidak lagi meminta perhatian. | | |
+| S.12 | (Negatif, opsional) Laporan berumur > 24 jam → buka detail. | PM Uji, HP | Tombol Edit tidak ada. | | |
+| S.13 | (Flag mati) Admin mematikan "Laporan progress dari APK…". PM buat laporan baru **online**, lalu sekali **offline**. | PM + Admin | Editor: "Server belum mengizinkan kirim offline…"; online → "Laporan terkirim." langsung (tanpa antrean); offline → tombol kirim mati dengan "Butuh koneksi internet" (laporan yang terputus di tengah kirim tetap tersimpan "Belum terkirim" dan dikirim ulang dari editor)." Nyalakan kembali setting sesudahnya. | | |
+| S.14 | Masuk sebagai **Direktur Uji** → Beranda. Lalu **Finance Uji**. | Direktur / Finance, HP | Direktur: kartu "Progress fisik vs anggaran" di Beranda + tombol Laporan baru. Finance: hanya melihat (tanpa "Laporan baru", tanpa Edit). | | |
+
+## T. Absensi lengkap (E6, US-01/02/09/13/14/15)
+
+| No | Langkah | Aktor & perangkat | Hasil yang diharapkan | PASS/FAIL | Catatan |
+|---|---|---|---|---|---|
+| T.1 | Staff Uji di titik **pusat biaya uji** (0.9). Absensi → tab **Absen** → pilih **Kantor Uji** (ikon gedung) → **Cek jarak ke lokasi**. | Staff Uji, HP | Kartu jarak: "Di dalam area absen", "… m", "Radius 100 m + toleransi GPS … m". | | |
+| T.2 | **Absen masuk** (selfie depan). | Staff Uji, HP | Terkirim; web Absensi: baris dengan **Pusat biaya** = Kantor Uji (bukan project). | | |
+| T.3 | Pindah > 150 m dari titik → **Cek jarak**. | Staff Uji, HP | "Di luar area absen", jarak tertulis, tombol absen menampilkan pesan radius lokasi; selfie tidak diminta. | | |
+| T.4 | Tab **Rekap**. Geser ke bulan sebelumnya lalu kembali. Ketuk tanggal hari ini. | Staff Uji, HP | Kotak ringkasan (Hadir x/y, Total jam kerja, Terlambat, Pulang cepat, Tidak hadir, Belum absen pulang); kalender Senin–Minggu dengan ikon + jam masuk; keterangan warna berikut ikon. Lembar hari: jam masuk/pulang per lokasi, terlambat … menit. Angka sama dengan web (rekap absensi karyawan). | | |
+| T.5 | Masuk sebagai **PM Uji** → Absensi → tab **Tim**. | PM Uji, HP | Jumlah Semua / Belum absen / Hadir / Selesai; daftar anggota tim; filter chip bekerja; Staff Uji "Hadir/Selesai" dengan jam. | | |
+| T.6 | **Mode pesawat**. Tim → **Absenkan anggota tim** (atau tombol **Absenkan masuk** pada "Karyawan Tanpa HP"). Pilih karyawan, lokasi project uji, **Absen masuk**, alasan kosong → tekan tombol. | PM Uji, HP (offline) | "Wajib diisi (minimal 3 karakter)."; GPS belum dibaca. | | |
+| T.7 | Alasan "Tidak punya HP", pilih kamera **Belakang**, tekan **Absenkan masuk** → foto karyawan. Matikan mode pesawat. | PM Uji, HP | "Absen Karyawan Tanpa HP tersimpan di HP (offline)…"; lalu **Terkirim**. Di Tim: status Hadir + tanda "Oleh PM". Web: sumber = PM, nama PM, alasan, foto. | | |
+| T.8 | (Negatif) Absenkan **diri sendiri**: nama PM tidak ada di daftar karyawan. | PM Uji, HP | Tidak bisa dipilih. | | |
+| T.9 | Tim → pada Staff Uji tekan tombol jam **Masuk hh.mm** → ubah jam (tanggal sama), alasan kosong → Simpan; lalu alasan "Lupa absen tepat waktu" → Simpan. | PM Uji, HP (online) | Tanpa alasan: "Wajib diisi…". Dengan alasan: "Koreksi absensi tersimpan."; tanda "Dikoreksi"; web: koreksi lama → baru + alasan di audit. Offline: tombol Simpan mati + "Butuh koneksi internet". | | |
+| T.10 | Tim → ketuk nama Staff Uji. | PM Uji, HP | Rekap bulanan Staff Uji (sama dengan T.4). | | |
+| T.11 | (Flag mati) Admin mematikan "Absensi dari APK…". Staff: Beranda → Absensi. PM: tab Tim. | Staff / PM, HP | Beranda: "Rekap bulanan (absen dari aplikasi belum diaktifkan Admin)"; tab Absen: tombol mati + pesan; **Rekap** dan **Tim** tetap jalan; tombol Absenkan hilang; koreksi tetap ada. Nyalakan kembali setting. | | |
+| T.12 | Direktur Uji / Finance Uji → Beranda → Absensi. | Direktur / Finance, HP | Langsung **Tim hari ini** (tanpa tab Absen/Rekap), tanpa tombol Absenkan/Koreksi (Finance). | | |
+
+## U. Addendum RAB (E5, US-18/30) — PM ajukan, Direktur lalu Finance di HP
+
+| No | Langkah | Aktor & perangkat | Hasil yang diharapkan | PASS/FAIL | Catatan |
+|---|---|---|---|---|---|
+| U.1 | PM Uji → Beranda → **Addendum RAB** → **Addendum baru**. Tekan **Ajukan** tanpa isian. | PM Uji, HP | "Pilih project.", "Tambahan RAB harus lebih dari Rp 0.", "Alasan wajib diisi…". | | |
+| U.2 | Pilih project uji, Tambahan RAB `25.000.000`, alasan "Uji U — tambahan pondasi" → **Ajukan**. Catat RAB project sebelum: `Rp ____`. | PM Uji, HP (online) | "Addendum diajukan. Menunggu Direktur."; detail: nomor `ADD/YYMM/####`, "Menunggu: Direktur", RAB lama → baru, komitmen % lama → baru. Mode pesawat: tombol Ajukan mati + "Butuh koneksi internet". | | |
+| U.3 | Direktur Uji → Beranda: jumlah di **Persetujuan** bertambah; buka **Persetujuan**. | Direktur Uji, HP | Bagian "Addendum RAB menunggu Anda (1)" di atas daftar pengajuan: +Rp 25.000.000, RAB → baru. | | |
+| U.4 | Buka addendum → **Setujui (Direktur)** → Ya. | Direktur Uji, HP | Status "Menunggu Finance"; riwayat keputusan "Disetujui Direktur · nama". Tidak ada tombol Setujui (Finance). | | |
+| U.5 | Finance Uji → Persetujuan → addendum → **Setujui (Finance)** → Ya. | Finance Uji, HP | Status Disetujui; web: RAB project = lama + 25.000.000, audit before → after; kartu "Progress fisik vs anggaran" memakai RAB baru (tarik ulang). | | |
+| U.6 | (Negatif) Ulangi U.2 (addendum kedua) → Direktur **Tolak** tanpa alasan, lalu dengan alasan "Belum ada BoQ". | Direktur Uji, HP | Tanpa alasan: "Wajib diisi…". Dengan alasan: Ditolak; PM melihat "Ditolak: Belum ada BoQ"; RAB tidak berubah. | | |
+| U.7 | (Negatif) Staff Uji → Beranda. | Staff Uji, HP | Tidak ada tombol Addendum RAB. | | |
+
 ## Ringkasan
 
 | Bagian | PASS/FAIL | Catatan |
@@ -207,5 +266,8 @@ Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` �
 | O. Sinkron latar belakang (aplikasi ditutup) | | |
 | P. KPI Beranda = web | | |
 | Q. Tautan tak dikenal | | |
+| S. Laporan progress (E4) | | |
+| T. Absensi lengkap (E6) | | |
+| U. Addendum RAB (E5) | | |
 
 Diuji oleh: ____________ · Tanggal: ____________ · Model HP / Android: ____________ · Versi APK: ____________

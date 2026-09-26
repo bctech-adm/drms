@@ -115,8 +115,75 @@ class OutboxRepository {
     return opUuid;
   }
 
-  /// Queues one attendance check-in/out (ADR 0010 Example A). Never merged or edited: every tap is its
-  /// own item; the selfie is uploaded first ([dependsOn] = local media uuid).
+  /// Queues (or refreshes) the one pending `progress_report.draft_upsert` of a local report (E4). While an
+  /// operation is still pending it is updated in place (same idempotency key, never delivered); after a
+  /// delivery the next edit gets a new UUIDv7 with `base_rev` = the server rev. The first operation of a
+  /// report uses the report uuid as `client_uuid` (= `report_client_uuid` on the server).
+  Future<String> enqueueProgress({
+    required String sub,
+    required String reportUuid,
+    required Map<String, dynamic> payload,
+    required List<String> photoUuids,
+    required String deviceTime,
+    required int elapsedMs,
+    required String bootId,
+    required bool offline,
+    int? baseRev,
+  }) => db.transaction(() async {
+    final pending =
+        await (db.select(db.outbox)..where(
+              (t) =>
+                  t.targetUuid.equals(reportUuid) &
+                  t.userSub.equals(sub) &
+                  t.type.equals(SyncItemType.progressReportUpsert) &
+                  (t.status.equals('pending') | t.status.equals('failed')),
+            ))
+            .getSingleOrNull();
+    if (pending != null) {
+      await (db.update(db.outbox)..where((t) => t.opUuid.equals(pending.opUuid))).write(
+        OutboxCompanion(
+          payloadJson: Value(jsonEncode(payload)),
+          dependsOnJson: Value(jsonEncode(photoUuids)),
+          deviceTime: Value(deviceTime),
+          elapsedMs: Value(elapsedMs),
+          bootId: Value(bootId),
+          offline: Value(offline),
+          baseRev: Value(baseRev),
+          status: const Value('pending'),
+          attempts: const Value(0),
+          nextAttemptAt: const Value(null),
+        ),
+      );
+      return pending.opUuid;
+    }
+    // An edit (base_rev set) never reuses the report uuid: the server may already hold the creating item
+    // under that client_uuid and would answer `duplicate` with the old result.
+    final anyBefore = await (db.select(db.outbox)..where((t) => t.opUuid.equals(reportUuid))).getSingleOrNull();
+    final opUuid = anyBefore == null && baseRev == null ? reportUuid : const Uuid().v7();
+    await db
+        .into(db.outbox)
+        .insert(
+          OutboxCompanion.insert(
+            opUuid: opUuid,
+            userSub: sub,
+            type: SyncItemType.progressReportUpsert,
+            targetUuid: reportUuid,
+            payloadJson: jsonEncode(payload),
+            baseRev: Value(baseRev),
+            dependsOnJson: Value(jsonEncode(photoUuids)),
+            deviceTime: deviceTime,
+            elapsedMs: elapsedMs,
+            bootId: bootId,
+            offline: Value(offline),
+            createdAt: DateTime.now(),
+          ),
+        );
+    return opUuid;
+  });
+
+  /// Queues one attendance item: own check-in/out (ADR 0010 Example A) or a PM on-behalf record (E6).
+  /// Never merged or edited: every tap is its own item; the photo is uploaded first ([dependsOn] = local
+  /// media uuid).
   Future<String> enqueueAttendance({
     required String sub,
     required String type,
@@ -154,7 +221,11 @@ class OutboxRepository {
             ..where(
               (t) =>
                   t.userSub.equals(sub) &
-                  t.type.isIn([SyncItemType.attendanceCheckIn, SyncItemType.attendanceCheckOut]),
+                  t.type.isIn([
+                    SyncItemType.attendanceCheckIn,
+                    SyncItemType.attendanceCheckOut,
+                    SyncItemType.attendanceOnBehalf,
+                  ]),
             )
             ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
             ..limit(20))
@@ -208,6 +279,17 @@ class OutboxRepository {
   Future<void> supersede(String sub, String target) =>
       (db.update(db.outbox)
             ..where((t) => t.userSub.equals(sub) & t.targetUuid.equals(target) & t.status.equals('pending')))
+          .write(const OutboxCompanion(status: Value('superseded')));
+
+  /// The user resolved the item(s) of [target] (kept the server version / discarded the report): every
+  /// open or refused operation is closed, so the queue no longer asks for attention.
+  Future<void> closeTarget(String sub, String target) =>
+      (db.update(db.outbox)..where(
+            (t) =>
+                t.userSub.equals(sub) &
+                t.targetUuid.equals(target) &
+                t.status.isIn(const ['pending', 'failed', 'rejected', 'conflict']),
+          ))
           .write(const OutboxCompanion(status: Value('superseded')));
 
   Stream<OutboxCounts> watchCounts(String sub) {
