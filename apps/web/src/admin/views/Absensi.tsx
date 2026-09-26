@@ -45,7 +45,8 @@ export const ABSENSI_STYLE = `
 .pk-f3 form.pk-filter .pk-kbtn { align-self: flex-end; }
 /* day classes: tinted cell + glyph in the tone's text colour */
 .pk-f3 .dc { --c: var(--pk-muted-fg); background: color-mix(in oklab, var(--c) 16%, var(--pk-card)); color: var(--c); border: 1px solid color-mix(in oklab, var(--c) 35%, var(--pk-border)); }
-.pk-f3 .dc.ok { --c: var(--dc-ok); } .pk-f3 .dc.warn { --c: var(--dc-warn); } .pk-f3 .dc.bad { --c: var(--dc-bad); } .pk-f3 .dc.info { --c: var(--dc-info); }
+.pk-f3 .dc.ok { --c: var(--dc-ok); } .pk-f3 .dc.warn { --c: var(--dc-warn); } .pk-f3 .dc.info { --c: var(--dc-info); }
+.pk-f3 .dc.bad { --c: var(--dc-bad); background: color-mix(in oklab, var(--c) 30%, var(--pk-card)); border-color: var(--c); }
 .pk-f3 .dc.muted { background: var(--pk-muted-bg); color: var(--pk-muted-fg); border-color: var(--pk-border); }
 .pk-f3 .dc.empty { background: transparent; color: var(--pk-muted-fg); border: 1px dashed var(--pk-input); }
 .pk-f3 .dcbar.ok { background: var(--dc-ok); } .pk-f3 .dcbar.warn { background: var(--dc-warn); } .pk-f3 .dcbar.bad { background: var(--dc-bad); } .pk-f3 .dcbar.info { background: var(--dc-info); } .pk-f3 .dcbar.muted, .pk-f3 .dcbar.empty { background: var(--viz-mute); }
@@ -98,7 +99,8 @@ export const ABSENSI_STYLE = `
 .pk-f3 .pk-split3 > span { min-width: 2px; } .pk-f3 .pk-split3 > span:first-child { border-radius: 999px 2px 2px 999px; } .pk-f3 .pk-split3 > span:last-child { border-radius: 2px 999px 999px 2px; }
 .pk-f3 .pk-split3 .b { background: var(--viz-mute); } .pk-f3 .pk-split3 .h { background: var(--viz-soft); } .pk-f3 .pk-split3 .s { background: var(--viz-strong); }
 /* detail table + dialogs */
-.pk-f3 .pk-t td.act { white-space: nowrap; } .pk-f3 .pk-t td.act .pk-kact { flex-wrap: nowrap; }
+.pk-f3 .pk-t .pk-actk { font-size: 11px; font-weight: 700; color: var(--pk-muted-fg); min-width: 42px; text-align: right; }
+.pk-f3 .pk-t .pk-actk:not(:first-child) { margin-left: 8px; padding-left: 10px; border-left: 1px solid var(--pk-border); }
 .pk-f3 .pk-t .locs { display: grid; gap: 6px; }
 .pk-f3 .pk-t .loc { display: grid; gap: 4px; }
 .pk-ba { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: var(--style-radius-m); background: var(--pk-muted-bg); border: 1px solid var(--pk-border); }
@@ -780,6 +782,9 @@ function EmployeeRecap({ d, recap }: { d: RekapData; recap: MonthlyRecap }) {
                             const kindLabel = k === 'checkIn' ? 'masuk' : 'pulang'
                             return (
                               <React.Fragment key={k}>
+                                <span className="pk-actk" aria-hidden>
+                                  {k === 'checkIn' ? 'Masuk' : 'Pulang'}
+                                </span>
                                 <SelfieButton attendanceId={s.id} label={`${kindLabel} ${dayShort(x.date)}`} available={d.selfies.get(s.id) !== false} own={d.own} />
                                 {d.canCorrect ? (
                                   <CorrectionDialog
