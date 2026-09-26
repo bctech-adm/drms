@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **S2 web A — E4 progress web + E5 Addendum RAB** (`apps/web`, fase1-golive §E4/§E5, US-12/18/29/30/31; branch
+  `feat/s2a-progress-web-addendum`):
+  - Admin views `/admin/progress` (K-09 progress fisik vs % anggaran per project, KPI tiles, table view),
+    `/admin/progress/project/{id}` (stage bars, stage editor with live 100 % validation — Direktur add/deactivate,
+    PM rename/reorder/re-weight, reason on re-weight — timeline per stage, addenda of the project),
+    `/admin/progress/laporan` (filters project/stage/date) and `/admin/progress/laporan/{id}` (photo gallery). Beranda
+    Direktur/Finance/PM: card "Progress fisik vs anggaran" (US-12) and "Progress fisik" column; PM "Lapangan" card shows
+    the latest progress reports. Report `anggaran-project`: "Progress fisik" + K-09 status columns (was "F5").
+  - Addendum RAB (T12): collection `budget-addenda` (`ADD/YYMM/####`), `/api/v1/budget-addenda` (list, inbox, detail,
+    create/patch/submit/cancel for the PM of the team, acknowledge = Direktur, approve = Finance, reject with reason;
+    Idempotency-Key, APK-ready). Approval through `approval-rules` docType `budget_addendum` (ADR 0013 engine);
+    decisions are `approvals` rows (docType `budget_addendum`); final approval raises `projects.budget` = current RAB +
+    addition in the same transaction (audit before → after); in-app notifications. Web `/admin/addendum`,
+    `/admin/addendum/baru`, `/admin/addendum/detail/{id}`; "Persetujuan" lists addenda too. Nav: Progress project,
+    Laporan progress, Addendum RAB.
+  - Migration `20260926_114555_e5_budget_addenda` (additive: new table + guards, `approvals.addendum_id`,
+    `approvals.request_id` nullable with an owner CHECK per docType, G1 trigger for addenda, default rule
+    "Default Addendum RAB — Direktur lalu Finance").
 - **S2 web B — E6 absensi web + retensi selfie + E7 pengingat terjadwal** (`apps/web`, fase1-golive §E6/§E7, US-09/11/13/14/15,
   M12/M13, Q-30/33/40; branch `feat/s2b-attendance-web-reminders`):
   - Admin views `/admin/absensi` "Tim hari ini" (belum absen / hadir / selesai board, times, project/pusat biaya, late,

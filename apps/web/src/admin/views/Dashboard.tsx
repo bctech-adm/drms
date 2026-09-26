@@ -1023,7 +1023,7 @@ async function Pm({ req }: { req: PayloadRequest }) {
               .map((c) => ({ key: String(c.id), label: `${c.code} ${c.name}`, value: Math.max(0, c.total), href: `/admin/laporan/rekap-pengajuan?${where({ pusat: String(c.id), dari: monthStart, sampai: lastDay(d.month) })}`, attrs: { 'data-pk-cost-center': String(c.id) } }))}
           />
         </Card>
-        <Card id="f5" title="Lapangan" sub="Kehadiran tim hari ini &middot; laporan progress terbaru" span={6} i={11}>
+        <Card id="f5" title="Lapangan" sub="Kehadiran tim hari ini · laporan progress terbaru" span={6} i={11}>
           <div style={{ display: 'grid', gap: 8 }}>
             <TeamTodayWidget req={req} />
             <LatestProgressReports rows={latestReports} />

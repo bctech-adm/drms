@@ -11057,6 +11057,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "removed_at": {
+          "name": "removed_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp(3) with time zone",
@@ -11177,6 +11183,21 @@
           "columns": [
             {
               "expression": "sha256_original",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "media_selfies_removed_at_idx": {
+          "name": "media_selfies_removed_at_idx",
+          "columns": [
+            {
+              "expression": "removed_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -14851,8 +14872,78 @@
           "notNull": true,
           "default": 12
         },
+        "selfie_retention_delete_enabled": {
+          "name": "selfie_retention_delete_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "selfie_retention_batch": {
+          "name": "selfie_retention_batch",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 200
+        },
         "sync_progress_reports_enabled": {
           "name": "sync_progress_reports_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "reminders_enabled": {
+          "name": "reminders_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "reminder_hour": {
+          "name": "reminder_hour",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 7
+        },
+        "reminder_email_enabled": {
+          "name": "reminder_email_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "reminder_late_progress_enabled": {
+          "name": "reminder_late_progress_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "reminder_lpj_overdue_enabled": {
+          "name": "reminder_lpj_overdue_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "reminder_revision_enabled": {
+          "name": "reminder_revision_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "reminder_revision_days": {
+          "name": "reminder_revision_days",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
+        },
+        "reminder_budget_enabled": {
+          "name": "reminder_budget_enabled",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
@@ -15527,7 +15618,8 @@
         "verify",
         "acknowledge_delegated",
         "access_denied",
-        "approval_skipped"
+        "approval_skipped",
+        "retention_purge"
       ]
     },
     "public.enum_audit_logs_source": {
@@ -15548,7 +15640,8 @@
         "auditDailyAnchor",
         "sendEmail",
         "reimburseAutoClose",
-        "selfieRetention"
+        "selfieRetention",
+        "dailyReminders"
       ]
     },
     "public.enum_payload_jobs_log_state": {
@@ -15567,7 +15660,8 @@
         "auditDailyAnchor",
         "sendEmail",
         "reimburseAutoClose",
-        "selfieRetention"
+        "selfieRetention",
+        "dailyReminders"
       ]
     }
   },
@@ -15581,6 +15675,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "ed33a32f-18e4-4cc1-8041-cc97bce2337e",
+  "id": "966368bd-51a3-43ba-a4a2-869d1211098d",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

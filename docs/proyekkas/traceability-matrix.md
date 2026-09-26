@@ -146,3 +146,16 @@ screens are E4-APK. Admin panel: `progress-reports` (read-only list/detail), `pr
 | US-12 | data (API) | K-09 `GET /api/v1/projects/progress` (`domain/reports/progress.ts`): K-08 − progress, colours from `progressWarnGapPct`/`progressBadGapPct`; widget in S2 | unit (colours) + API SQL reconciliation (`e4-progress`) |
 | US-29 | implemented (API; admin partial) | `GET/PUT /api/v1/projects/{id}/stages` (whole set = 100 %, reason for re-weighting, template apply); admin single-stage writes cannot break a complete set; no delete (deactivate) | unit + API + DB (`e4-progress`) |
 | US-31 | implemented (API) | `GET /api/v1/progress-reports[?project=&stage=&from=&to=&mine=]` newest first + `GET …/{id}` with photos (`/api/v1/media/progress-photos/{id}/file`) | API (`e4-progress`) |
+
+### S2 web A status (fase1-golive §E4 web + §E5, branch `feat/s2a-progress-web-addendum`)
+
+E5 approval flow: rule engine of ADR 0013 with `approval-rules.docType = budget_addendum`; default rule seeded by the
+migration = Direktur ("Diketahui" = approval) → Finance level 1 (Sprint S2 decision on ADR 0013 O-3; configurable).
+
+| US | Status | Implemented as | Test type (files) |
+|---|---|---|---|
+| US-12 | implemented (web) | Beranda Direktur/Finance/PM card "Progress fisik vs anggaran" (K-09, paired bars on one axis + status pill), "Progress fisik" column in the budget table and in report `anggaran-project` (replaces "F5"), page `/admin/progress` | unit (`e4-progress-ui`) + API (`e4-web`) |
+| US-29 | implemented (web) | `/admin/progress/project/{id}`: stage bars, stage editor (live total = 100 %, reason on re-weight/deactivate; Direktur add/deactivate, PM rename/reorder/re-weight) → `PUT /api/v1/projects/{id}/stages` | API (`e4-progress`), UI screenshot/interaction |
+| US-31 | implemented (web) | `/admin/progress/laporan` (filters project/stage/date, newest first, cursor), `/admin/progress/laporan/{id}` (photo gallery via `/api/v1/media/progress-photos/{id}/file?variant=thumb`), timeline per stage on the project page | API (`e4-web`) |
+| US-18 | implemented (API + web) | `budget-addenda` (`ADD/YYMM/####`); `POST /api/v1/budget-addenda` (PM of the team only, nominal > 0 + reason), `PATCH`, `/submit`, `/cancel`; web `/admin/addendum`, `/admin/addendum/baru` | unit + API + DB (`e5-addendum`) |
+| US-30 | implemented (API + web; APK screens = E5 APK) | `/acknowledge` (Direktur), `/approve` (Finance; last level: `projects.budget` = current RAB + addition in the same transaction, audited), `/reject` (reason); `GET /api/v1/budget-addenda/inbox`; web inbox section in `/admin/persetujuan` + detail `/admin/addendum/detail/{id}` | unit + API + DB + atomicity (`e5-addendum`) |

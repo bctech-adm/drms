@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { addendumAllowedActions, addendumInputErrors, ADDENDUM_TRANSITIONS, isTerminal, newBudget, pctOf, type AddendumActorContext } from '@/domain/addendum/rules'
 import { ruleDecisionError } from '@/domain/expense/decision'
 import { selectRule, type RuleInput } from '@/domain/expense/rules'
-import { ADDENDUM_DEFAULT_RULE_NAME as MIGRATION_RULE_NAME } from '@/migrations/20260926_104647_e5_budget_addenda'
+import { ADDENDUM_DEFAULT_RULE_NAME as MIGRATION_RULE_NAME } from '@/migrations/20260926_114555_e5_budget_addenda'
 import { ADDENDUM_DEFAULT_RULE_NAME, DEFAULT_APPROVAL_RULES } from '@/seed/data'
 
 /** E5 Addendum RAB (T12, US-18/US-30): pure rules. */
