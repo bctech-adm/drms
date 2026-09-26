@@ -188,11 +188,11 @@ jobs:
             echo "publish=$publish"
             echo "tags=$tags"
             echo "version=$version"
-            # Reproducible image config (created/timestamps) → the scanned and the pushed image are identical.
+            # Reproducible image config/timestamps (created = commit time).
             echo "epoch=$(git log -1 --format=%ct)"
             created="$(git log -1 --format=%cI)"
             echo "created=$created"
-            # OCI labels (identical for the scanned and the pushed build — labels are part of the image config).
+            # OCI labels (same for the local-only build and the published one).
             for name in web migrate; do
               echo "${name}_labels<<EOF_LABELS"
               echo "org.opencontainers.image.title=proyekkas-$name"
@@ -214,71 +214,9 @@ jobs:
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      # ---- 1) build + load locally (GHA layer cache) → Trivy gate. Nothing is pushed before the gate. ----
-      - name: Build web (runner target) and load
-        id: web-load
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        env:
-          SOURCE_DATE_EPOCH: ${{ steps.meta.outputs.epoch }}
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          target: runner
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          tags: proyekkas-web:ci
-          labels: ${{ steps.meta.outputs.web_labels }}
-          cache-from: |
-            type=gha,scope=pk-web
-            type=gha,scope=pk-migrate
-          cache-to: type=gha,mode=max,scope=pk-web
-      - name: Build migrate target and load
-        id: migrate-load
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        env:
-          SOURCE_DATE_EPOCH: ${{ steps.meta.outputs.epoch }}
-        with:
-          context: .
-          file: apps/web/Dockerfile
-          target: migrate
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          tags: proyekkas-migrate:ci
-          labels: ${{ steps.meta.outputs.migrate_labels }}
-          cache-from: |
-            type=gha,scope=pk-migrate
-            type=gha,scope=pk-web
-          cache-to: type=gha,mode=max,scope=pk-migrate
-
-      - name: Trivy report (HIGH + CRITICAL incl. unfixed — informational, job summary)
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/trivy-cache"
-          {
-            echo "### Trivy image scan (trivy 0.74.0)"
-            echo "| image | CRITICAL fixable | CRITICAL unfixed | HIGH fixable | HIGH unfixed |"
-            echo "|---|---|---|---|---|"
-          } >> "$GITHUB_STEP_SUMMARY"
-          for img in proyekkas-web:ci proyekkas-migrate:ci; do
-            out="$RUNNER_TEMP/trivy-${img%%:*}.json"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
-              "$TRIVY_IMAGE" image --quiet --severity HIGH,CRITICAL --exit-code 0 --format json "$img" > "$out"
-            jq -r '[.Results[]?.Vulnerabilities[]?] | "  \(length) HIGH/CRITICAL:", (.[] | "  \(.Severity) \(.PkgName) \(.InstalledVersion) \(.VulnerabilityID) fixed=\(.FixedVersion // "-")")' "$out"
-            jq -r --arg img "$img" '[.Results[]?.Vulnerabilities[]?] as $v
-              | def n(s; f): [$v[] | select(.Severity == s and ((.FixedVersion // "") != "") == f)] | length;
-              "| \($img) | \(n("CRITICAL"; true)) | \(n("CRITICAL"; false)) | \(n("HIGH"; true)) | \(n("HIGH"; false)) |"' \
-              "$out" >> "$GITHUB_STEP_SUMMARY"
-          done
-      - name: Trivy gate (fail on fixable CRITICAL)
-        run: |
-          for img in proyekkas-web:ci proyekkas-migrate:ci; do
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:ro -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
-              "$TRIVY_IMAGE" image --quiet --severity CRITICAL --exit-code 1 --ignore-unfixed "$img"
-          done
-
-      # ---- 2) publish (develop, vX.Y.Z tags, ci/ghcr-* only): same inputs → cache hit → identical image ----
+      # Build ONCE per target. Publishing runs push an UNTAGGED manifest (push-by-digest); Trivy scans exactly that
+      # digest; only a passing digest gets tags (imagetools create). Nothing tagged is ever unscanned.
+      # Other runs (PRs, feat/**) load the image locally and scan it; nothing leaves the runner.
       - name: Login to GHCR
         if: steps.meta.outputs.publish == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -297,16 +235,47 @@ jobs:
               exit 1
             fi
           done
-      - name: Image references
-        if: steps.meta.outputs.publish == 'true'
-        id: refs
+
+      - name: Build web (runner target) → local
+        if: steps.meta.outputs.publish != 'true'
+        id: web-local
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          web=""; mig=""
-          for t in $TAGS; do web+="$WEB_IMAGE:$t,"; mig+="$MIGRATE_IMAGE:$t,"; done
-          { echo "web=${web%,}"; echo "migrate=${mig%,}"; } >> "$GITHUB_OUTPUT"
-      - name: Push web
+          SOURCE_DATE_EPOCH: ${{ steps.meta.outputs.epoch }}
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          target: runner
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          tags: proyekkas-web:ci
+          labels: ${{ steps.meta.outputs.web_labels }}
+          cache-from: |
+            type=gha,scope=pk-web
+            type=gha,scope=pk-migrate
+          cache-to: type=gha,mode=max,scope=pk-web
+      - name: Build migrate target → local
+        if: steps.meta.outputs.publish != 'true'
+        id: migrate-local
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          SOURCE_DATE_EPOCH: ${{ steps.meta.outputs.epoch }}
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          target: migrate
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          tags: proyekkas-migrate:ci
+          labels: ${{ steps.meta.outputs.migrate_labels }}
+          cache-from: |
+            type=gha,scope=pk-migrate
+            type=gha,scope=pk-web
+          cache-to: type=gha,mode=max,scope=pk-migrate
+
+      - name: Build web (runner target) → GHCR by digest (untagged) + SBOM + provenance
         if: steps.meta.outputs.publish == 'true'
         id: web-push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -317,15 +286,15 @@ jobs:
           file: apps/web/Dockerfile
           target: runner
           platforms: linux/amd64
-          push: true
-          tags: ${{ steps.refs.outputs.web }}
+          outputs: type=image,name=${{ env.WEB_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           sbom: true
           provenance: mode=max
+          labels: ${{ steps.meta.outputs.web_labels }}
           cache-from: |
             type=gha,scope=pk-web
             type=gha,scope=pk-migrate
-          labels: ${{ steps.meta.outputs.web_labels }}
-      - name: Push migrate
+          cache-to: type=gha,mode=max,scope=pk-web
+      - name: Build migrate target → GHCR by digest (untagged) + SBOM + provenance
         if: steps.meta.outputs.publish == 'true'
         id: migrate-push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -336,26 +305,83 @@ jobs:
           file: apps/web/Dockerfile
           target: migrate
           platforms: linux/amd64
-          push: true
-          tags: ${{ steps.refs.outputs.migrate }}
+          outputs: type=image,name=${{ env.MIGRATE_IMAGE }},push-by-digest=true,name-canonical=true,push=true
           sbom: true
           provenance: mode=max
+          labels: ${{ steps.meta.outputs.migrate_labels }}
           cache-from: |
             type=gha,scope=pk-migrate
             type=gha,scope=pk-web
-          labels: ${{ steps.meta.outputs.migrate_labels }}
-      - name: Pushed image = scanned image (same config digest)
+          cache-to: type=gha,mode=max,scope=pk-migrate
+
+      - name: Scan targets
+        id: scan
+        env:
+          PUBLISH: ${{ steps.meta.outputs.publish }}
+          WEB_DIGEST: ${{ steps.web-push.outputs.digest }}
+          MIGRATE_DIGEST: ${{ steps.migrate-push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          if [[ "$PUBLISH" == "true" ]]; then
+            for d in "$WEB_DIGEST" "$MIGRATE_DIGEST"; do
+              [[ "$d" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::missing digest from push-by-digest"; exit 1; }
+            done
+            { echo "web=$WEB_IMAGE@$WEB_DIGEST"; echo "migrate=$MIGRATE_IMAGE@$MIGRATE_DIGEST"; } >> "$GITHUB_OUTPUT"
+          else
+            { echo "web=proyekkas-web:ci"; echo "migrate=proyekkas-migrate:ci"; } >> "$GITHUB_OUTPUT"
+          fi
+      - name: Trivy report (HIGH + CRITICAL incl. unfixed — informational, job summary)
+        env:
+          WEB_REF: ${{ steps.scan.outputs.web }}
+          MIGRATE_REF: ${{ steps.scan.outputs.migrate }}
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/trivy-cache"
+          {
+            echo "### Trivy image scan (trivy 0.74.0)"
+            echo "| image | CRITICAL fixable | CRITICAL unfixed | HIGH fixable | HIGH unfixed |"
+            echo "|---|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for name in web migrate; do
+            ref="WEB_REF"; [[ $name == migrate ]] && ref="MIGRATE_REF"; img="${!ref}"
+            out="$RUNNER_TEMP/trivy-$name.json"
+            docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD \
+              -v /var/run/docker.sock:/var/run/docker.sock:ro -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
+              "$TRIVY_IMAGE" image --quiet --platform linux/amd64 --severity HIGH,CRITICAL --exit-code 0 --format json "$img" > "$out"
+            jq -r '[.Results[]?.Vulnerabilities[]?] | "  \(length) HIGH/CRITICAL:", (.[] | "  \(.Severity) \(.PkgName) \(.InstalledVersion) \(.VulnerabilityID) fixed=\(.FixedVersion // "-")")' "$out"
+            jq -r --arg img "$img" '[.Results[]?.Vulnerabilities[]?] as $v
+              | def n(s; f): [$v[] | select(.Severity == s and ((.FixedVersion // "") != "") == f)] | length;
+              "| \($img) | \(n("CRITICAL"; true)) | \(n("CRITICAL"; false)) | \(n("HIGH"; true)) | \(n("HIGH"; false)) |"' \
+              "$out" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Trivy gate (fail on fixable CRITICAL — the digest stays untagged)
+        env:
+          WEB_REF: ${{ steps.scan.outputs.web }}
+          MIGRATE_REF: ${{ steps.scan.outputs.migrate }}
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for img in "$WEB_REF" "$MIGRATE_REF"; do
+            docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD \
+              -v /var/run/docker.sock:/var/run/docker.sock:ro -v "$RUNNER_TEMP/trivy-cache:/root/.cache/trivy" \
+              "$TRIVY_IMAGE" image --quiet --platform linux/amd64 --severity CRITICAL --exit-code 1 --ignore-unfixed "$img"
+          done
+
+      - name: Tag the scanned digests
         if: steps.meta.outputs.publish == 'true'
         env:
-          WEB_SCANNED: ${{ steps.web-load.outputs.imageid }}
-          WEB_PUSHED: ${{ steps.web-push.outputs.imageid }}
-          MIGRATE_SCANNED: ${{ steps.migrate-load.outputs.imageid }}
-          MIGRATE_PUSHED: ${{ steps.migrate-push.outputs.imageid }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          WEB_REF: ${{ steps.scan.outputs.web }}
+          MIGRATE_REF: ${{ steps.scan.outputs.migrate }}
         run: |
-          echo "web      scanned=$WEB_SCANNED pushed=$WEB_PUSHED"
-          echo "migrate  scanned=$MIGRATE_SCANNED pushed=$MIGRATE_PUSHED"
-          [[ -n "$WEB_PUSHED" && "$WEB_SCANNED" == "$WEB_PUSHED" && "$MIGRATE_SCANNED" == "$MIGRATE_PUSHED" ]] \
-            || { echo "::error::pushed image differs from the Trivy-scanned image"; exit 1; }
+          set -euo pipefail
+          for pair in "$WEB_IMAGE=$WEB_REF" "$MIGRATE_IMAGE=$MIGRATE_REF"; do
+            img="${pair%%=*}"; src="${pair#*=}"; args=()
+            for t in $TAGS; do args+=(-t "$img:$t"); done
+            docker buildx imagetools create "${args[@]}" "$src"
+          done
       - name: Summary (image@digest for the deploy .env)
         if: steps.meta.outputs.publish == 'true'
         env:
@@ -363,7 +389,12 @@ jobs:
           WEB_DIGEST: ${{ steps.web-push.outputs.digest }}
           MIGRATE_DIGEST: ${{ steps.migrate-push.outputs.digest }}
         run: |
+          set -euo pipefail
           t="${TAGS%% *}"
+          for pair in "$WEB_IMAGE:$t=$WEB_DIGEST" "$MIGRATE_IMAGE:$t=$MIGRATE_DIGEST"; do
+            got="$(docker buildx imagetools inspect "${pair%%=*}" --format '{{json .Manifest}}' | jq -r .digest)"
+            [[ "$got" == "${pair#*=}" ]] || { echo "::error::${pair%%=*} → $got, expected ${pair#*=}"; exit 1; }
+          done
           {
             echo "### GHCR images"
             echo '```'

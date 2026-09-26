@@ -22,18 +22,19 @@ lokal staging (`proyekkas-web:0.1.0-stg-<sha>`).
 
 Urutan (job `image` hanya jalan setelah `verify`, `integration`, `security` hijau):
 
-1. **Tag & label** dihitung dari ref git (tabel §3). `SOURCE_DATE_EPOCH` = waktu commit → config image reprodusibel.
-2. **Build + load lokal** (buildx, `linux/amd64`) target `runner` lalu `migrate`, cache layer di **GitHub Actions cache**
-   (`type=gha`, scope `pk-web` / `pk-migrate`, `mode=max`). Webpack butuh ≈ 2 GiB → aman di runner (16 GiB).
-3. **Trivy 0.74.0** (image dipin digest, sama dengan job `security`):
+1. **Tag & label** dihitung dari ref git (tabel §3). `SOURCE_DATE_EPOCH` = waktu commit (timestamp image reprodusibel).
+2. **Build sekali per target** (buildx, `linux/amd64`) — `runner` lalu `migrate`, cache layer di **GitHub Actions
+   cache** (`type=gha`, scope `pk-web` / `pk-migrate`, `mode=max`). Webpack butuh ≈ 2 GiB → aman di runner (16 GiB).
+   - run *publish* (`develop`, tag `vX.Y.Z`, `ci/ghcr-*`; tidak pernah dari PR): image di-push **tanpa tag**
+     (`push-by-digest`) beserta **SBOM** (SPDX) dan **provenance** SLSA (`mode=max`) sebagai attestation. Login GHCR
+     memakai `GITHUB_TOKEN` (`permissions: packages: write` hanya di job ini).
+   - run lain (PR, `feat/**`, `main`): image di-*load* ke runner saja, tidak ada push.
+3. **Trivy 0.74.0** (image dipin digest, sama dengan job `security`) memindai **digest yang persis sama**:
    - *laporan*: HIGH + CRITICAL termasuk yang belum ada perbaikan → tabel jumlah di **job summary** + daftar di log;
    - *gerbang*: `--severity CRITICAL --ignore-unfixed --exit-code 1` → ada CRITICAL yang bisa diperbaiki = job gagal,
-     **tidak ada push**.
-4. **Push** (hanya `develop`, tag `vX.Y.Z`, branch `ci/ghcr-*`; tidak pernah dari PR): build ulang dari cache (tanpa
-   kerja ulang) dengan `push: true`, **SBOM** (`sbom: true`, SPDX) dan **provenance** SLSA (`mode=max`) sebagai
-   attestation di GHCR. Login GHCR memakai `GITHUB_TOKEN` (`permissions: packages: write` hanya di job ini).
-5. **Verifikasi**: config digest image yang di-push harus sama dengan image yang dipindai Trivy; beda → job gagal.
-6. **Summary**: baris siap tempel untuk `.env` prod:
+     digest **tetap tanpa tag** (tidak bisa dipakai lewat tag; jangan deploy digest tanpa tag).
+4. **Tag**: hanya digest yang lolos diberi tag (`docker buildx imagetools create`, tanpa build ulang) — §3.
+5. **Summary**: tag dicek menunjuk digest yang dipindai, lalu baris siap tempel untuk `.env` prod:
    `PK_WEB_IMAGE=ghcr.io/bctech-adm/proyekkas-web:<tag>@sha256:…` dan `PK_MIGRATE_IMAGE=…`.
 
 Label OCI di setiap image: `org.opencontainers.image.{title,description,source,revision,version,created,vendor,licenses}`.
@@ -61,17 +62,21 @@ rollback). Tidak ada tag bergerak (`latest`, `X.Y`) — deploy selalu dengan dig
 Rilis prod: merge `release/*` → `main`, `git tag -a vX.Y.Z` di `main`, `git push origin vX.Y.Z` → tunggu run `ci`
 tag itu hijau → ambil dua baris `PK_*_IMAGE` dari job summary.
 
-## 4. Visibilitas image (privat)
+## 4. Visibilitas image (harus privat) — **aksi user**
 
-Repo `bctech-adm/drms` **publik**. Paket container baru di organisasi dibuat **privat** secara default; pastikan setelah
-push pertama (run uji `ci/ghcr-test`):
+Repo `bctech-adm/drms` **publik**. Paket yang dibuat workflow dengan `GITHUB_TOKEN` tertaut ke repo dan **mewarisi
+visibilitas publik** — terbukti pada push uji pertama 2026-09-26 (`test-ba70515`: manifest bisa diambil tanpa login,
+HTTP 200). Isi image tidak memuat secret (hanya placeholder build), tetapi target tetap privat:
+GitHub → organisasi `bctech-adm` → Packages → `proyekkas-web` dan `proyekkas-migrate` → *Package settings* →
+*Change visibility* → **Private** (sekali per paket; bila dikunci kebijakan org, admin org mengizinkan dulu di
+Settings → Packages). *Manage Actions access*: repo `bctech-adm/drms` peran **Write** (agar CI tetap bisa push).
+Setelah privat, VPS wajib `docker login ghcr.io` (§6a). Cek (tanpa login harus 401/403):
 ```bash
-# tanpa login: harus 401/403 (privat). 200 = publik → ubah di GitHub (Package settings → Change visibility → Private).
 T=$(curl -s "https://ghcr.io/token?scope=repository:bctech-adm/proyekkas-web:pull" | sed -E 's/.*"token":"([^"]*)".*/\1/')
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" \
-  -H 'Accept: application/vnd.oci.image.index.v1+json' https://ghcr.io/v2/bctech-adm/proyekkas-web/manifests/test-<sha7>
+  -H 'Accept: application/vnd.oci.image.index.v1+json' https://ghcr.io/v2/bctech-adm/proyekkas-web/manifests/<tag>
 ```
-Pengaturan visibilitas/akses paket dilakukan user di GitHub (agent tidak mengubah setelan GitHub).
+Agent tidak mengubah setelan GitHub.
 
 ## 5. Compose prod — `deploy/prod/docker-compose.yml`
 
