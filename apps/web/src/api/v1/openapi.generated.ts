@@ -8521,7 +8521,7 @@ export const openapiDocument = {
     },
     "/cash-entries": {
       "get": {
-        "summary": "Finance/Owner/Admin: cash ledger (KM/KK, reversals)",
+        "summary": "Finance/Direktur (pk-owner)/Admin: cash ledger (KM/KK, reversals)",
         "security": [
           {
             "bearer": []
@@ -9014,7 +9014,7 @@ export const openapiDocument = {
     },
     "/cash-accounts/balances": {
       "get": {
-        "summary": "Finance/Owner: balance per cash account (opening + in − out)",
+        "summary": "Finance/Direktur (pk-owner): balance per cash account (opening + in − out)",
         "security": [
           {
             "bearer": []
@@ -9112,7 +9112,7 @@ export const openapiDocument = {
         }
       },
       "post": {
-        "summary": "Finance/Owner: close a past month (DB rejects postings dated ≤ lock date)",
+        "summary": "Finance/Direktur (pk-owner): close a past month (DB rejects postings dated ≤ lock date)",
         "security": [
           {
             "bearer": []

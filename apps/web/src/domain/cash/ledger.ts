@@ -258,7 +258,7 @@ export async function balances(req: PayloadRequest, asOf?: string) {
   })
 }
 
-/** Close a month (Finance/Owner). Only past months; audited `period_close`. */
+/** Close a month (Finance/Direktur = pk-owner). Only past months; audited `period_close`. */
 export async function closePeriod(req: PayloadRequest, period: string, note?: string) {
   if (!isPeriod(period)) fail(400, 'Periode harus YYYY-MM.')
   if (period >= (await today(req)).slice(0, 7)) fail(409, 'Hanya bulan yang sudah lewat yang dapat ditutup.')

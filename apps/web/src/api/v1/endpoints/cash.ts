@@ -6,7 +6,7 @@ import { balances, closePeriod, createManualEntry, currentLockDate, editManualEn
 import { HttpError, json, v1 } from '../http'
 import { CashEntryCreate, CashEntryUpdate, CashListQuery, PeriodCloseBody, ReasonBody } from '../schemas-flow'
 
-/** US-23 / US-24 / ADR 0005 — Finance writes; Finance/Owner/Admin read (requirements §4 "Kas & bank"). */
+/** US-23 / US-24 / ADR 0005 — Finance writes; Finance/Direktur (pk-owner)/Admin read (requirements §4 "Kas & bank"). */
 const WRITE_LIMIT: [number, number] = [30, 60_000]
 
 export function cashDto(e: CashEntryDoc & { postedAt?: string | null }) {

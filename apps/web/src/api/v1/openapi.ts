@@ -225,7 +225,7 @@ export function buildOpenApiDocument(version: string) {
   registry.registerPath({
     method: 'get',
     path: '/cash-entries',
-    summary: 'Finance/Owner/Admin: cash ledger (KM/KK, reversals)',
+    summary: 'Finance/Direktur (pk-owner)/Admin: cash ledger (KM/KK, reversals)',
     security,
     request: { query: F.CashListQuery },
     responses: res(200, 'Page', F.CashEntryList, [400, 401, 403]),
@@ -250,7 +250,7 @@ export function buildOpenApiDocument(version: string) {
   registry.registerPath({
     method: 'get',
     path: '/cash-accounts/balances',
-    summary: 'Finance/Owner: balance per cash account (opening + in − out)',
+    summary: 'Finance/Direktur (pk-owner): balance per cash account (opening + in − out)',
     security,
     request: { query: z.object({ asOf: z.string().optional() }) },
     responses: res(200, 'Balances', F.Balances, [401, 403]),
@@ -262,7 +262,7 @@ export function buildOpenApiDocument(version: string) {
     security,
     responses: res(200, 'Periods', F.PeriodClosingList, [401, 403]),
   })
-  post('/period-closings', 'Finance/Owner: close a past month (DB rejects postings dated ≤ lock date)', F.PeriodCloseBody, [], res(201, 'Closed', F.PeriodClosing, [400, 401, 403, 409, 422, 429]))
+  post('/period-closings', 'Finance/Direktur (pk-owner): close a past month (DB rejects postings dated ≤ lock date)', F.PeriodCloseBody, [], res(201, 'Closed', F.PeriodClosing, [400, 401, 403, 409, 422, 429]))
   registry.registerPath({
     method: 'post',
     path: '/period-closings/{period}/reopen',
