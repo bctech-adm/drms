@@ -20,9 +20,9 @@ Kontrol ini dinilai berdasarkan keputusan tercatat di ADR 0002, ADR 0003 dan `do
 penilaian memakai state staging yang diverifikasi Lead 2026-09-23.
 
 **Metode:** membaca kode dan konfigurasi di worktree; setiap path/fungsi yang dikutip sudah dicek ada (`ls`/`grep`).
-Tidak ada pengujian dinamis dalam dokumen ini. **Belum termasuk (pending, dikerjakan QA di E9):** ZAP baseline staging,
-load test (Q-34), restore drill (DB + media, RTO ≤ 4 jam). Temuan dari ketiganya akan menjadi lampiran terpisah dan
-dapat mengubah status baris yang ditandai "verifikasi ZAP".
+Tidak ada pengujian dinamis dalam penilaian awal. **Pembaruan 2026-09-26 (QA E9):** ZAP baseline staging (tanpa login),
+load test (hanya jalur tanpa login — load test terautentikasi terblokir kredensial) dan restore drill sudah dijalankan;
+laporan `docs/proyekkas/qa/s3-e9-qa-report.md`. Baris yang dulu bertanda "verifikasi ZAP" diperbarui (lihat §8).
 
 **Status:**
 - **Terpenuhi** — kontrol ada dan ada bukti (kode/test/CI atau keputusan ADR untuk kontrol infra/KC).
@@ -35,8 +35,8 @@ dapat mengubah status baris yang ditandai "verifikasi ZAP".
 
 | Status | Jumlah persyaratan L1 |
 |---|---|
-| Terpenuhi | 80 |
-| Sebagian | 25 |
+| Terpenuhi | 82 |
+| Sebagian | 23 |
 | Celah | 9 |
 | N/A | 13 |
 | **Total nomor L1 dinilai** | **127** |
@@ -134,13 +134,13 @@ Seluruh login (password, TOTP, brute force, reset) ada di Keycloak; aplikasi mem
 | 4.2.1 | Perlindungan IDOR / akses data | Terpenuhi | Scope own/team/assigned (`scope.ts`, `ownUser`, `teamProjects`); `mediaFileEndpoint` memakai `findByID(overrideAccess:false)`; `visibleRequestIds` | `int/authz.int.test.ts` "read scopes…"; `int/files.int.test.ts` "other user's receipt → 404…". E9: URL media bertanda tangan tetap cek akses ulang. |
 | 4.2.2 | Anti-CSRF | Terpenuhi | `oidcSessionStrategy`: metode unsafe dengan `Origin`/`Sec-Fetch-Site` asing → tidak terautentikasi; `SameSite=Lax`; logout hanya POST + cek `Origin` | `int/api.int.test.ts` "cross-origin POST is not authenticated". |
 | 4.3.1 | MFA untuk antarmuka administratif | Sebagian | [KC] required action `CONFIGURE_TOTP` dipakai pada akun admin bootstrap/UAT (ADR 0003 §6; UAT F2 memakai password + TOTP) | Aplikasi **tidak** menegakkan MFA (tidak ada cek `acr`/`amr`); bergantung pada setiap akun diberi TOTP. Usul: OTP wajib di realm untuk peran panel, atau cek `amr` di `auth/callback`. |
-| 4.3.2 | Directory listing mati, metadata (.git) tidak terekspos | Terpenuhi | Next standalone tanpa listing; `.dockerignore` mengecualikan `.git`, `.env*`, `docs`; media di `/data/media` tidak disajikan statis | Verifikasi ZAP. |
+| 4.3.2 | Directory listing mati, metadata (.git) tidak terekspos | Terpenuhi | Next standalone tanpa listing; `.dockerignore` mengecualikan `.git`, `.env*`, `docs`; media di `/data/media` tidak disajikan statis | Diverifikasi E9 QA 2026-09-26: `/.git/HEAD`, `/.git/config`, `/.env`, `/package.json` → 403 (WAF), `/server.js` → 404, tanpa listing (`../qa/s3-e9-qa-report.md` §1.4). |
 
 ### V5 — Validasi, sanitasi, encoding
 
 | # | Persyaratan | Status | Bukti | Catatan |
 |---|---|---|---|---|
-| 5.1.1 | HTTP parameter pollution | Sebagian | Query dibaca dengan `searchParams.get` (nilai pertama); body divalidasi zod | Tidak ada test untuk parameter ganda; verifikasi ZAP. |
+| 5.1.1 | HTTP parameter pollution | Sebagian | Query dibaca dengan `searchParams.get` (nilai pertama); body divalidasi zod | E9 QA: `?version=1.0.0&version=abc` di `/api/v1/app/config` → nilai **terakhir** dipakai (`Object.fromEntries`) lalu ditolak zod (400); endpoint lain `searchParams.get` (nilai pertama) → tidak seragam, tanpa dampak (nilai tetap divalidasi). Belum ada test parameter ganda (`../qa/s3-e9-qa-report.md` §1.4). |
 | 5.1.2 | Mass assignment | Terpenuhi | Skema zod (`web/src/api/v1/schemas*.ts`, 40 pemakaian `.strict()`/`strictObject`); field access Payload (`Users.ts` `ADMIN_FIELDS`, field `access: { update: () => false }` di media) | |
 | 5.1.3 | Validasi input allow-list | Terpenuhi | `v1()` → `opts.body.safeParse` → 400 problem+json; regex id/enum (`FileCollectionEnum`, `MediaKindEnum`, `IDEMPOTENCY_KEY_RE`, `DEVICE_HEADER_RE`) | |
 | 5.1.4 | Data terstruktur bertipe kuat | Terpenuhi | zod + tipe Payload (`payload-types.ts`); CI `check:openapi` (kontrak) | |
@@ -179,7 +179,7 @@ Seluruh login (password, TOTP, brute force, reset) ada di Keycloak; aplikasi mem
 |---|---|---|---|---|
 | 7.1.1 | Kredensial/token sesi tidak di-log | Terpenuhi | `loggerOptions` `redact` (`authorization`, `cookie`, `*.accessToken`, `*.refreshToken`, `*.idToken`, `*.client_secret`) di `web/src/lib/logger.ts`; sesi hanya tersimpan sebagai hash | Tidak ada test yang memverifikasi redaksi. |
 | 7.1.2 | Data sensitif lain tidak di-log | Sebagian | `*.accountNo` di-redact; komentar "No tokens, cookies or bodies in logs" | Redact hanya satu level (`*.accountNo`); belum ada review log nyata. QA: periksa log Loki selama ZAP/load test. |
-| 7.4.1 | Pesan error generik + id untuk support | Terpenuhi | `problem(500, 'Internal Server Error')` (`http.ts`); callback "Login gagal. Silakan ulangi."; `X-Request-Id` (`web/src/proxy.ts`, `web/src/lib/request-meta.ts`) | E9: urutan 403/409 konsisten. Verifikasi ZAP untuk REST generik Payload. |
+| 7.4.1 | Pesan error generik + id untuk support | Terpenuhi | `problem(500, 'Internal Server Error')` (`http.ts`); callback "Login gagal. Silakan ulangi."; `X-Request-Id` (`web/src/proxy.ts`, `web/src/lib/request-meta.ts`) | E9: urutan 403/409 konsisten. Diverifikasi E9 QA: REST generik (`/api/users`, `/api/users/abc`) → 403 pesan generik; `/api/v1/*` 401 `problem+json`, rute tak dikenal 404 JSON Payload `Route not found` — tanpa stack (`../qa/s3-e9-qa-report.md` §1.4). |
 
 Catatan L2: event `login_failed` bersumber dari log event Keycloak (keputusan E9, ADR 0003 §7); keputusan hash-chain
 `audit_logs` dicatat di ADR 0006 §5 (E9). Audit append-only sudah ditegakkan DB (`int/db-security.int.test.ts`).
@@ -188,7 +188,7 @@ Catatan L2: event `login_failed` bersumber dari log event Keycloak (keputusan E9
 
 | # | Persyaratan | Status | Bukti | Catatan |
 |---|---|---|---|---|
-| 8.2.1 | Header anti-cache untuk data sensitif | Sebagian | `/api/v1`: `Cache-Control: no-store` (`json()`, `problem()`); file media `private, no-store` (`modifyResponseHeaders`, `mediaFileEndpoint`) | REST generik `/api/<slug>` dan HTML admin memakai default Payload/Next — belum diverifikasi. |
+| 8.2.1 | Header anti-cache untuk data sensitif | Sebagian | `/api/v1`: `Cache-Control: no-store` (`json()`, `problem()`); file media `private, no-store` (`modifyResponseHeaders`, `mediaFileEndpoint`) | E9 QA: HTML admin `private, no-cache, no-store, max-age=0, must-revalidate` (terverifikasi); REST generik `/api/<slug>` **tanpa** `Cache-Control` (temuan M-3, Low) → G-08. |
 | 8.2.2 | Data sensitif tidak di storage browser | Terpenuhi | Web: sesi hanya cookie HttpOnly, tanpa JWT Payload (`refresh` hook `setCookie: false`); APK: `apps/mobile/lib/core/storage/secure_store.dart`, `allowBackup="false"` | |
 | 8.2.3 | Data klien dibersihkan setelah sesi berakhir | Sebagian | Cookie dihapus saat logout (`Max-Age=0`) | Tanpa `Clear-Site-Data`; pembersihan data APK saat logout tidak dinilai di dokumen ini. |
 | 8.3.1 | Data sensitif di body/header, bukan query string | Terpenuhi | Token di header; body JSON | `sig` URL media (E9) bukan data sensitif. |
@@ -201,7 +201,7 @@ Catatan L2: event `login_failed` bersumber dari log event Keycloak (keputusan E9
 | # | Persyaratan | Status | Bukti | Catatan |
 |---|---|---|---|---|
 | 9.1.1 | TLS untuk semua koneksi klien | Terpenuhi | [infra] Traefik + Let's Encrypt (ADR 0002, architecture §3.2–3.3); aplikasi menolak cookie insecure dengan issuer https di produksi (`env.ts`) | Staging `le-http-staging` → prod `le-http` di E10. |
-| 9.1.2, 9.1.3 | Cipher suite kuat; hanya TLS 1.2/1.3 | Sebagian | [infra] konfigurasi TLS Traefik platform | Tidak ada bukti di repo ini; QA jalankan `testssl.sh`/ZAP di host prod (2 nomor). |
+| 9.1.2, 9.1.3 | Cipher suite kuat; hanya TLS 1.2/1.3 | Sebagian | [infra] konfigurasi TLS Traefik platform | E9 QA (staging, dari host): TLS 1.0/1.1 ditolak, 1.2/1.3 diterima; TLS 1.2 masih menerima suite CBC/non-PFS (`ECDHE-RSA-AES128-SHA`, `AES128-SHA256`) = default Traefik (temuan M-2, Low, infra). Host prod belum ada (E10) (2 nomor). |
 
 ### V10 — Kode berbahaya
 
@@ -256,17 +256,17 @@ Catatan L2: event `login_failed` bersumber dari log event Keycloak (keputusan E9
 | 14.2.2 | Fitur tak perlu dimatikan | Terpenuhi | `graphQL.disable`, REST jobs ditutup (`jobs.access`), `disableLocalStrategy`, `poweredByHeader: false`, npm/corepack dihapus dari image (`Dockerfile`), telemetry off | `unit/config-guards.test.ts`. |
 | 14.2.3 | SRI aset eksternal | Terpenuhi | Tidak ada aset CDN (CSP `'self'`) | |
 | 14.3.2 | Mode debug mati di produksi | Terpenuhi | `NODE_ENV=production` (`Dockerfile`), `'unsafe-eval'` hanya dev | |
-| 14.3.3 | Header tidak membocorkan versi | Sebagian | `poweredByHeader: false` | Header Traefik/Next lain belum diverifikasi (ZAP). |
+| 14.3.3 | Header tidak membocorkan versi | Terpenuhi | `poweredByHeader: false` | Diverifikasi E9 QA: tidak ada header `Server`/`X-Powered-By`/versi di HTML, `/api/v1`, REST generik, aset (`../qa/s3-e9-qa-report.md` §1.4). |
 | 14.4.1 | Content-Type + charset aman | Sebagian | `Response.json` (`application/json`), `application/problem+json`; callback `text/plain; charset=utf-8` | Charset tidak eksplisit di JSON/problem+json. |
 | 14.4.2 | Respons API `Content-Disposition: attachment` | Celah | — | Tambahkan di `json()`/`problem()` (`http.ts`). Prioritas rendah. |
 | 14.4.3 | CSP | Terpenuhi | Nonce CSP per request (`web/src/proxy.ts`, `buildCsp`); `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'` | `unit/security.test.ts` "csp …". `style-src 'unsafe-inline'` = deviasi yang diterima (Payload admin). |
 | 14.4.4 | `X-Content-Type-Options: nosniff` | Terpenuhi | `next.config.ts` `headers()` (semua path), media | |
-| 14.4.5 | HSTS | Sebagian | [infra] komentar `next.config.ts` "HSTS is handled by Traefik"; middleware `security-headers` | Nilai HSTS tidak tercatat di ADR; verifikasi dengan ZAP. |
+| 14.4.5 | HSTS | Sebagian | [infra] komentar `next.config.ts` "HSTS is handled by Traefik"; middleware `security-headers` | E9 QA: HSTS dikirim (Traefik) `max-age=604800` (7 hari) **tanpa** `includeSubDomains` — di bawah contoh ASVS (`max-age=15724800; includeSubDomains`) → temuan M-1 (Low, infra, nilai prod E10). |
 | 14.4.6 | `Referrer-Policy` | Terpenuhi | `strict-origin-when-cross-origin` (`next.config.ts`) | |
 | 14.4.7 | Anti-framing | Terpenuhi | `X-Frame-Options: DENY` + `frame-ancestors 'none'`; [infra] `frameDeny` | |
-| 14.5.1 | Hanya metode HTTP yang diperlukan | Sebagian | `v1()` terikat metode; route Payload mengekspor GET/POST/DELETE/PATCH/PUT/OPTIONS (`web/src/app/(payload)/api/[...slug]/route.ts`) | TRACE/metode lain → verifikasi ZAP. |
+| 14.5.1 | Hanya metode HTTP yang diperlukan | Terpenuhi | `v1()` terikat metode; route Payload mengekspor GET/POST/DELETE/PATCH/PUT/OPTIONS (`web/src/app/(payload)/api/[...slug]/route.ts`) | Diverifikasi E9 QA: TRACE/TRACK/PROPFIND/PUT/DELETE ke `/admin/login` → 403 ([infra] CrowdSec AppSec CRS), OPTIONS → 400 (`../qa/s3-e9-qa-report.md` §1.4). |
 | 14.5.2 | Header `Origin` tidak dipakai untuk keputusan akses | Terpenuhi | `Origin`/`Sec-Fetch-Site` hanya **menolak** (CSRF) di `oidcSessionStrategy`, tidak pernah memberi akses | |
-| 14.5.3 | CORS allow-list ketat | Terpenuhi | `cors` tidak dikonfigurasi di `payload.config.ts` (tanpa `Access-Control-Allow-Origin`) | Verifikasi ZAP. |
+| 14.5.3 | CORS allow-list ketat | Terpenuhi | `cors` tidak dikonfigurasi di `payload.config.ts` (tanpa `Access-Control-Allow-Origin`) | Diverifikasi E9 QA: `Origin: https://evil.example` (GET & preflight) → tanpa `Access-Control-Allow-Origin`; header `Access-Control-Allow-Headers/-Methods` default Payload tetap terkirim (Info, tanpa dampak). |
 
 ### Rekap N/A
 
@@ -292,17 +292,17 @@ Catatan L2: event `login_failed` bersumber dari log event Keycloak (keputusan E9
 | G-04 | Tidak ada notifikasi perubahan kredensial/faktor; onboarding password sementara di luar sistem | 2.2.3, 2.5.5, 2.3.1 | infra | Sedang | SMTP realm + `execute-actions-email` (E10). |
 | G-05 | Tidak ada pemindaian antivirus upload (PDF disimpan apa adanya) | 12.4.2 | nextjs + infra | Sedang | ClamAV (sidecar) untuk PDF, atau terima risiko tercatat di ADR 0004. |
 | G-06 | Hak subjek data & pemberitahuan privasi (selfie, GPS, rekening) | 8.3.2, 8.3.3, 8.3.4 | user | Sedang | Keputusan UU PDP; teks pemberitahuan di layar login web/APK; inventaris data pribadi. |
-| G-07 | TLS cipher/versi & HSTS tidak terbukti di repo | 9.1.2, 9.1.3, 14.4.5 | qa + infra | Sedang | `testssl.sh` + ZAP pada host prod; catat nilai HSTS di architecture §3.3. |
-| G-08 | Anti-cache belum pasti di REST generik/HTML admin | 8.2.1 | qa → nextjs | Sedang | Verifikasi ZAP; bila perlu tambah `Cache-Control: no-store` untuk `/api/:path*` dan `/admin/:path*` di `next.config.ts`. |
+| G-07 | TLS cipher/versi & HSTS tidak terbukti di repo | 9.1.2, 9.1.3, 14.4.5 | qa + infra | Sedang | `testssl.sh` + ZAP pada host prod; catat nilai HSTS di architecture §3.3. **E9 QA (staging):** TLS 1.2/1.3 saja, tetapi suite CBC/non-PFS diterima (M-2); HSTS 7 hari tanpa `includeSubDomains` (M-1) → infra: `tls.options` + `stsSeconds` ≥ 180 hari untuk prod. |
+| G-08 | Anti-cache REST generik | 8.2.1 | nextjs | Rendah | **E9 QA:** HTML admin sudah `no-store`; REST generik `/api/<slug>` tanpa `Cache-Control` (M-3) → tambah `Cache-Control: no-store` untuk `/api/:path*` di `next.config.ts`. |
 | G-09 | Pembaruan dependensi tidak otomatis; HIGH Trivy tidak menggagalkan | 14.2.1 | nextjs | Sedang | Renovate/Dependabot; `trivy --severity HIGH,CRITICAL` (dengan `.trivyignore` terdokumentasi). |
 | G-10 | Kanal distribusi & signing APK rilis belum ditetapkan | 10.3.1 | user + infra | Sedang | Tetapkan kanal (Play/MDM/unduhan HTTPS) dan kunci rilis sebelum go-live (E10). |
 | G-11 | Form login Keycloak (truncation, Unicode, paste, show password, ganti password) belum diverifikasi | 2.1.3–2.1.6, 2.1.11, 2.1.12 | qa | Rendah | Uji manual di realm staging; catat hasil. |
 | G-12 | Prosedur reset password oleh Admin belum tertulis | 2.5.6 | user (runbook E12) | Rendah | Runbook: verifikasi identitas + password sementara + `UPDATE_PASSWORD`. |
 | G-13 | Respons API tanpa `Content-Disposition` & charset eksplisit | 14.4.1, 14.4.2 | nextjs | Rendah | Tambah di `json()`/`problem()` (`web/src/api/v1/http.ts`). |
 | G-14 | Redaksi log satu level; tidak ada test redaksi | 7.1.1, 7.1.2 | nextjs + qa | Rendah | Unit test `loggerOptions().redact`; review log Loki saat load test. |
-| G-15 | Header versi, metode HTTP ekstra, HPP belum diverifikasi | 14.3.3, 14.5.1, 5.1.1, 4.3.2 | qa | Rendah | ZAP baseline staging (E9). |
+| G-15 | ~~Header versi, metode HTTP ekstra~~ (terverifikasi E9 QA: 14.3.3, 14.5.1, 4.3.2); HPP tidak seragam (nilai pertama vs terakhir) | 5.1.1 | nextjs | Rendah | Seragamkan pembacaan query + test parameter ganda. |
 | G-16 | Tanpa `Clear-Site-Data` saat logout | 8.2.3 | nextjs | Rendah | Tambah header di `POST /auth/logout`. |
-| G-17 | Rate limit in-memory, belum diuji beban | 11.1.2, 11.1.4 | qa | Rendah | Load test E9 (Q-34); cek 429 dan RAM. |
+| G-17 | Rate limit in-memory, belum diuji beban terautentikasi | 11.1.2, 11.1.4 | qa + Lead/user | Rendah | E9 QA: Q-34 tanpa login OK (0× 429, RAM web 29%); run terautentikasi butuh ≥ 30 akun uji lapangan (limit per user) — laporan QA §2.5. |
 | G-18 | Batas panjang field teks belum seragam | 5.2.2 | nextjs | Rendah | Audit `maxLength` koleksi + zod. |
 | G-19 | Kebersihan DNS (subdomain takeover) | 10.3.3 | user | Rendah | Review record Hostinger saat membuat A record prod. |
 | G-20 | ~~Kontrol E9 perlu dikonfirmasi~~ — **selesai**: §3 diperbarui dengan file & test final; 404 tetap untuk jalur non-signed (lihat catatan §3) | 3.x/4.x/11.1.5 | nextjs | — | Tutup. |
@@ -313,8 +313,26 @@ plaintext (read access `false`); pertimbangkan tidak menyimpan atau mengenkripsi
 
 ## 7. Pending (bukan bagian dokumen ini)
 
-- **ZAP baseline** staging `https://drms-kas.staging.bimacreative.tech` — QA, E9. Akan memverifikasi baris bertanda
-  "verifikasi ZAP" (4.3.2, 5.1.1, 7.4.1, 8.2.1, 14.3.3, 14.4.5, 14.5.1, 14.5.3).
-- **Load test** (30 lapangan + 5 kantor, p95 < 2 s) — QA, E9.
-- **Restore drill** DB + media ke `pk_drms_restoretest` (RTO ≤ 4 jam) — QA + infra, E9.
+- ~~ZAP baseline staging~~ — selesai tanpa login (2026-09-26, §8). **Sisa:** ZAP terautentikasi (butuh kredensial uji).
+- **Load test terautentikasi** (30 lapangan + 5 kantor, p95 < 2 s, RAM) — QA, E9; terblokir kredensial/akun uji
+  (laporan QA §2.5). Jalur tanpa login sudah diuji.
+- ~~Restore drill DB + media ke `pk_drms_restoretest`~~ — selesai, RTO 6,1 s, baris & checksum cocok (laporan QA §3).
+  Ulangi untuk `pk_drms` + `drms_pk_media_prod` setelah prod ada.
 - **Verifikasi realm/router prod** (`bruteForceProtected`, TOTP, SMTP, TLS) — infra, E10.
+
+## 8. Hasil ZAP baseline & cek manual (QA E9, 2026-09-26)
+
+Laporan lengkap: `docs/proyekkas/qa/s3-e9-qa-report.md` §1 (bukti mentah `docs/proyekkas/qa/s3-e9-evidence/`).
+ZAP 2.17.0 `zap-baseline.py` (pasif) 2 run tanpa login (`/` dan `/admin/login` + AJAX spider): **0 FAIL, 0 High/Critical**.
+
+| Temuan | Severity | Baris ASVS | Status |
+|---|---|---|---|
+| CSP `style-src 'unsafe-inline'` (ZAP 10055, Medium) | Low — deviasi diterima | 5.3.3, 14.4.3 | Tetap (keputusan user 2026-09-23) |
+| CORP tidak ada di aset statis, COEP tidak ada (ZAP 90004) | Low / Info | — (L2+) | Opsional |
+| `Content-Type` tidak ada di 302 `/admin` (ZAP 10019) | Info | 14.4.1 | — |
+| HSTS 7 hari tanpa `includeSubDomains` (M-1) | Low | 14.4.5 | Sebagian → G-07 |
+| TLS 1.2 menerima suite CBC/non-PFS (M-2) | Low | 9.1.2 | Sebagian → G-07 |
+| REST generik tanpa `Cache-Control` (M-3) | Low | 8.2.1 | Sebagian → G-08 |
+| Tanpa header versi; metode ekstra 403; tanpa ACAO; `.git`/`.env` 403 | — | 14.3.3, 14.5.1, 14.5.3, 4.3.2 | Terpenuhi (diverifikasi) |
+
+Perubahan status: 14.3.3 dan 14.5.1 Sebagian → Terpenuhi (ringkasan §2: Terpenuhi 82, Sebagian 23).
