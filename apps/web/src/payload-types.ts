@@ -467,6 +467,9 @@ export interface Project {
   address?: string | null;
   lat?: number | null;
   lng?: number | null;
+  /**
+   * Kosong = radius default perusahaan (Setting perusahaan).
+   */
   radiusM?: number | null;
   pm?: (number | null) | User;
   budget?: number | null;
@@ -672,6 +675,9 @@ export interface CostCenter {
   manager?: (number | null) | User;
   lat?: number | null;
   lng?: number | null;
+  /**
+   * Kosong = radius default perusahaan (Setting perusahaan).
+   */
   radiusM?: number | null;
   /**
    * Referensi Odoo (diisi saat mirror, ADR 0009).
@@ -864,6 +870,9 @@ export interface ExpenseRequest {
   notes?: string | null;
   requesters?: (number | Employee)[] | null;
   createdBy?: (number | null) | User;
+  /**
+   * Hanya rekening milik pemohon. Kosongkan untuk memakai rekening default pemohon pertama.
+   */
   bankAccount?: (number | null) | EmployeeBankAccount;
   bankSnapshot?: {
     bankName?: string | null;
@@ -3225,6 +3234,9 @@ export interface CompanySetting {
    * Proses server memakai env TZ (cron, tanggal bisnis); ubah keduanya bersamaan.
    */
   timezone: string;
+  /**
+   * Dipakai untuk absensi bila project/pusat biaya punya titik lokasi tetapi radiusnya kosong.
+   */
   defaultGeofenceRadiusM: number;
   lateReportDays: number;
   budgetWarnPct: number;
@@ -3292,6 +3304,14 @@ export interface CompanySetting {
    * Ambang = "Ambang anggaran kuning" dan "merah" di atas; sekali per ambang per project.
    */
   reminderBudgetEnabled?: boolean | null;
+  /**
+   * Pemohon lain dan pembuat diberi tahu; pelaku aksi tidak diberi tahu tentang aksinya sendiri.
+   */
+  notifyRequesterStatusEnabled?: boolean | null;
+  /**
+   * Selain notifikasi in-app. Isi email tanpa nominal/nama pemohon. Batas SMTP 30 email/jam per mailbox.
+   */
+  approvalEmailEnabled?: boolean | null;
   offlineMaxAgeDays: number;
   imageTargets: {
     receiptsMaxPx: number;
@@ -3365,6 +3385,8 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   reminderRevisionEnabled?: T;
   reminderRevisionDays?: T;
   reminderBudgetEnabled?: T;
+  notifyRequesterStatusEnabled?: T;
+  approvalEmailEnabled?: T;
   offlineMaxAgeDays?: T;
   imageTargets?:
     | T
