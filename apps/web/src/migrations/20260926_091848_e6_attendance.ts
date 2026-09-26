@@ -152,7 +152,7 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
   
   ALTER TABLE "attendances" DROP CONSTRAINT "attendances_recorded_by_id_users_id_fk";
   
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_attendance_corrections_fk";
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_attendance_corrections_fk"; -- already dropped by DROP TABLE … CASCADE
   
   ALTER TABLE "company_settings" DROP CONSTRAINT "company_settings_default_work_schedule_id_work_schedules_id_fk";
   
