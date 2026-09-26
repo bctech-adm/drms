@@ -32,7 +32,7 @@ export const SyncItemTypeEnum = z
     'expense_request.draft_delete',
     'progress_report.draft_upsert',
   ])
-  .meta({ id: 'SyncItemType', description: 'attendance.on_behalf and progress_report.draft_upsert are accepted by the schema but answered `unsupported` until F5.' })
+  .meta({ id: 'SyncItemType', description: 'progress_report.draft_upsert is accepted by the schema but answered `unsupported` until F5. attendance.on_behalf (US-14, E6): PM only.' })
 export type SyncItemType = z.infer<typeof SyncItemTypeEnum>
 
 export const SyncClock = z
@@ -109,15 +109,20 @@ export const SyncDraftDeletePayload = z
   .meta({ id: 'SyncDraftDeletePayload', description: 'Soft delete = the draft is cancelled (no hard delete).' })
 export type SyncDraftDelete = z.infer<typeof SyncDraftDeletePayload>
 
+/** Exactly one of project_id / cost_center_id (E6, Q-40: cost-center geofence). */
+const oneLocation = (v: { project_id?: number | null; cost_center_id?: number | null }) => (v.project_id === undefined) !== (v.cost_center_id === undefined)
+const oneLocationError = { message: 'Isi salah satu: project_id ATAU cost_center_id.', path: ['project_id'] }
+
 /**
- * `attendance.check_in` / `attendance.check_out` (F4 slice of US-01/US-02, ADR 0010 decisions 7/8):
- * own attendance at an ASSIGNED PROJECT only (cost-center geofences QM-1b, PM on-behalf and
- * corrections are F5). The selfie is uploaded first with POST /api/v1/media/selfies. Enabled by
- * company-settings.syncAttendanceEnabled (else `rejected FEATURE_DISABLED`).
+ * `attendance.check_in` / `attendance.check_out` (US-01/US-02, ADR 0010 decisions 7/8): own
+ * attendance at an ASSIGNED project OR cost center (E6, Q-40) with a geofence. The selfie is uploaded
+ * first with POST /api/v1/media/selfies. Enabled by company-settings.syncAttendanceEnabled (else
+ * `rejected FEATURE_DISABLED`). Corrections (US-15) are POST /api/v1/attendance/{id}/correct.
  */
 export const SyncAttendancePayload = z
   .object({
-    project_id: id,
+    project_id: id.optional().meta({ description: 'Project (one of project_id / cost_center_id).' }),
+    cost_center_id: id.optional().meta({ description: 'Cost center / operational location (E6, Q-40).' }),
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
     accuracy_m: z.number().min(0).max(10_000).nullable().optional().meta({ description: 'GPS accuracy radius (m); up to 50 m is added to the geofence radius.' }),
@@ -126,8 +131,35 @@ export const SyncAttendancePayload = z
     camera_lens: z.literal('front').optional(),
   })
   .strict()
+  .refine(oneLocation, oneLocationError)
   .meta({ id: 'SyncAttendancePayload' })
 export type SyncAttendance = z.infer<typeof SyncAttendancePayload>
+
+/**
+ * `attendance.on_behalf` (US-14, E6; "diabsenkan oleh PM"): a PM records a check-in/out of a team
+ * member (e.g. without a phone, Q-29) at a TEAM project/cost center. The photo is taken and the
+ * GPS fix measured on the PM's phone (geofence + mock-location checks apply to that fix); the row
+ * is stored with source `pm`, recorded_by = the PM and the reason. The PM cannot record their own
+ * attendance this way. Same switch as check-in (syncAttendanceEnabled).
+ */
+export const SyncOnBehalfPayload = z
+  .object({
+    employee_id: id.meta({ description: 'Team member (employees id; may have no user account).' }),
+    kind: z.enum(['check_in', 'check_out']),
+    project_id: id.optional(),
+    cost_center_id: id.optional(),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    accuracy_m: z.number().min(0).max(10_000).nullable().optional(),
+    is_mocked: z.boolean(),
+    selfie_media_id: id.meta({ description: 'media-selfies id uploaded by the PM (photo of the employee).' }),
+    camera_lens: z.enum(['front', 'back']).optional(),
+    reason: z.string().trim().min(3).max(500).meta({ description: 'Why the PM records it (e.g. "tidak punya HP"). Required.' }),
+  })
+  .strict()
+  .refine(oneLocation, oneLocationError)
+  .meta({ id: 'SyncOnBehalfPayload' })
+export type SyncOnBehalf = z.infer<typeof SyncOnBehalfPayload>
 
 export const SyncItem = z
   .object({
@@ -152,10 +184,10 @@ export const SyncItem = z
     // Documented as anyOf (components for the Dart client); validated per item type by the
     // service, so a bad payload rejects only its own item (never the whole batch).
     payload: z
-      .union([SyncDraftUpsertPayload, SyncDraftDeletePayload, SyncAttendancePayload, z.record(z.string(), z.unknown())])
+      .union([SyncDraftUpsertPayload, SyncDraftDeletePayload, SyncAttendancePayload, SyncOnBehalfPayload, z.record(z.string(), z.unknown())])
       .meta({
         description:
-          'Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload; other types: free-form until supported.',
+          'Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload, attendance.on_behalf → SyncOnBehalfPayload; other types: free-form until supported.',
       }),
   })
   .strict()
@@ -238,14 +270,14 @@ export const SyncResult = z
         'applied | duplicate (replay; original result below) | rejected (business rule, never retry) | conflict (stale base_rev, server wins, see server_copy) | deferred (retry later) | unsupported (item type not enabled on this server yet — keep it queued, do not count as an attempt; see GET /app/config features).',
     }),
     original_status: z.enum(['applied', 'rejected', 'conflict']).nullable().meta({ description: 'For duplicate: the status of the first processing.' }),
-    server_id: z.string().nullable().meta({ description: 'Server id (numeric, as string) of the expense request.' }),
+    server_id: z.string().nullable().meta({ description: 'Server id (numeric, as string) of the expense request / attendance.' }),
     rev: z.number().int().nullable(),
     received_at: z.string().meta({ description: 'Authoritative server time of (first) processing, UTC.' }),
     time_trust: z.enum(['server', 'estimated', 'device_only']),
     flags: z.array(z.string()).meta({ description: 'OFFLINE, CLOCK_SKEW, CLIENT_TOTAL_MISMATCH, ALREADY_CANCELLED.' }),
     errors: z.array(
       z.object({
-        code: z.string().meta({ description: 'VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT.' }),
+        code: z.string().meta({ description: 'VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT (on_behalf also FORBIDDEN: not a PM / not a team location / own attendance).' }),
         field: z.string().optional(),
         message: z.string(),
       }),

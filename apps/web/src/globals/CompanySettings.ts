@@ -115,8 +115,23 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         defaultValue: false,
         admin: {
           description:
-            'Tahap F4: absen masuk/pulang sendiri di project yang ditugaskan (geofence, selfie, lokasi palsu ditolak). Nonaktif → item absensi ditolak FEATURE_DISABLED.',
+            'Absen masuk/pulang sendiri di project/pusat biaya yang ditugaskan (geofence, selfie, lokasi palsu ditolak) dan "diabsenkan PM". Nonaktif → item absensi ditolak FEATURE_DISABLED. Nyalakan di prod setelah checklist go-live.',
         },
+      },
+      // E6 (Q-30): schedule for employees without their own `workSchedule` (terlambat / pulang cepat).
+      {
+        name: 'defaultWorkSchedule',
+        type: 'relationship',
+        relationTo: 'work-schedules',
+        label: 'Jadwal kerja default',
+        admin: { description: 'Dipakai untuk karyawan tanpa jadwal sendiri. Kosong = keterlambatan tidak dihitung.' },
+      },
+      // E6 (Q-33, UU PDP): selfie retention period. The daily job `selfieRetention` (jobs/tasks.ts)
+      // currently only COUNTS the selfies past this period (dry run, logged); deleting the files is
+      // the next step of E6 (plan fase1-golive, sprint S2) and gets its own switch then.
+      {
+        ...intField('selfieRetentionMonths', 'Retensi selfie absensi (bulan)', 12, 1, 120),
+        admin: { description: 'Selfie lebih tua dari ini akan dihapus dari penyimpanan (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).' },
       },
       intField('offlineMaxAgeDays', 'Umur maksimal sesi offline APK (hari)', 30, 1, 30),
       {

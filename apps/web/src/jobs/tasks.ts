@@ -1,6 +1,7 @@
 import { sql } from '@payloadcms/db-postgres'
 import type { TaskConfig } from 'payload'
 
+import { selfieRetentionPlan } from '@/domain/attendance/retention'
 import { autoCloseReimburse } from '@/domain/expense/auto-close'
 
 /**
@@ -98,4 +99,29 @@ export const reimburseAutoCloseTask: TaskConfig<{
   },
 }
 
-export const tasks = [auditDailyAnchorTask, sendEmailTask, reimburseAutoCloseTask]
+/**
+ * E6 selfie retention (Q-33): daily 02:30 (process TZ). DRY RUN — counts the selfies older than
+ * company-settings.selfieRetentionMonths and logs the count (no ids/PII in the log). Deleting the
+ * files is the next E6 step (plan fase1-golive, sprint S2) and will switch this task to delete.
+ */
+export const selfieRetentionTask: TaskConfig<{
+  input: Record<string, never>
+  output: { months: number; cutoff: string; candidates: number; deleted: number }
+}> = {
+  slug: 'selfieRetention',
+  schedule: [{ cron: '30 2 * * *', queue: 'default' }],
+  inputSchema: [],
+  outputSchema: [
+    { name: 'months', type: 'number', required: true },
+    { name: 'cutoff', type: 'text', required: true },
+    { name: 'candidates', type: 'number', required: true },
+    { name: 'deleted', type: 'number', required: true },
+  ],
+  handler: async ({ req }) => {
+    const plan = await selfieRetentionPlan(req.payload)
+    req.payload.logger.info({ msg: 'selfie retention (dry run)', months: plan.months, cutoff: plan.cutoff, candidates: plan.candidates })
+    return { output: { months: plan.months, cutoff: plan.cutoff, candidates: plan.candidates, deleted: 0 } }
+  },
+}
+
+export const tasks = [auditDailyAnchorTask, sendEmailTask, reimburseAutoCloseTask, selfieRetentionTask]

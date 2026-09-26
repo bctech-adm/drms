@@ -316,12 +316,13 @@ describe('POST /api/v1/sync/batch — expense request drafts (ADR 0010)', () => 
     expect(del2.body.results[0].errors[0].code).toBe('NOT_EDITABLE')
   })
 
-  it('on-behalf attendance / progress items → unsupported (kept for F5, not stored); feature flags off → FEATURE_DISABLED', async () => {
+  it('progress items → unsupported (kept for F5, not stored); on-behalf (E6) and feature flags off → FEATURE_DISABLED', async () => {
     const att = item('attendance.on_behalf', { project_id: w.project, lat: -2.2, lng: 113.9 })
     const prog = item('progress_report.draft_upsert', {})
     const r = await sync(staffA, [att, prog])
-    expect(r.body.results.map((x: { status: string }) => x.status)).toEqual(['unsupported', 'unsupported'])
-    expect((await sqlAs('app', 'SELECT count(*)::int AS n FROM sync_receipts WHERE client_uuid = ANY($1::uuid[])', [[att.client_uuid, prog.client_uuid]])).rows[0].n).toBe(0)
+    expect(r.body.results.map((x: { status: string }) => x.status)).toEqual(['rejected', 'unsupported'])
+    expect(r.body.results[0].errors[0].code).toBe('FEATURE_DISABLED') // E6: supported, same switch as check-in
+    expect((await sqlAs('app', 'SELECT count(*)::int AS n FROM sync_receipts WHERE client_uuid = ANY($1::uuid[])', [[att.client_uuid, prog.client_uuid]])).rows[0].n).toBe(1)
     // F4b: own check-in is supported but off by default (company-settings.syncAttendanceEnabled).
     const own = await sync(staffA, [item('attendance.check_in', { project_id: w.project, lat: -2.2, lng: 113.9, is_mocked: false, selfie_media_id: 1 })])
     expect(own.body.results[0]).toMatchObject({ status: 'rejected', errors: [expect.objectContaining({ code: 'FEATURE_DISABLED' })] })

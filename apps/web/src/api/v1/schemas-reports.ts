@@ -8,7 +8,7 @@ const rp = z.number().int().meta({ description: 'Rupiah (integer)' })
 const pct = z.number().nullable().meta({ description: 'Percent, 2 decimals; null = no budget' })
 const tone = z.enum(['none', 'ok', 'warn', 'over']).meta({ description: 'K-08 colour: Tanpa RAB / Aman / Waspada / Lewat RAB (Komitmen basis)' })
 
-export const ReportCode = z.enum(['rekap-kas', 'buku-kas', 'pengeluaran-kategori', 'anggaran-project', 'rekap-pengajuan', 'kelengkapan', 'biaya-kendaraan', 'audit-log'])
+export const ReportCode = z.enum(['rekap-kas', 'buku-kas', 'pengeluaran-kategori', 'anggaran-project', 'rekap-pengajuan', 'kelengkapan', 'biaya-kendaraan', 'absensi', 'audit-log'])
 export const ReportFormat = z.enum(['csv', 'xlsx', 'pdf'])
 
 export const ProjectBudget = z.object({
@@ -239,5 +239,6 @@ export const ReportQuery = z
     aksi: z.string().optional(),
     nodok: z.string().optional(),
     sumber: z.string().optional(),
+    bulan: z.string().optional().meta({ description: 'YYYY-MM (absensi; default current month)' }),
   })
   .meta({ description: 'Same filters as the web report page; PM filters are intersected with the team scope.' })

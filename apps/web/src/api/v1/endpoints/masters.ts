@@ -9,14 +9,14 @@ const LIMIT = 500
 const MAP: Record<MasterType, { collection: CollectionSlug; fields: string[] }> = {
   projects: { collection: 'projects', fields: ['code', 'name', 'client', 'address', 'lat', 'lng', 'radiusM', 'pm', 'status', 'startDate', 'targetDate'] },
   'project-stages': { collection: 'project-stages', fields: ['project', 'name', 'weightPct', 'sequence', 'progressPct'] },
-  'cost-centers': { collection: 'cost-centers', fields: ['code', 'name', 'type', 'manager', 'active'] },
+  'cost-centers': { collection: 'cost-centers', fields: ['code', 'name', 'type', 'manager', 'lat', 'lng', 'radiusM', 'active'] },
   'expense-categories': { collection: 'expense-categories', fields: ['code', 'name', 'defaultUom', 'allowedUoms', 'requiresVehicle', 'active'] },
   uoms: { collection: 'uoms', fields: ['code', 'name', 'category', 'active'] },
   vehicles: { collection: 'vehicles', fields: ['plateNo', 'plateDisplay', 'type', 'brandModel', 'costCenter', 'project', 'active'] },
   employees: { collection: 'employees', fields: ['code', 'name', 'nickname', 'position', 'active'] },
   banks: { collection: 'banks', fields: ['code', 'name', 'active'] },
   'bank-accounts': { collection: 'employee-bank-accounts', fields: ['employee', 'bank', 'accountNo', 'accountHolder', 'isDefault', 'verificationStatus', 'active'] },
-  'work-schedules': { collection: 'work-schedules', fields: ['name', 'startTime', 'endTime', 'lateToleranceMin', 'active'] },
+  'work-schedules': { collection: 'work-schedules', fields: ['name', 'startTime', 'endTime', 'lateToleranceMin', 'workDays', 'active'] },
   holidays: { collection: 'holidays', fields: ['date', 'name'] },
   'team-assignments': { collection: 'team-assignments', fields: ['employee', 'project', 'costCenter', 'roleInProject', 'startDate', 'endDate'] },
 }

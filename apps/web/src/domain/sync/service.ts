@@ -2,16 +2,18 @@ import { sql } from '@payloadcms/db-postgres'
 import { APIError, ValidationError, type PayloadRequest } from 'payload'
 import type { z } from 'zod'
 
-import { relId, userId } from '@/access/roles'
+import { hasRole, relId, userId } from '@/access/roles'
 import {
   SyncAttendancePayload,
   SyncDraftDeletePayload,
   SyncDraftUpsertPayload,
+  SyncOnBehalfPayload,
   type SyncBatchIn,
   type SyncDraftCopyOut as SyncDraftCopy,
   type SyncDraftUpsert,
   type SyncItemIn,
   type SyncItemType,
+  type SyncOnBehalf,
   type SyncResultOut,
 } from '@/api/v1/schemas-sync'
 import { writeAudit } from '@/audit/writer'
@@ -23,7 +25,9 @@ import { withReqTransaction } from '@/lib/system-tx'
 import { DEFAULT_TZ } from '@/lib/time'
 import { getRequestTx } from '@/lib/tx'
 
-import { attendanceTimeOf, dayRows, employeeOfUser, haversineM, insideGeofence, isAssigned, localDateString, type AttendanceKind } from './attendance'
+import { AttendanceReject, recordAttendance, userOfEmployee } from '@/domain/attendance/record'
+
+import { attendanceTimeOf, employeeOfUser } from './attendance'
 import { judgeTime, type TimeVerdict } from './clock'
 
 /**
@@ -42,10 +46,11 @@ import { judgeTime, type TimeVerdict } from './clock'
  *   missing `base_rev` → `conflict` + `server_copy` (server wins, nothing changes).
  * - Drafts are edited only by their creator and only in status Draft (else `rejected
  *   NOT_EDITABLE`); delete = cancel (soft delete, requirements §1.2 #6).
- * - Attendance check-in/out (F4 slice, company-settings.syncAttendanceEnabled): own employee, assigned
- *   project with a geofence, inside radius (+ capped GPS accuracy), not mocked, own selfie, one
- *   check-in and one check-out per employee/project/local date. `attendance.on_behalf` and progress
- *   reports: accepted by the schema, answered `unsupported` (F5).
+ * - Attendance check-in/out + PM on-behalf (company-settings.syncAttendanceEnabled; checks in
+ *   domain/attendance/record.ts): assigned project/cost center with a geofence, inside radius
+ *   (+ capped GPS accuracy), not mocked, selfie uploaded by the caller, one check-in and one
+ *   check-out per employee/location/local date; on-behalf = PM of the team location only (US-14).
+ *   Progress reports: accepted by the schema, answered `unsupported` (F5).
  */
 
 type SyncError = { code: string; field?: string; message: string }
@@ -81,8 +86,8 @@ type ItemCtx = { req: PayloadRequest; uid: number; item: SyncItemIn }
 /** Server switches + company timezone, read once per batch. */
 type Features = { drafts: boolean; attendance: boolean; timezone: string }
 
-const UNSUPPORTED: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.on_behalf', 'progress_report.draft_upsert'])
-const ATTENDANCE: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.check_in', 'attendance.check_out'])
+const UNSUPPORTED: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['progress_report.draft_upsert'])
+const ATTENDANCE: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.check_in', 'attendance.check_out', 'attendance.on_behalf'])
 
 const reject = (code: string, message: string, field?: string, target: SyncReject['target'] = null): never => {
   throw new SyncReject([{ code, message, ...(field ? { field } : {}) }], target)
@@ -398,78 +403,63 @@ async function applyDraftDelete(c: ItemCtx): Promise<Outcome> {
 
 // ------------------------------------------------------------------------------------ attendance
 
-type ProjectGeo = { id: number; lat?: number | null; lng?: number | null; radiusM?: number | null; status?: string | null }
-
+/** Sync adapter of domain/attendance/record.ts (the only attendance write path). */
 async function applyAttendance(c: ItemCtx, verdict: TimeVerdict, receivedAt: Date, features: Features): Promise<Outcome> {
   const { req, uid, item } = c
-  const kind: AttendanceKind = item.type === 'attendance.check_out' ? 'check_out' : 'check_in'
-  const p = parsePayload(SyncAttendancePayload, item.payload)
-  const employee = await employeeOfUser(req, uid)
-  if (employee === undefined) reject('VALIDATION', 'Akun Anda belum terhubung ke data karyawan. Hubungi Admin.')
-  // ADR 0010 decision 8 / US-01 "Mock location ditolak" (Q-43 proposal: fake GPS always blocked).
-  if (p.is_mocked) reject('MOCK_LOCATION', 'Lokasi palsu (mock location) terdeteksi. Absensi ditolak.', 'payload.is_mocked')
-  const project = (await req.payload.findByID({ collection: 'projects', id: p.project_id, depth: 0, overrideAccess: true /* SYSTEM-READ: geofence of the target project */, req, disableErrors: true })) as ProjectGeo | null
-  if (!project) return reject('NOT_FOUND', 'Project tidak ditemukan.', 'payload.project_id')
-  if (project.status === 'arsip') reject('VALIDATION', 'Project sudah diarsipkan.', 'payload.project_id')
-  if (typeof project.lat !== 'number' || typeof project.lng !== 'number' || typeof project.radiusM !== 'number') {
-    reject('NO_GEOFENCE', 'Titik lokasi/radius project belum diisi Admin. Absensi belum bisa dipakai di project ini.', 'payload.project_id')
+  const onBehalf = item.type === 'attendance.on_behalf'
+  const p = onBehalf ? parsePayload(SyncOnBehalfPayload, item.payload) : parsePayload(SyncAttendancePayload, item.payload)
+  const own = await employeeOfUser(req, uid)
+  let employee: number
+  let user: number | null
+  if (onBehalf) {
+    const ob = p as SyncOnBehalf
+    // US-14: "diabsenkan oleh PM" — requirements §4 "Absensi": PM C (atas nama tim). Not an approval
+    // (ADR 0013 covers expense decisions only), so the PM keeps this right.
+    if (!hasRole(req, 'pk-pm')) reject('FORBIDDEN', 'Hanya PM yang dapat mengabsenkan anggota tim.')
+    if (own !== undefined && own === ob.employee_id) reject('FORBIDDEN', 'Absensi Anda sendiri dicatat lewat absen masuk/pulang biasa.', 'payload.employee_id')
+    const emp = (await req.payload.findByID({ collection: 'employees', id: ob.employee_id, depth: 0, overrideAccess: true /* SYSTEM-READ: target employee of on-behalf */, req, disableErrors: true })) as { active?: boolean | null } | null
+    if (!emp) reject('NOT_FOUND', 'Karyawan tidak ditemukan.', 'payload.employee_id')
+    if (emp!.active === false) reject('VALIDATION', 'Karyawan sudah nonaktif.', 'payload.employee_id')
+    employee = ob.employee_id
+    user = await userOfEmployee(req, employee)
+  } else {
+    if (own === undefined) reject('VALIDATION', 'Akun Anda belum terhubung ke data karyawan. Hubungi Admin.')
+    employee = own!
+    user = uid
   }
   const { time, flags: timeFlags } = attendanceTimeOf(verdict, item.device_time, receivedAt)
-  const localDate = localDateString(time, features.timezone)
-  if (!(await isAssigned(req, employee!, project.id, localDate))) {
-    reject('NOT_ASSIGNED', 'Anda tidak ditugaskan di project ini pada tanggal tersebut.', 'payload.project_id')
-  }
-  const distance = Math.round(haversineM(p.lat, p.lng, project.lat!, project.lng!))
-  if (!insideGeofence(distance, project.radiusM!, p.accuracy_m)) {
-    reject('OUTSIDE_GEOFENCE', `Di luar radius project (${distance} m dari titik, radius ${project.radiusM} m).`, 'payload.lat')
-  }
-  const selfie = (await req.payload.findByID({ collection: 'media-selfies', id: p.selfie_media_id, depth: 0, overrideAccess: true /* SYSTEM-READ: existence + uploader */, req, disableErrors: true })) as {
-    uploadedBy?: unknown
-  } | null
-  if (!selfie) reject('MEDIA_MISSING', 'Selfie belum terunggah (POST /api/v1/media/selfies).', 'payload.selfie_media_id')
-  if (relId(selfie!.uploadedBy) !== uid) reject('FORBIDDEN', 'Selfie bukan unggahan Anda.', 'payload.selfie_media_id')
-
-  // One check-in and one check-out per employee/project/local date (serialised per day).
-  const tx = await getRequestTx(req)
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`att:${employee}:${project.id}:${localDate}`}, 0))`)
-  const today = await dayRows(req, employee!, project.id, localDate)
-  const checkIn = today.find((r) => r.kind === 'check_in')
-  if (kind === 'check_in' && checkIn) reject('ALREADY_CHECKED_IN', 'Sudah absen masuk di project ini hari ini.')
-  if (kind === 'check_out') {
-    if (!checkIn) reject('NO_CHECK_IN', 'Belum ada absen masuk hari ini di project ini.')
-    if (today.some((r) => r.kind === 'check_out')) reject('ALREADY_CHECKED_OUT', 'Sudah absen pulang di project ini hari ini.')
-    if (new Date(checkIn!.attendanceTime).getTime() > time.getTime()) reject('VALIDATION', 'Jam pulang lebih awal dari jam masuk.')
-  }
   const device = (req.user as { _pkDevice?: { id?: number } } | null)?._pkDevice?.id
-  const flags = [...timeFlags]
-  const created = await req.payload.create({
-    collection: 'attendances',
-    data: {
-      employee: employee!,
-      user: uid,
-      kind,
-      project: project.id,
-      localDate,
-      attendanceTime: time.toISOString(),
-      receivedAt: receivedAt.toISOString(),
-      deviceTime: new Date(item.device_time).toISOString(),
-      estimatedTime: verdict.estimatedTime,
-      timeTrust: verdict.timeTrust,
-      offline: item.offline,
+  try {
+    const { id } = await recordAttendance(req, {
+      kind: onBehalf ? (p as SyncOnBehalf).kind : item.type === 'attendance.check_out' ? 'check_out' : 'check_in',
+      employee,
+      user,
+      location: p.project_id !== undefined ? { type: 'project', id: p.project_id } : { type: 'cost_center', id: p.cost_center_id! },
       lat: p.lat,
       lng: p.lng,
       accuracyM: p.accuracy_m ?? null,
-      distanceM: distance,
-      selfie: p.selfie_media_id,
-      device: device ?? null,
-      flags: [...verdict.flags, ...flags],
+      isMocked: p.is_mocked,
+      selfieId: p.selfie_media_id,
+      uploader: uid,
+      time,
+      timeTrust: verdict.timeTrust,
+      estimatedTime: verdict.estimatedTime,
+      receivedAt,
+      deviceTime: item.device_time,
+      offline: item.offline,
+      flags: [...verdict.flags, ...timeFlags],
       clientUuid: item.client_uuid,
-    },
-    depth: 0,
-    overrideAccess: true, // SYSTEM-WRITE: attendance after the server-side checks above (create is closed for HTTP)
-    req,
-  })
-  return { status: 'applied', id: created.id, rev: null, copy: null, flags, errors: [] }
+      device: device ?? null,
+      source: onBehalf ? 'pm' : 'self',
+      recordedBy: onBehalf ? uid : null,
+      onBehalfReason: onBehalf ? (p as SyncOnBehalf).reason : null,
+      timeZone: features.timezone,
+    })
+    return { status: 'applied', id, rev: null, copy: null, flags: timeFlags, errors: [] }
+  } catch (err) {
+    if (err instanceof AttendanceReject) return reject(err.code, err.message, err.field)
+    throw err
+  }
 }
 
 // ------------------------------------------------------------------------------------ storage

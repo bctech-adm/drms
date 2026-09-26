@@ -1,6 +1,7 @@
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi'
 import { z } from 'zod'
 
+import { registerAttendancePaths } from './openapi-attendance'
 import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready, TestEmailQueued } from './schemas'
 import * as F from './schemas-flow'
 import * as R from './schemas-reports'
@@ -365,7 +366,7 @@ export function buildOpenApiDocument(version: string) {
     summary:
       'APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.',
     description:
-      'Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN); attendance.on_behalf and progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).',
+      'Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload: project_id OR cost_center_id; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN), attendance.on_behalf (payload SyncOnBehalfPayload, US-14: PM only, team location, not own, reason required; GPS + photo from the PM phone); progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).',
     security: [{ [bearer.name]: [] }],
     request: {
       headers: z.object({
@@ -412,6 +413,9 @@ export function buildOpenApiDocument(version: string) {
       ...problemResponses(400, 401, 403, 404, 413, 426, 429, 503),
     },
   })
+
+  // ---- E6 attendance (US-09/13/15, Q-33) -------------------------------------------------------
+  registerAttendancePaths(registry, { security, deviceHeader, idem, res, problemResponses })
 
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: '3.1.0',

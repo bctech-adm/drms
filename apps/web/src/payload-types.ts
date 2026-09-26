@@ -99,6 +99,7 @@ export interface Config {
     'cash-entries': CashEntry;
     'period-closings': PeriodClosing;
     attendances: Attendance;
+    'attendance-corrections': AttendanceCorrection;
     notifications: Notification;
     devices: Device;
     'web-sessions': WebSession;
@@ -150,6 +151,7 @@ export interface Config {
     'cash-entries': CashEntriesSelect<false> | CashEntriesSelect<true>;
     'period-closings': PeriodClosingsSelect<false> | PeriodClosingsSelect<true>;
     attendances: AttendancesSelect<false> | AttendancesSelect<true>;
+    'attendance-corrections': AttendanceCorrectionsSelect<false> | AttendanceCorrectionsSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     devices: DevicesSelect<false> | DevicesSelect<true>;
     'web-sessions': WebSessionsSelect<false> | WebSessionsSelect<true>;
@@ -189,6 +191,7 @@ export interface Config {
       auditDailyAnchor: TaskAuditDailyAnchor;
       sendEmail: TaskSendEmail;
       reimburseAutoClose: TaskReimburseAutoClose;
+      selfieRetention: TaskSelfieRetention;
       inline: {
         input: unknown;
         output: unknown;
@@ -257,6 +260,7 @@ export interface Employee {
   nickname?: string | null;
   position?: string | null;
   phone?: string | null;
+  workSchedule?: (number | null) | WorkSchedule;
   faceRefPhoto?: (number | null) | MediaSelfy;
   /**
    * Referensi Odoo (diisi saat mirror, ADR 0009).
@@ -264,6 +268,33 @@ export interface Employee {
   odooEmployeeRef?: string | null;
   active?: boolean | null;
   uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "work-schedules".
+ */
+export interface WorkSchedule {
+  id: number;
+  name: string;
+  startTime: string;
+  endTime: string;
+  lateToleranceMin?: number | null;
+  workDays?: {
+    mon?: boolean | null;
+    tue?: boolean | null;
+    wed?: boolean | null;
+    thu?: boolean | null;
+    fri?: boolean | null;
+    sat?: boolean | null;
+    sun?: boolean | null;
+  };
+  active?: boolean | null;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
    */
@@ -621,30 +652,15 @@ export interface CostCenter {
   name: string;
   type: 'operational' | 'department';
   manager?: (number | null) | User;
+  lat?: number | null;
+  lng?: number | null;
+  radiusM?: number | null;
   /**
    * Referensi Odoo (diisi saat mirror, ADR 0009).
    */
   odooAnalyticRef?: string | null;
   active?: boolean | null;
   uuid?: string | null;
-  /**
-   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
-   */
-  changeReason?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "work-schedules".
- */
-export interface WorkSchedule {
-  id: number;
-  name: string;
-  startTime: string;
-  endTime: string;
-  lateToleranceMin?: number | null;
-  active?: boolean | null;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
    */
@@ -1257,9 +1273,13 @@ export interface PeriodClosing {
 export interface Attendance {
   id: number;
   employee: number | Employee;
-  user: number | User;
+  user?: (number | null) | User;
   kind: 'check_in' | 'check_out';
-  project: number | Project;
+  project?: (number | null) | Project;
+  costCenter?: (number | null) | CostCenter;
+  source: 'self' | 'pm';
+  recordedBy?: (number | null) | User;
+  onBehalfReason?: string | null;
   localDate: string;
   attendanceTime: string;
   receivedAt: string;
@@ -1274,6 +1294,15 @@ export interface Attendance {
   selfie: number | MediaSelfy;
   device?: (number | null) | Device;
   flags?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  schedule?:
     | {
         [k: string]: unknown;
       }
@@ -1321,6 +1350,30 @@ export interface Device {
   lastSeenAt?: string | null;
   revokedAt?: string | null;
   revokedBy?: (number | null) | User;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "attendance-corrections".
+ */
+export interface AttendanceCorrection {
+  id: number;
+  attendance: number | Attendance;
+  employee: number | Employee;
+  project?: (number | null) | Project;
+  costCenter?: (number | null) | CostCenter;
+  kind: 'check_in' | 'check_out';
+  localDate: string;
+  oldTime: string;
+  newTime: string;
+  reason: string;
+  correctedBy: number | User;
+  correctedAt: string;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
    */
@@ -1588,7 +1641,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose';
+        taskSlug: 'inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose' | 'selfieRetention';
         taskID: string;
         input?:
           | {
@@ -1621,7 +1674,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose') | null;
+  taskSlug?: ('inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose' | 'selfieRetention') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1765,6 +1818,10 @@ export interface PayloadLockedDocument {
         value: number | Attendance;
       } | null)
     | ({
+        relationTo: 'attendance-corrections';
+        value: number | AttendanceCorrection;
+      } | null)
+    | ({
         relationTo: 'devices';
         value: number | Device;
       } | null)
@@ -1865,6 +1922,7 @@ export interface EmployeesSelect<T extends boolean = true> {
   nickname?: T;
   position?: T;
   phone?: T;
+  workSchedule?: T;
   faceRefPhoto?: T;
   odooEmployeeRef?: T;
   active?: T;
@@ -2078,6 +2136,17 @@ export interface WorkSchedulesSelect<T extends boolean = true> {
   startTime?: T;
   endTime?: T;
   lateToleranceMin?: T;
+  workDays?:
+    | T
+    | {
+        mon?: T;
+        tue?: T;
+        wed?: T;
+        thu?: T;
+        fri?: T;
+        sat?: T;
+        sun?: T;
+      };
   active?: T;
   changeReason?: T;
   updatedAt?: T;
@@ -2183,6 +2252,9 @@ export interface CostCentersSelect<T extends boolean = true> {
   name?: T;
   type?: T;
   manager?: T;
+  lat?: T;
+  lng?: T;
+  radiusM?: T;
   odooAnalyticRef?: T;
   active?: T;
   uuid?: T;
@@ -2485,6 +2557,10 @@ export interface AttendancesSelect<T extends boolean = true> {
   user?: T;
   kind?: T;
   project?: T;
+  costCenter?: T;
+  source?: T;
+  recordedBy?: T;
+  onBehalfReason?: T;
   localDate?: T;
   attendanceTime?: T;
   receivedAt?: T;
@@ -2499,7 +2575,28 @@ export interface AttendancesSelect<T extends boolean = true> {
   selfie?: T;
   device?: T;
   flags?: T;
+  schedule?: T;
   clientUuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "attendance-corrections_select".
+ */
+export interface AttendanceCorrectionsSelect<T extends boolean = true> {
+  attendance?: T;
+  employee?: T;
+  project?: T;
+  costCenter?: T;
+  kind?: T;
+  localDate?: T;
+  oldTime?: T;
+  newTime?: T;
+  reason?: T;
+  correctedBy?: T;
+  correctedAt?: T;
   changeReason?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2959,9 +3056,17 @@ export interface CompanySetting {
    */
   syncExpenseDraftsEnabled?: boolean | null;
   /**
-   * Tahap F4: absen masuk/pulang sendiri di project yang ditugaskan (geofence, selfie, lokasi palsu ditolak). Nonaktif → item absensi ditolak FEATURE_DISABLED.
+   * Absen masuk/pulang sendiri di project/pusat biaya yang ditugaskan (geofence, selfie, lokasi palsu ditolak) dan "diabsenkan PM". Nonaktif → item absensi ditolak FEATURE_DISABLED. Nyalakan di prod setelah checklist go-live.
    */
   syncAttendanceEnabled?: boolean | null;
+  /**
+   * Dipakai untuk karyawan tanpa jadwal sendiri. Kosong = keterlambatan tidak dihitung.
+   */
+  defaultWorkSchedule?: (number | null) | WorkSchedule;
+  /**
+   * Selfie lebih tua dari ini akan dihapus dari penyimpanan (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).
+   */
+  selfieRetentionMonths: number;
   offlineMaxAgeDays: number;
   imageTargets: {
     receiptsMaxPx: number;
@@ -3022,6 +3127,8 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   appDownloadUrl?: T;
   syncExpenseDraftsEnabled?: T;
   syncAttendanceEnabled?: T;
+  defaultWorkSchedule?: T;
+  selfieRetentionMonths?: T;
   offlineMaxAgeDays?: T;
   imageTargets?:
     | T
@@ -3091,6 +3198,19 @@ export interface TaskReimburseAutoClose {
   input?: unknown;
   output: {
     closed: number;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSelfieRetention".
+ */
+export interface TaskSelfieRetention {
+  input?: unknown;
+  output: {
+    months: number;
+    cutoff: string;
+    candidates: number;
+    deleted: number;
   };
 }
 /**
