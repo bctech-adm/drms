@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **S3 web A — E9 hardening F6** (`apps/web`, fase1-golive §E9; branch `feat/s3a-e9-hardening`):
+  - Signed, time-limited media URLs (ADR 0004 §4b): `GET /api/v1/media/{collection}/{id}/signed-url` mints a 5-minute
+    HMAC-SHA256 URL of the file endpoint (keys `MEDIA_URL_KEYS[_FILE]` with rotation, default derived from
+    `PAYLOAD_SECRET`); expired/invalid → 403, valid signature but the user may not read the file → 403 +
+    `access_denied`. Bearer/cookie downloads unchanged (APK compatible). Selfies are served by the media file
+    endpoint too (`selfies`), with `view_sensitive` for other people's selfies.
+  - `/admin/*` without a session cookie → real **302** to `/admin/login?redirect=…` (Next proxy) instead of the 200 shell.
+  - Settlement reversal: `POST /api/v1/expense-requests/{id}/settle/reverse {reason}` (Finance) voids the refund KM /
+    shortfall transfer + KK, LPJ back to "Terverifikasi", request "LPJ Terverifikasi", balances restored, audited;
+    closed period → 409; button "Batalkan penyelesaian LPJ" on the request detail. Migration
+    `20260926_131136_s3a_e9_hardening` (4 additive columns on `settlements`, guard update).
+  - 403 before 409 (UAT 5.2): authorization failures are answered before state conflicts (expense flow, addendum).
+  - `login_failed` audit for logins refused on the ProyekKas side (OIDC callback failure, unknown/inactive account);
+    Keycloak event log = source of truth for wrong passwords (ADR 0003 §7). Hash chain deferred (ADR 0006 §5).
+  - CI: unit-test coverage gate (`npm run test:coverage`, thresholds in `apps/web/vitest.config.ts`).
+  - Docs: ASVS L1 self-checklist `docs/proyekkas/security/asvs-l1-checklist.md`.
 - **APK S2 — laporan progress (E4) + absensi lengkap (E6)** (`apps/mobile`, branch
   `feat/mobile-s2-progress-attendance`). Progress: offline-first reports (project/stage, % never below the stage %,
   ≤ 5 rear-camera photos compressed on the phone, `progress_report.draft_upsert` or online POST/PATCH when

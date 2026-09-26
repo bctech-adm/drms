@@ -855,6 +855,7 @@ stateDiagram-v2
   settle --> SE : difference = 0
   settle --> SE : difference positive / refund T6 KM Pengembalian LPJ recorded
   settle --> SE : difference negative / shortfall T3 transfer + T7 KK
+  SE --> LV : settlement reversal by Finance (reason) [refund or shortfall, period open] / void KM or transfer + KK
   TO --> [*] : resubmit = NEW request (resubmitOf)
   SE --> [*]
   BA --> [*]
@@ -866,6 +867,16 @@ return transfer (proof optional per US-23 — client question).
 - **Exact amount auto-settles:** when `difference = 0` the `lpj_verify` transition goes straight to "Selesai"
   (LPJ `verified` → `settled` in the same call, no cash posting); `settle` is only needed for a refund or a
   shortfall (ADR 0005 "As implemented (F2b)").
+- **Settlement reversal (E9, `feat/s3a-e9-hardening`):** `POST /api/v1/expense-requests/{id}/settle/reverse {reason}`
+  (Finance, never on its own request; action `settle_reverse`): the refund KM is voided (reversal row) or the
+  shortfall transfer voided with its KK reversed (`transferredTotal` −= shortfall); LPJ `settled` → `verified`
+  (links cleared, `reversalCount`/`lastReversal*` recorded), request "Selesai" → "LPJ Terverifikasi", then `settle`
+  can run again. Transaction in a closed period → 409 (Direktur re-opens first). Exact LPJ (difference 0) → 409.
+  DB guard `pk_settlements_guard` (migration `20260926_131136_s3a_e9_hardening`).
+- **403 before 409 (E9, UAT 5.2):** the service answers an authorization failure (role/ownership, G1/G17,
+  ADR 0013 monitor-only PM) with 403 **before** looking at the status; only an authorized caller gets 409 for a
+  status that does not allow the action (`state.ts` `mayPerform`, `common.ts` `requireAction`; same order in the
+  addendum service).
 - The **`NL --> DT` arrow ("add/remove receipt before LPJ") is not implemented**: there is no transition from
   "Nota Lengkap" back to "Ditransfer".
 - **Settlement reversal is not implemented:** voiding the refund KM or the shortfall transfer of a settled LPJ

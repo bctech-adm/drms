@@ -167,7 +167,7 @@ async function deniedCreate(req: PayloadRequest, projectId: number): Promise<nev
 
 const DECISIONS: ReadonlySet<AddendumAction> = new Set<AddendumAction>(['acknowledge', 'approve', 'reject'])
 
-/** 409 wrong status, 403 not allowed; denied decisions are audited (`access_denied`, own transaction). */
+/** 403 not allowed (checked first, E9), 409 wrong status; denied decisions are audited (`access_denied`, own transaction). */
 async function requireAction(req: PayloadRequest, doc: AddendumDoc, action: AddendumAction): Promise<AddendumActorContext> {
   const ctx = await actorContext(req, doc)
   if (addendumAllowedActions(ctx).includes(action)) return ctx
@@ -192,10 +192,13 @@ async function requireAction(req: PayloadRequest, doc: AddendumDoc, action: Adde
       { action: 'access_denied', docType: 'budget_addendum', docId: String(doc.id), docNo: doc.docNo ?? undefined, field: action, newValue: { action, status: doc.status, roles: userRoles(req) }, reason },
     ])
   }
-  if (!statusOk) fail(409, 'STATE_CONFLICT', `Aksi tidak dapat dilakukan pada status addendum saat ini (${ADDENDUM_STATUS_LABELS[doc.status]}).`)
-  if (action === 'cancel' && ctx.isCreator && ctx.hasDecision) fail(409, 'STATE_CONFLICT', 'Addendum yang sudah diputuskan sebagian tidak dapat dibatalkan.')
+  // E9 (UAT 5.2 rule): authorization failures (403) are answered BEFORE state conflicts (409) — a
+  // caller who may never take this action does not learn the document's state.
   if (decision && ctx.lacksDecisionRole) fail(403, 'FORBIDDEN', 'Hanya Direktur atau Finance yang dapat menyetujui atau menolak addendum RAB (ADR 0013). PM hanya memantau.')
   if (decision && ctx.isCreator) fail(403, 'FORBIDDEN', 'Pengaju tidak dapat memutuskan addendumnya sendiri (G1).')
+  if (!decision && !ctx.isCreator) fail(403, 'FORBIDDEN', 'Hanya pengaju yang dapat mengubah, mengajukan atau membatalkan addendum ini.')
+  if (!statusOk) fail(409, 'STATE_CONFLICT', `Aksi tidak dapat dilakukan pada status addendum saat ini (${ADDENDUM_STATUS_LABELS[doc.status]}).`)
+  if (action === 'cancel' && ctx.isCreator && ctx.hasDecision) fail(409, 'STATE_CONFLICT', 'Addendum yang sudah diputuskan sebagian tidak dapat dibatalkan.')
   return fail(403, 'FORBIDDEN', 'Anda tidak berhak melakukan aksi ini pada addendum ini.')
 }
 
