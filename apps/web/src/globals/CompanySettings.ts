@@ -126,12 +126,25 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         label: 'Jadwal kerja default',
         admin: { description: 'Dipakai untuk karyawan tanpa jadwal sendiri. Kosong = keterlambatan tidak dihitung.' },
       },
-      // E6 (Q-33, UU PDP): selfie retention period. The daily job `selfieRetention` (jobs/tasks.ts)
-      // currently only COUNTS the selfies past this period (dry run, logged); deleting the files is
-      // the next step of E6 (plan fase1-golive, sprint S2) and gets its own switch then.
+      // E6 (Q-33, UU PDP): selfie retention. The daily job `selfieRetention` (jobs/tasks.ts) deletes the
+      // selfie FILES older than this many months when `selfieRetentionDeleteEnabled` is on (default
+      // OFF = dry run: count only); attendance rows stay, the media row becomes a tombstone (removedAt).
       {
         ...intField('selfieRetentionMonths', 'Retensi selfie absensi (bulan)', 12, 1, 120),
-        admin: { description: 'Selfie lebih tua dari ini akan dihapus dari penyimpanan (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).' },
+        admin: { description: 'Selfie lebih tua dari ini dihapus dari penyimpanan saat penghapusan otomatis aktif (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).' },
+      },
+      {
+        type: 'row',
+        fields: [
+          {
+            name: 'selfieRetentionDeleteEnabled',
+            type: 'checkbox',
+            label: 'Hapus otomatis selfie melewati retensi (aktif)',
+            defaultValue: false,
+            admin: { description: 'Nonaktif = job hanya menghitung (dry run). Aktif = file selfie dihapus permanen setiap malam (02:30), tercatat di audit log.' },
+          },
+          { ...intField('selfieRetentionBatch', 'Maks. selfie dihapus per malam', 200, 10, 2000) },
+        ],
       },
       {
         name: 'syncProgressReportsEnabled',
@@ -139,6 +152,52 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         label: 'Laporan progress dari APK (termasuk offline) aktif',
         defaultValue: true,
         admin: { description: 'E4: laporan progress harian + foto dari APK. Nonaktif → item laporan ditolak FEATURE_DISABLED (rollback).' },
+      },
+      // E7 (M12, US-11, plan fase1-golive §E7): daily reminders. Run once per business day at/after
+      // `reminderHour` (company timezone; the worker checks hourly). Exactly one notification per
+      // recipient, rule, subject and day (budget: once per threshold per project). In-app always,
+      // email when `reminderEmailEnabled` (FCM later, ADR 0011).
+      {
+        type: 'collapsible',
+        label: 'Pengingat terjadwal (E7)',
+        admin: { initCollapsed: false },
+        fields: [
+          {
+            type: 'row',
+            fields: [
+              { name: 'remindersEnabled', type: 'checkbox', label: 'Pengingat aktif', defaultValue: true, admin: { description: 'Nonaktif = job pengingat tidak mengirim apa pun (rollback).' } },
+              { ...intField('reminderHour', 'Jam kirim (0–23, zona perusahaan)', 7, 0, 23) },
+              {
+                name: 'reminderEmailEnabled',
+                type: 'checkbox',
+                label: 'Juga kirim email',
+                defaultValue: false,
+                admin: { description: 'Selain notifikasi in-app. Batas SMTP 30 email/jam per mailbox — aktifkan setelah alamat email pengguna benar.' },
+              },
+            ],
+          },
+          {
+            type: 'row',
+            fields: [
+              { name: 'reminderLateProgressEnabled', type: 'checkbox', label: 'Laporan progress terlambat → PM + Direktur', defaultValue: true, admin: { description: 'Batas hari = "Batas hari laporan progress terlambat".' } },
+              { name: 'reminderLpjOverdueEnabled', type: 'checkbox', label: 'Nota/LPJ uang muka terlambat → pemohon + Finance', defaultValue: true, admin: { description: 'Batas hari = "Batas LPJ uang muka".' } },
+            ],
+          },
+          {
+            type: 'row',
+            fields: [
+              { name: 'reminderRevisionEnabled', type: 'checkbox', label: 'Revisi nota/LPJ menggantung → pemohon', defaultValue: true },
+              { ...intField('reminderRevisionDays', 'Revisi menggantung setelah (hari)', 3, 1, 60) },
+            ],
+          },
+          {
+            name: 'reminderBudgetEnabled',
+            type: 'checkbox',
+            label: 'Komitmen anggaran project lewat ambang → Direktur + Finance + PM',
+            defaultValue: true,
+            admin: { description: 'Ambang = "Ambang anggaran kuning" dan "merah" di atas; sekali per ambang per project.' },
+          },
+        ],
       },
       intField('offlineMaxAgeDays', 'Umur maksimal sesi offline APK (hari)', 30, 1, 30),
       {

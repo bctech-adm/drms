@@ -40,3 +40,15 @@ export const E2_ADMIN_VIEWS = {
   kasEdit: { Component: '@/admin/views/Kas#KasEdit', path: '/kas/:id/ubah' as const, exact: true, meta: { title: 'Edit transaksi kas' } },
   periodClose: { Component: '@/admin/views/Kas#TutupBuku', path: '/tutup-buku' as const, exact: true, meta: { title: 'Tutup buku' } },
 }
+
+/**
+ * E6 web (fase1-golive §E6, S2): attendance views — "Tim hari ini" (US-13), monthly recap + team grid
+ * (US-09, T10 correction US-15, selfie viewer Q-33), work schedules / holidays / cost-center geofence
+ * (Q-30/Q-40). All exact (else `/absensi` prefix-matches the sub-pages). Scope checks inside the views
+ * and the /api/v1 endpoints.
+ */
+export const E6_ADMIN_VIEWS = {
+  absensiToday: { Component: '@/admin/views/Absensi#AbsensiToday', path: '/absensi' as const, exact: true, meta: { title: 'Absensi' } },
+  absensiRekap: { Component: '@/admin/views/Absensi#AbsensiRekap', path: '/absensi/rekap' as const, exact: true, meta: { title: 'Rekap absensi' } },
+  absensiJadwal: { Component: '@/admin/views/Absensi#AbsensiJadwal', path: '/absensi/jadwal' as const, exact: true, meta: { title: 'Jadwal & hari libur' } },
+}

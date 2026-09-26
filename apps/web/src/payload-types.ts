@@ -194,6 +194,7 @@ export interface Config {
       sendEmail: TaskSendEmail;
       reimburseAutoClose: TaskReimburseAutoClose;
       selfieRetention: TaskSelfieRetention;
+      dailyReminders: TaskDailyReminders;
       inline: {
         input: unknown;
         output: unknown;
@@ -319,6 +320,7 @@ export interface MediaSelfy {
   originalHeight?: number | null;
   originalSize?: number | null;
   capturedAt?: string | null;
+  removedAt?: string | null;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
    */
@@ -1521,7 +1523,8 @@ export interface AuditLog {
     | 'verify'
     | 'acknowledge_delegated'
     | 'access_denied'
-    | 'approval_skipped';
+    | 'approval_skipped'
+    | 'retention_purge';
   field?: string | null;
   lineNo?: number | null;
   oldValue?:
@@ -1696,7 +1699,8 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose' | 'selfieRetention';
+        taskSlug:
+          'inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose' | 'selfieRetention' | 'dailyReminders';
         taskID: string;
         input?:
           | {
@@ -1729,7 +1733,8 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose' | 'selfieRetention') | null;
+  taskSlug?:
+    ('inline' | 'auditDailyAnchor' | 'sendEmail' | 'reimburseAutoClose' | 'selfieRetention' | 'dailyReminders') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -2887,6 +2892,7 @@ export interface MediaSelfiesSelect<T extends boolean = true> {
   originalHeight?: T;
   originalSize?: T;
   capturedAt?: T;
+  removedAt?: T;
   changeReason?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -3156,13 +3162,41 @@ export interface CompanySetting {
    */
   defaultWorkSchedule?: (number | null) | WorkSchedule;
   /**
-   * Selfie lebih tua dari ini akan dihapus dari penyimpanan (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).
+   * Selfie lebih tua dari ini dihapus dari penyimpanan saat penghapusan otomatis aktif (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).
    */
   selfieRetentionMonths: number;
+  /**
+   * Nonaktif = job hanya menghitung (dry run). Aktif = file selfie dihapus permanen setiap malam (02:30), tercatat di audit log.
+   */
+  selfieRetentionDeleteEnabled?: boolean | null;
+  selfieRetentionBatch: number;
   /**
    * E4: laporan progress harian + foto dari APK. Nonaktif → item laporan ditolak FEATURE_DISABLED (rollback).
    */
   syncProgressReportsEnabled?: boolean | null;
+  /**
+   * Nonaktif = job pengingat tidak mengirim apa pun (rollback).
+   */
+  remindersEnabled?: boolean | null;
+  reminderHour: number;
+  /**
+   * Selain notifikasi in-app. Batas SMTP 30 email/jam per mailbox — aktifkan setelah alamat email pengguna benar.
+   */
+  reminderEmailEnabled?: boolean | null;
+  /**
+   * Batas hari = "Batas hari laporan progress terlambat".
+   */
+  reminderLateProgressEnabled?: boolean | null;
+  /**
+   * Batas hari = "Batas LPJ uang muka".
+   */
+  reminderLpjOverdueEnabled?: boolean | null;
+  reminderRevisionEnabled?: boolean | null;
+  reminderRevisionDays: number;
+  /**
+   * Ambang = "Ambang anggaran kuning" dan "merah" di atas; sekali per ambang per project.
+   */
+  reminderBudgetEnabled?: boolean | null;
   offlineMaxAgeDays: number;
   imageTargets: {
     receiptsMaxPx: number;
@@ -3225,7 +3259,17 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   syncAttendanceEnabled?: T;
   defaultWorkSchedule?: T;
   selfieRetentionMonths?: T;
+  selfieRetentionDeleteEnabled?: T;
+  selfieRetentionBatch?: T;
   syncProgressReportsEnabled?: T;
+  remindersEnabled?: T;
+  reminderHour?: T;
+  reminderEmailEnabled?: T;
+  reminderLateProgressEnabled?: T;
+  reminderLpjOverdueEnabled?: T;
+  reminderRevisionEnabled?: T;
+  reminderRevisionDays?: T;
+  reminderBudgetEnabled?: T;
   offlineMaxAgeDays?: T;
   imageTargets?:
     | T
@@ -3308,6 +3352,19 @@ export interface TaskSelfieRetention {
     cutoff: string;
     candidates: number;
     deleted: number;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskDailyReminders".
+ */
+export interface TaskDailyReminders {
+  input?: unknown;
+  output: {
+    status: string;
+    date: string;
+    notified: number;
+    emails: number;
   };
 }
 /**

@@ -103,6 +103,9 @@ export const MediaSelfies = mediaCollection({
   // keeps selfies embeddable in PDF recaps (@react-pdf: JPEG/PNG only).
   formatOptions: { format: 'jpeg', options: { quality: 75, mozjpeg: true } },
   access: { read: ownOrOffice, create: rolesAllowed('pk-staff', 'pk-pm', 'pk-admin') },
+  // E6 S2 (Q-33): set by the selfieRetention job when the file was deleted from the volume. The row
+  // stays as a tombstone (attendances.selfie_id is NOT NULL and append-only), without the image.
+  extraFields: [{ name: 'removedAt', type: 'date', label: 'File dihapus (retensi)', index: true, access: { update: () => false }, admin: { readOnly: true } }],
 })
 
 export const MediaProgressPhotos = mediaCollection({

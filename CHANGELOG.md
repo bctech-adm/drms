@@ -7,6 +7,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **S2 web B — E6 absensi web + retensi selfie + E7 pengingat terjadwal** (`apps/web`, fase1-golive §E6/§E7, US-09/11/13/14/15,
+  M12/M13, Q-30/33/40; branch `feat/s2b-attendance-web-reminders`):
+  - Admin views `/admin/absensi` "Tim hari ini" (belum absen / hadir / selesai board, times, project/pusat biaya, late,
+    diabsenkan PM, filters date/project/cost center), `/admin/absensi/rekap` (per employee: month calendar with
+    status legend, KPI tiles, day detail, T10 correction dialog before → after with mandatory reason, correction history,
+    audited selfie viewer; without employee: team grid employees × days + totals; Staff: own recap), `/admin/absensi/jadwal`
+    (company default schedule, schedule list, employee schedule assignment, holidays per year + add, cost-center geofence
+    lat/lng/radius editor with an OpenStreetMap link — no embedded map). Nav "Absensi" (PM/Finance/Direktur/Admin),
+    "Rekap absensi saya" (Staff). Beranda PM: widget "Kehadiran tim hari ini" replaces the F5 placeholder. Laporan
+    absensi rows link to the employee recap; stale "Rekap absensi (F5)" row removed from `/admin/laporan`.
+  - Retensi selfie (Q-33): job `selfieRetention` deletes selfie FILES older than `selfieRetentionMonths` when
+    `company-settings.selfieRetentionDeleteEnabled` is on (**default OFF** = dry run), at most `selfieRetentionBatch`
+    (default 200) per night, oldest first, face reference photos never; media row kept as tombstone
+    (`media_selfies.removed_at`, immutable once set) because attendances are append-only; one `retention_purge` audit row
+    per run (counts only). Attendance rows untouched; selfie endpoint answers 404.
+  - Pengingat terjadwal (E7, M12/US-11): job `dailyReminders` (hourly tick, one run per business day at/after
+    `reminderHour`, company TZ) — laporan progress terlambat → PM + Direktur; uang muka tanpa nota/LPJ > `lpjDueDays` →
+    pemohon + Finance; revisi nota/LPJ menggantung ≥ `reminderRevisionDays` → pemohon; komitmen anggaran ≥ ambang
+    kuning/merah → Direktur + Finance + PM (once per threshold per project). Exactly one notification per recipient,
+    rule, subject and day (`reminder_deliveries`, append-only); inactive users and archived projects excluded; in-app
+    always, email via the `sendEmail` queue when `reminderEmailEnabled` (**default OFF**). Settings per rule in
+    company-settings ("Pengingat terjadwal (E7)").
+  - Migration `20260926_104606_s2b_attendance_reminders` (additive: nullable/defaulted columns, 2 new tables, enum values).
 - **E6 backend — absensi lengkap** (`apps/web`, fase1-golive §E6, US-01/02/09/13/14/15, Q-30/33/40; branch
   `feat/e6-attendance-backend`). Web/APK screens follow in S2; `syncAttendanceEnabled` stays **off** by default.
   - Cost-center geofence (Q-40): `cost-centers` lat/lng/radius (optional); sync check-in/out takes `project_id` XOR

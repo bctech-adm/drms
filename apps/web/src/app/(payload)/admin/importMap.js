@@ -19,6 +19,9 @@ import { KasBook as KasBook_38163a8a76a60c5684b51059a76858a2 } from '@/admin/vie
 import { KasNew as KasNew_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
 import { KasEdit as KasEdit_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
 import { TutupBuku as TutupBuku_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
+import { AbsensiToday as AbsensiToday_eee5013ba73a2fec203c62622a245848 } from '@/admin/views/Absensi'
+import { AbsensiRekap as AbsensiRekap_eee5013ba73a2fec203c62622a245848 } from '@/admin/views/Absensi'
+import { AbsensiJadwal as AbsensiJadwal_eee5013ba73a2fec203c62622a245848 } from '@/admin/views/Absensi'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -44,5 +47,8 @@ export const importMap = {
   "@/admin/views/Kas#KasNew": KasNew_38163a8a76a60c5684b51059a76858a2,
   "@/admin/views/Kas#KasEdit": KasEdit_38163a8a76a60c5684b51059a76858a2,
   "@/admin/views/Kas#TutupBuku": TutupBuku_38163a8a76a60c5684b51059a76858a2,
+  "@/admin/views/Absensi#AbsensiToday": AbsensiToday_eee5013ba73a2fec203c62622a245848,
+  "@/admin/views/Absensi#AbsensiRekap": AbsensiRekap_eee5013ba73a2fec203c62622a245848,
+  "@/admin/views/Absensi#AbsensiJadwal": AbsensiJadwal_eee5013ba73a2fec203c62622a245848,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

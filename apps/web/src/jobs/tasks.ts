@@ -1,7 +1,8 @@
 import { sql } from '@payloadcms/db-postgres'
 import type { TaskConfig } from 'payload'
 
-import { selfieRetentionPlan } from '@/domain/attendance/retention'
+import { purgeExpiredSelfies } from '@/domain/attendance/retention'
+import { runDailyReminders } from '@/domain/reminders/service'
 import { autoCloseReimburse } from '@/domain/expense/auto-close'
 
 /**
@@ -100,9 +101,10 @@ export const reimburseAutoCloseTask: TaskConfig<{
 }
 
 /**
- * E6 selfie retention (Q-33): daily 02:30 (process TZ). DRY RUN — counts the selfies older than
- * company-settings.selfieRetentionMonths and logs the count (no ids/PII in the log). Deleting the
- * files is the next E6 step (plan fase1-golive, sprint S2) and will switch this task to delete.
+ * E6 selfie retention (Q-33): daily 02:30 (process TZ). company-settings.selfieRetentionDeleteEnabled
+ * OFF (default) = dry run (count only); ON = deletes at most selfieRetentionBatch selfie FILES older
+ * than selfieRetentionMonths, marks the media rows removed and writes one `retention_purge` audit
+ * row per run (domain/attendance/retention.ts). Attendance rows stay. Log = counts only (no ids/PII).
  */
 export const selfieRetentionTask: TaskConfig<{
   input: Record<string, never>
@@ -118,10 +120,36 @@ export const selfieRetentionTask: TaskConfig<{
     { name: 'deleted', type: 'number', required: true },
   ],
   handler: async ({ req }) => {
-    const plan = await selfieRetentionPlan(req.payload)
-    req.payload.logger.info({ msg: 'selfie retention (dry run)', months: plan.months, cutoff: plan.cutoff, candidates: plan.candidates })
-    return { output: { months: plan.months, cutoff: plan.cutoff, candidates: plan.candidates, deleted: 0 } }
+    const r = await purgeExpiredSelfies(req.payload)
+    req.payload.logger.info({ msg: r.dryRun ? 'selfie retention (dry run)' : 'selfie retention', months: r.months, cutoff: r.cutoff, candidates: r.candidates, deleted: r.deleted, failed: r.failed, remaining: r.remaining })
+    return { output: { months: r.months, cutoff: r.cutoff, candidates: r.candidates, deleted: r.deleted } }
   },
 }
 
-export const tasks = [auditDailyAnchorTask, sendEmailTask, reimburseAutoCloseTask, selfieRetentionTask]
+/**
+ * E7 daily reminders (M12, US-11): the worker queues this every hour (process TZ); the domain runs
+ * ONE pass per business day at/after company-settings.reminderHour and de-duplicates every delivery
+ * (domain/reminders/service.ts). Log = counts per rule only (no names/ids of recipients).
+ */
+export const dailyRemindersTask: TaskConfig<{
+  input: Record<string, never>
+  output: { status: string; date: string; notified: number; emails: number }
+}> = {
+  slug: 'dailyReminders',
+  schedule: [{ cron: '2 * * * *', queue: 'default' }],
+  inputSchema: [],
+  outputSchema: [
+    { name: 'status', type: 'text', required: true },
+    { name: 'date', type: 'text', required: true },
+    { name: 'notified', type: 'number', required: true },
+    { name: 'emails', type: 'number', required: true },
+  ],
+  handler: async ({ req }) => {
+    const r = await runDailyReminders(req.payload)
+    const notified = Object.values(r.rules).reduce((s, x) => s + (x?.notified ?? 0), 0)
+    if (r.status === 'run') req.payload.logger.info({ msg: 'daily reminders', date: r.date, rules: r.rules, emails: r.emails })
+    return { output: { status: r.status, date: r.date, notified, emails: r.emails } }
+  },
+}
+
+export const tasks = [auditDailyAnchorTask, sendEmailTask, reimburseAutoCloseTask, selfieRetentionTask, dailyRemindersTask]

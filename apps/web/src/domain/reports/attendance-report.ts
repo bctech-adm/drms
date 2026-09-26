@@ -164,6 +164,8 @@ export const absensiReport: ReportDef = {
           { key: 'koreksi', label: 'Dikoreksi (hari)', type: 'int' },
         ],
         rows: list.map((e) => ({
+          // E6 web: the employee's calendar, day detail, corrections and selfies (same numbers).
+          href: `/admin/absensi/rekap?karyawan=${e.id}&bulan=${month}`,
           cells: {
             karyawan: `${e.name} (${e.code})`,
             hariKerja: e.summary.workingDays,

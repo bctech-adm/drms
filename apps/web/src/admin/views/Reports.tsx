@@ -65,11 +65,6 @@ export async function ReportsIndex(props: AdminViewServerProps) {
                     </td>
                   </tr>
                 ))}
-                <tr>
-                  <td>Rekap absensi</td>
-                  <td className="pk-secondary">Tersedia setelah modul absensi (F5).</td>
-                  <td className="pk-secondary">–</td>
-                </tr>
               </tbody>
             </table>
           </div>

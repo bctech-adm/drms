@@ -39,6 +39,10 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
         <Link href="/admin/collections/expense-requests" style={plain}>
           Daftar pengajuan
         </Link>
+        {/* E6: own monthly attendance recap (US-09) */}
+        <Link href="/admin/absensi/rekap" style={plain} data-pk-nav-link="absensi-saya">
+          Rekap absensi saya
+        </Link>
         {requesterLinks}
       </div>
     )
@@ -96,6 +100,12 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
       {office || roles.includes('pk-pm') ? (
         <Link href="/admin/laporan" style={link} data-pk-nav-link="laporan">
           Laporan
+        </Link>
+      ) : null}
+      {/* E6: attendance (Tim hari ini, rekap, jadwal) — PM team, office roles + Admin all */}
+      {office || roles.includes('pk-pm') || roles.includes('pk-admin') ? (
+        <Link href="/admin/absensi" style={link} data-pk-nav-link="absensi">
+          Absensi
         </Link>
       ) : null}
       {office || roles.includes('pk-admin') ? (
