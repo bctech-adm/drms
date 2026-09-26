@@ -523,7 +523,7 @@ function LatestProgressReports({ rows }: { rows: Awaited<ReturnType<typeof listR
         rowKey={(r) => r.id}
         empty={null}
         cols={[
-          { key: 'd', label: 'Tanggal', sort: 'descending', cell: (r) => <span className="nw">{dateId(r.reportDate)}</span> },
+          { key: 'd', label: 'Tanggal', cell: (r) => <span className="nw">{dateId(r.reportDate)}</span> },
           {
             key: 'n',
             label: 'Laporan',

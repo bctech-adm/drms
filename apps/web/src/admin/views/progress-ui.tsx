@@ -18,7 +18,7 @@ import { EmptyState, pctText, rp, StatusPill } from './viz'
  */
 export const PROGRESS_STYLE = `
 .pk-f3 .pk-pvb { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.pk-f3 .pk-pvb-row { display: grid; grid-template-columns: minmax(0, 30%) minmax(0, 1fr) 250px; align-items: center; gap: 4px 14px; padding: 4px; margin: 0 -4px; border-radius: 6px; color: inherit; text-decoration: none; }
+.pk-f3 .pk-pvb-row { display: grid; grid-template-columns: minmax(0, 28%) minmax(0, 1fr) 310px; align-items: center; gap: 4px 14px; padding: 4px; margin: 0 -4px; border-radius: 6px; color: inherit; text-decoration: none; }
 .pk-f3 a.pk-pvb-row:hover, .pk-f3 .pk-pvb-row:focus-visible { background: color-mix(in oklab, var(--pk-primary) 6%, transparent); }
 .pk-f3 .pk-pvb-row .l { min-width: 0; font-size: 13px; }
 .pk-f3 .pk-pvb-row .l span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -31,7 +31,7 @@ export const PROGRESS_STYLE = `
 .pk-f3 .pk-pvb-row .v b { color: var(--pk-fg); }
 @container (max-width: 720px) { .pk-f3 .pk-pvb-row { grid-template-columns: minmax(0, 1fr) auto; } .pk-f3 .pk-pvb-row .t { grid-column: 1 / -1; grid-row: 2; } }
 @container (max-width: 520px) { .pk-f3 .pk-pvb-row { grid-template-columns: minmax(0, 1fr); } .pk-f3 .pk-pvb-row .t { grid-row: 3; } .pk-f3 .pk-pvb-row .v { align-items: flex-start; white-space: normal; } }
-.pk-f3 .pk-pvb-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--pk-muted-fg); margin: 2px 264px 0 calc(30% + 10px); }
+.pk-f3 .pk-pvb-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--pk-muted-fg); margin: 2px 324px 0 calc(28% + 10px); }
 @container (max-width: 720px) { .pk-f3 .pk-pvb-axis { display: none; } }
 /* stages */
 .pk-f3 .pk-stages { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
