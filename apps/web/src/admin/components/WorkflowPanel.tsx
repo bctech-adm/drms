@@ -13,6 +13,7 @@ import { withSystemTransaction } from '@/lib/system-tx'
 import { ReasonAction } from './kas/ReasonAction'
 import { KAS_STYLE } from './kas/style'
 import { RequesterActions, type RequesterActionsProps } from './RequesterActions'
+import { ReviewDetails } from './ReviewDetails'
 
 type Detail = Awaited<ReturnType<typeof detail>>
 
@@ -209,6 +210,12 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
           </ul>
         ) : null}
       </section>
+      {!own && d.status !== 'draft' ? (
+        // S3e (US-26/US-59, S-05): deciders / Finance / PM see lines, receipts and per-line flags here too.
+        <section style={box} data-pk-section="review">
+          <ReviewDetails d={d} />
+        </section>
+      ) : null}
       {own ? (
         <RequesterActions
           id={d.id}

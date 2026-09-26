@@ -106,11 +106,11 @@ describe('form 228/PB-DRMS/20/IX/2026 (F2 acceptance fixture)', () => {
 
   it('receipts are attached per line (Reimburse: required before submit, US-38)', async () => {
     for (const rc of FORM_228.receipts) {
-      // Synthetic FICTIONAL receipt photo (bitmap text), 2400 px wide → resized to ≤ 2000 px.
+      // Synthetic FICTIONAL receipt photo (bitmap text), 2400 px wide → resized to ≤ 1600 px (S3e).
       const photo = await receiptImage([rc.vendorName.slice(0, 22), `NO ${rc.receiptNo}`, `TGL ${rc.receiptDate}${rc.receiptTime ? ` ${rc.receiptTime}` : ''}`, `TOTAL RP ${formatAmount(rc.amount)}`, 'TERIMA KASIH'], { width: 2400, px: 14 })
       const img = await upload('/api/v1/media/receipts', citra, photo, 'image/jpeg')
       expect(img.status).toBe(201)
-      expect(Math.max(img.body.width, img.body.height)).toBeLessThanOrEqual(2000) // resized, original discarded
+      expect(Math.max(img.body.width, img.body.height)).toBeLessThanOrEqual(1600) // resized, original discarded
       const r = await api('POST', `/api/v1/expense-requests/${requestId}/receipts`, citra, {
         lineId: lineIds[rc.line],
         receiptNo: rc.receiptNo,
@@ -174,7 +174,8 @@ describe('form 228/PB-DRMS/20/IX/2026 (F2 acceptance fixture)', () => {
     expect(ok.status, JSON.stringify(ok.body)).toBe(200)
     expect(ok.body).toMatchObject({ status: 'approved', approvedAmount: 1_447_500, budget: { basis: 'none', pctBefore: null } })
     const appr = ok.body.approvals.find((a: { position: string }) => a.position === 'approval')
-    expect(appr).toMatchObject({ actorId: sari.id, decision: 'approved', openFlags: 3, budgetPctBefore: null })
+    // S3e (S-05): open flags of both levels (3 warnings + 1 info), as shown in the inbox
+    expect(appr).toMatchObject({ actorId: sari.id, decision: 'approved', openFlags: 4, budgetPctBefore: null })
     expect(ok.body.approvals.find((a: { position: string }) => a.position === 'diketahui')).toMatchObject({ actorId: budiH.id, decision: 'acknowledged' })
   })
 

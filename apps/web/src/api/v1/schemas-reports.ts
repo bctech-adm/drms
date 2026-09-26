@@ -170,11 +170,28 @@ const RequestRow = z.object({
   openFlags: z.number().int(),
 })
 
+const TeamWaitingItem = z.object({
+  id: z.number().int(),
+  docNo: z.string().nullable(),
+  title: z.string(),
+  type: z.enum(['advance', 'reimburse']),
+  status: z.string(),
+  waitingFor: z.enum(['direktur', 'finance']),
+  scopeName: z.string(),
+  requesters: z.string(),
+  grandTotal: rp,
+  submittedDate: z.string().nullable(),
+  days: z.number().int().nullable(),
+})
+
 export const PmDashboard = z.object({
   asOf: z.string(),
   month: z.string(),
   hasScope: z.boolean(),
-  waitingForMe: z.number().int(),
+  waitingForMe: z.number().int().meta({ description: 'ADR 0013: 0 for Direktur → Finance requests (PM monitors only); kept for compatibility.' }),
+  teamWaiting: z
+    .object({ count: z.number().int(), direktur: z.number().int(), finance: z.number().int(), oldestDays: z.number().int().nullable(), items: z.array(TeamWaitingItem) })
+    .meta({ description: 'S3e (US-17): team requests waiting for the Direktur (Diketahui) or Finance (Approval), oldest first (max 8 items).' }),
   teamMonth: z.object({ count: z.number().int(), sum: rp, waiting: z.number().int() }),
   lpj: z.object({ withoutLpj: z.number().int(), overdue: z.number().int(), lpjDueDays: z.number().int() }),
   projects: z.array(ProjectBudget),

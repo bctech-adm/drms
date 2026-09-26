@@ -16342,7 +16342,108 @@
                       "type": "boolean"
                     },
                     "waitingForMe": {
-                      "type": "integer"
+                      "type": "integer",
+                      "description": "ADR 0013: 0 for Direktur → Finance requests (PM monitors only); kept for compatibility."
+                    },
+                    "teamWaiting": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "direktur": {
+                          "type": "integer"
+                        },
+                        "finance": {
+                          "type": "integer"
+                        },
+                        "oldestDays": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer"
+                              },
+                              "docNo": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "advance",
+                                  "reimburse"
+                                ]
+                              },
+                              "status": {
+                                "type": "string"
+                              },
+                              "waitingFor": {
+                                "type": "string",
+                                "enum": [
+                                  "direktur",
+                                  "finance"
+                                ]
+                              },
+                              "scopeName": {
+                                "type": "string"
+                              },
+                              "requesters": {
+                                "type": "string"
+                              },
+                              "grandTotal": {
+                                "type": "integer",
+                                "description": "Rupiah (integer)"
+                              },
+                              "submittedDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "docNo",
+                              "title",
+                              "type",
+                              "status",
+                              "waitingFor",
+                              "scopeName",
+                              "requesters",
+                              "grandTotal",
+                              "submittedDate",
+                              "days"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "direktur",
+                        "finance",
+                        "oldestDays",
+                        "items"
+                      ],
+                      "description": "S3e (US-17): team requests waiting for the Direktur (Diketahui) or Finance (Approval), oldest first (max 8 items)."
                     },
                     "teamMonth": {
                       "type": "object",
@@ -16929,6 +17030,7 @@
                     "month",
                     "hasScope",
                     "waitingForMe",
+                    "teamWaiting",
                     "teamMonth",
                     "lpj",
                     "projects",

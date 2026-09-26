@@ -271,10 +271,16 @@ export async function projectCommitted(req: PayloadRequest, projectId: number, e
   return Number(r.rows[0]?.s ?? 0)
 }
 
-export async function openWarningFlags(req: PayloadRequest, requestId: number): Promise<number> {
+/**
+ * Flag count stored with a decision (`approvals.openFlags`, US-26/US-59). S3e (S-05): counts what the
+ * decider sees as open in the inbox / review panel — status "Terbuka", BOTH levels (peringatan + info).
+ * Reviewed ("Sudah diperiksa") and resolved flags are not counted. Decisions before S3e counted
+ * open warnings only.
+ */
+export async function openFlagCount(req: PayloadRequest, requestId: number): Promise<number> {
   const r = await req.payload.count({
     collection: 'receipt-flags',
-    where: { and: [{ request: { equals: requestId } }, { status: { equals: 'open' } }, { level: { equals: 'warning' } }] },
+    where: { and: [{ request: { equals: requestId } }, { status: { equals: 'open' } }] },
     overrideAccess: true, // SYSTEM-READ: flag count for decisions
     req,
   })

@@ -325,6 +325,53 @@ export async function pendingApprovals(req: PayloadRequest, scope: ReportScope) 
   return { pendingAck: ack, pendingApproval: appr, count: ack.count + appr.count, sum: ack.sum + appr.sum, oldestDays: oldest ? daysBetween(oldest, ctx.today) : null }
 }
 
+/**
+ * S3e (US-17, ADR 0013, S-01): PM monitoring — team requests waiting for a decision, oldest first.
+ * The PM never decides; `waitingFor` names who does: "Menunggu Direktur" (pending_ack, Diketahui =
+ * Direktur approval) or "Menunggu Finance" (pending_approval). Legacy snapshots (PM "Diketahui",
+ * Owner approval) are rare and labelled by status the same way.
+ */
+export type TeamWaitingItem = { id: number; docNo: string | null; title: string; type: RequestType; status: RequestStatus; waitingFor: 'direktur' | 'finance'; scopeName: string; requesters: string; grandTotal: number; submittedDate: string | null; days: number | null }
+
+export async function teamWaiting(req: PayloadRequest, scope: ReportScope, top = 8) {
+  const ctx = await reportContext(req)
+  const base = sql`er.status IN ('pending_ack', 'pending_approval') AND ${requestScopeSql(scope)}`
+  const [counts, list] = await inSequence(
+    () => rows(req, sql`SELECT er.status::text AS status, count(*)::int AS n, min((er.submitted_at AT TIME ZONE ${ctx.tz})::date)::text AS oldest FROM expense_requests er WHERE ${base} GROUP BY er.status`),
+    () =>
+      rows(
+        req,
+        sql`SELECT er.id, er.doc_no, er.title, er.type::text AS type, er.status::text AS status, coalesce(er.grand_total, 0)::text AS gt,
+              ((er.submitted_at AT TIME ZONE ${ctx.tz})::date)::text AS submitted,
+              coalesce((SELECT string_agg(e.name, ', ' ORDER BY rr."order") FROM expense_requests_rels rr JOIN employees e ON e.id = rr.employees_id
+                        WHERE rr.parent_id = er.id AND rr.path = 'requesters'), '') AS requesters,
+              coalesce(p.code || ' ' || p.name, cc.code || ' ' || cc.name, '') AS scope_name
+            FROM expense_requests er
+            LEFT JOIN projects p ON p.id = er.project_id LEFT JOIN cost_centers cc ON cc.id = er.cost_center_id
+            WHERE ${base} ORDER BY er.submitted_at ASC NULLS LAST, er.id ASC LIMIT ${top}`,
+      ),
+  )
+  const n = (st: string) => num(counts.find((x) => x.status === st)?.n)
+  const oldest = counts.map((x) => x.oldest as string | null).filter((x): x is string => !!x).sort()[0] ?? null
+  const items: TeamWaitingItem[] = list.map((x) => {
+    const submitted = (x.submitted as string | null) ?? null
+    return {
+      id: num(x.id),
+      docNo: (x.doc_no as string | null) ?? null,
+      title: String(x.title),
+      type: x.type as RequestType,
+      status: x.status as RequestStatus,
+      waitingFor: x.status === 'pending_ack' ? 'direktur' : 'finance',
+      scopeName: String(x.scope_name),
+      requesters: String(x.requesters),
+      grandTotal: num(x.gt),
+      submittedDate: submitted,
+      days: submitted ? daysBetween(submitted, ctx.today) : null,
+    }
+  })
+  return { count: n('pending_ack') + n('pending_approval'), direktur: n('pending_ack'), finance: n('pending_approval'), oldestDays: oldest ? daysBetween(oldest, ctx.today) : null, items }
+}
+
 // ================================================================ K-11 transfer queue
 
 export async function transferQueueSummary(req: PayloadRequest) {

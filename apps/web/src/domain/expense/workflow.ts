@@ -14,7 +14,7 @@ import {
   ids,
   loadRaw,
   loadVisible,
-  openWarningFlags,
+  openFlagCount,
   projectCommitted,
   requireAction,
   requireActionAudited,
@@ -270,7 +270,7 @@ export async function acknowledge(req: PayloadRequest, id: number, opts: SignOpt
     delegation: snap?.acknowledgeDelegatedTo ? { to: snap.acknowledgeDelegatedTo, reason: snap.acknowledgeDelegationReason ?? null } : null,
     signature: sig,
     budget: await budgetFor(req, doc),
-    openFlags: await openWarningFlags(req, id),
+    openFlags: await openFlagCount(req, id),
   })
   if (doc.status !== 'pending_ack') return doc
   const next = await updateRequest(req, id, { status: 'pending_approval', currentLevel: 1 })
@@ -305,7 +305,7 @@ export async function approve(req: PayloadRequest, id: number, opts: SignOpts = 
     actor: caller,
     signature: sig,
     budget: await budgetFor(req, doc),
-    openFlags: await openWarningFlags(req, id),
+    openFlags: await openFlagCount(req, id),
   })
   const snap = doc.approvalSnapshot as ApprovalSnapshot
   if (level < lastLevel(snap)) return updateRequest(req, id, { currentLevel: level + 1 })
@@ -333,7 +333,7 @@ export async function reject(req: PayloadRequest, id: number, reason: string, op
         : null,
     signature: sig,
     budget: await budgetFor(req, doc),
-    openFlags: await openWarningFlags(req, id),
+    openFlags: await openFlagCount(req, id),
   })
   return updateRequest(req, id, { status: 'rejected', rejectReason: reason }, reason)
 }
