@@ -7,8 +7,8 @@ const LIMIT = 500
 
 /** type → collection + whitelisted fields (never internal/sensitive columns like odoo refs). */
 const MAP: Record<MasterType, { collection: CollectionSlug; fields: string[] }> = {
-  projects: { collection: 'projects', fields: ['code', 'name', 'client', 'address', 'lat', 'lng', 'radiusM', 'pm', 'status', 'startDate', 'targetDate'] },
-  'project-stages': { collection: 'project-stages', fields: ['project', 'name', 'weightPct', 'sequence', 'progressPct'] },
+  projects: { collection: 'projects', fields: ['code', 'name', 'client', 'address', 'lat', 'lng', 'radiusM', 'pm', 'status', 'startDate', 'targetDate', 'progressPct'] },
+  'project-stages': { collection: 'project-stages', fields: ['project', 'name', 'weightPct', 'sequence', 'progressPct', 'active'] },
   'cost-centers': { collection: 'cost-centers', fields: ['code', 'name', 'type', 'manager', 'lat', 'lng', 'radiusM', 'active'] },
   'expense-categories': { collection: 'expense-categories', fields: ['code', 'name', 'defaultUom', 'allowedUoms', 'requiresVehicle', 'active'] },
   uoms: { collection: 'uoms', fields: ['code', 'name', 'category', 'active'] },

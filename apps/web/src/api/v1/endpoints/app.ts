@@ -14,6 +14,7 @@ type GateSettings = {
   timezone: string
   syncExpenseDraftsEnabled: boolean
   syncAttendanceEnabled: boolean
+  syncProgressReportsEnabled: boolean
 }
 
 let cache: { value: GateSettings; at: number } | undefined
@@ -32,6 +33,7 @@ async function gateSettings(req: PayloadRequest): Promise<GateSettings> {
     timezone?: string | null
     syncExpenseDraftsEnabled?: boolean | null
     syncAttendanceEnabled?: boolean | null
+    syncProgressReportsEnabled?: boolean | null
   }
   const value: GateSettings = {
     minAppVersion: s.minAppVersion || null,
@@ -40,6 +42,7 @@ async function gateSettings(req: PayloadRequest): Promise<GateSettings> {
     timezone: s.timezone || DEFAULT_TZ,
     syncExpenseDraftsEnabled: s.syncExpenseDraftsEnabled !== false,
     syncAttendanceEnabled: s.syncAttendanceEnabled === true,
+    syncProgressReportsEnabled: s.syncProgressReportsEnabled !== false,
   }
   cache = { value, at: Date.now() }
   return value
@@ -75,7 +78,7 @@ export const appConfigEndpoint = v1({
         pushEnabled: getEnv().PUSH_FCM_ENABLED,
         syncExpenseDrafts: s.syncExpenseDraftsEnabled,
         syncAttendance: s.syncAttendanceEnabled, // F4 slice: own check-in/out (company-settings)
-        syncProgressReports: false, // F5
+        syncProgressReports: s.syncProgressReportsEnabled, // E4: progress_report.draft_upsert (company-settings, default on)
       },
       sync: { maxItemsPerBatch: SYNC_MAX_ITEMS, maxBatchBytes: SYNC_MAX_BYTES, rateLimitPerMinute: SYNC_RATE_LIMIT[0] },
     }

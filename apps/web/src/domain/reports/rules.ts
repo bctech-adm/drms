@@ -32,6 +32,34 @@ export function budgetTone(pct: number | null, warnPct: number, overPct: number)
   return 'ok'
 }
 
+// ---------------------------------------------------------------- K-09 progress vs budget (US-12)
+
+export type ProgressTone = 'none' | 'ok' | 'warn' | 'bad'
+
+export const PROGRESS_LABELS: Record<ProgressTone, string> = {
+  none: 'Belum bisa dihitung',
+  ok: 'Sesuai',
+  warn: 'Perlu perhatian',
+  bad: 'Anggaran mendahului progress',
+}
+
+/** K-09: selisih = K-08 (% anggaran, Komitmen) − progress fisik (%); 2 decimals. null = not computable. */
+export function progressGap(budgetPctValue: number | null, progressPct: number | null): number | null {
+  if (budgetPctValue === null || progressPct === null) return null
+  return Math.round((budgetPctValue - progressPct) * 100) / 100
+}
+
+/**
+ * K-09 colour (US-12, settings progressWarnGapPct default 0 / progressBadGapPct default 8):
+ * green selisih ≤ warn · yellow ≤ bad · red > bad · none without RAB or complete stage weights.
+ */
+export function progressTone(gap: number | null, warnGapPct: number, badGapPct: number): ProgressTone {
+  if (gap === null) return 'none'
+  if (gap > badGapPct) return 'bad'
+  if (gap > warnGapPct) return 'warn'
+  return 'ok'
+}
+
 // ---------------------------------------------------------------- periods (C2/C3)
 
 export const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']

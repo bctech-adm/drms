@@ -100,6 +100,7 @@ export interface Config {
     'period-closings': PeriodClosing;
     attendances: Attendance;
     'attendance-corrections': AttendanceCorrection;
+    'progress-reports': ProgressReport;
     notifications: Notification;
     devices: Device;
     'web-sessions': WebSession;
@@ -152,6 +153,7 @@ export interface Config {
     'period-closings': PeriodClosingsSelect<false> | PeriodClosingsSelect<true>;
     attendances: AttendancesSelect<false> | AttendancesSelect<true>;
     'attendance-corrections': AttendanceCorrectionsSelect<false> | AttendanceCorrectionsSelect<true>;
+    'progress-reports': ProgressReportsSelect<false> | ProgressReportsSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     devices: DevicesSelect<false> | DevicesSelect<true>;
     'web-sessions': WebSessionsSelect<false> | WebSessionsSelect<true>;
@@ -468,6 +470,10 @@ export interface Project {
   targetDate?: string | null;
   status: 'perencanaan' | 'berjalan' | 'ditunda' | 'selesai' | 'arsip';
   /**
+   * Dihitung dari bobot × progress tahapan (hanya lewat laporan progress).
+   */
+  progressPct?: number | null;
+  /**
    * Referensi Odoo (diisi saat mirror, ADR 0009).
    */
   odooAnalyticRef?: string | null;
@@ -490,6 +496,10 @@ export interface ProjectStage {
   weightPct?: number | null;
   sequence: number;
   progressPct?: number | null;
+  /**
+   * Nonaktif = tidak dihitung dalam bobot & progress project.
+   */
+  active?: boolean | null;
   uuid?: string | null;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
@@ -1382,6 +1392,51 @@ export interface AttendanceCorrection {
   createdAt: string;
 }
 /**
+ * Laporan dibuat dari aplikasi Android atau layar laporan progress (bukan dari form ini).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "progress-reports".
+ */
+export interface ProgressReport {
+  id: number;
+  docNo?: string | null;
+  project: number | Project;
+  stage: number | ProjectStage;
+  reportDate: string;
+  pctBefore: number;
+  pctAfter: number;
+  projectPctBefore?: number | null;
+  projectPctAfter?: number | null;
+  work: string;
+  issues?: string | null;
+  reporter: number | User;
+  photoCount?: number | null;
+  receivedAt?: string | null;
+  editableUntil?: string | null;
+  deviceTime?: string | null;
+  timeTrust?: ('server' | 'estimated' | 'device_only') | null;
+  offline?: boolean | null;
+  source?: ('web' | 'apk') | null;
+  flags?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  syncRev?: number | null;
+  clientUuid?: string | null;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "notifications".
  */
@@ -1822,6 +1877,10 @@ export interface PayloadLockedDocument {
         value: number | AttendanceCorrection;
       } | null)
     | ({
+        relationTo: 'progress-reports';
+        value: number | ProgressReport;
+      } | null)
+    | ({
         relationTo: 'devices';
         value: number | Device;
       } | null)
@@ -2011,6 +2070,7 @@ export interface ProjectsSelect<T extends boolean = true> {
   startDate?: T;
   targetDate?: T;
   status?: T;
+  progressPct?: T;
   odooAnalyticRef?: T;
   uuid?: T;
   changeReason?: T;
@@ -2027,6 +2087,7 @@ export interface ProjectStagesSelect<T extends boolean = true> {
   weightPct?: T;
   sequence?: T;
   progressPct?: T;
+  active?: T;
   uuid?: T;
   changeReason?: T;
   updatedAt?: T;
@@ -2603,6 +2664,37 @@ export interface AttendanceCorrectionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "progress-reports_select".
+ */
+export interface ProgressReportsSelect<T extends boolean = true> {
+  docNo?: T;
+  project?: T;
+  stage?: T;
+  reportDate?: T;
+  pctBefore?: T;
+  pctAfter?: T;
+  projectPctBefore?: T;
+  projectPctAfter?: T;
+  work?: T;
+  issues?: T;
+  reporter?: T;
+  photoCount?: T;
+  receivedAt?: T;
+  editableUntil?: T;
+  deviceTime?: T;
+  timeTrust?: T;
+  offline?: T;
+  source?: T;
+  flags?: T;
+  syncRev?: T;
+  clientUuid?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "notifications_select".
  */
 export interface NotificationsSelect<T extends boolean = true> {
@@ -3067,6 +3159,10 @@ export interface CompanySetting {
    * Selfie lebih tua dari ini akan dihapus dari penyimpanan (data absensi tetap). Default 12 bulan; menunggu keputusan klien (Q-33).
    */
   selfieRetentionMonths: number;
+  /**
+   * E4: laporan progress harian + foto dari APK. Nonaktif → item laporan ditolak FEATURE_DISABLED (rollback).
+   */
+  syncProgressReportsEnabled?: boolean | null;
   offlineMaxAgeDays: number;
   imageTargets: {
     receiptsMaxPx: number;
@@ -3129,6 +3225,7 @@ export interface CompanySettingsSelect<T extends boolean = true> {
   syncAttendanceEnabled?: T;
   defaultWorkSchedule?: T;
   selfieRetentionMonths?: T;
+  syncProgressReportsEnabled?: T;
   offlineMaxAgeDays?: T;
   imageTargets?:
     | T

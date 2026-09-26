@@ -33,6 +33,7 @@ import { MEDIA_COLLECTIONS } from './collections/media'
 import { NotificationTemplates } from './collections/NotificationTemplates'
 import { Notifications } from './collections/Notifications'
 import { PeriodClosings } from './collections/PeriodClosings'
+import { ProgressReports } from './collections/ProgressReports'
 import { Projects } from './collections/Projects'
 import { ProjectStages } from './collections/ProjectStages'
 import { ReceiptFlags } from './collections/ReceiptFlags'
@@ -120,7 +121,7 @@ export default buildConfig({
     meta: { titleSuffix: ' — ProyekKas DRMS' },
   },
   // F2c: staff-only users see only their requests, receipts, notifications and profile.
-  collections: withStaffPanelVisibility([Users, ...MASTER_COLLECTIONS, ...FLOW_COLLECTIONS, Attendances, AttendanceCorrections, Notifications, Devices, WebSessions, AuditLogs, ...MEDIA_COLLECTIONS]),
+  collections: withStaffPanelVisibility([Users, ...MASTER_COLLECTIONS, ...FLOW_COLLECTIONS, Attendances, AttendanceCorrections, ProgressReports, Notifications, Devices, WebSessions, AuditLogs, ...MEDIA_COLLECTIONS]),
   globals: withStaffHiddenGlobals([CompanySettings]),
   // Admin UI in Bahasa Indonesia (ADR 0001 §5; @payloadcms/translations/languages/id @3.90.1).
   i18n: { supportedLanguages: { id }, fallbackLanguage: 'id' },

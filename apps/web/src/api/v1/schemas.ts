@@ -47,6 +47,7 @@ export const Me = z
       .object({
         approvalInbox: z.boolean().meta({ description: 'ADR 0013: holds pk-owner (label "Direktur") or pk-finance → show the approval inbox.' }),
         teamMonitor: z.boolean().meta({ description: 'Holds pk-pm → team list/dashboard (monitoring only, no decisions).' }),
+        progressReportCreate: z.boolean().meta({ description: 'E4: holds pk-pm (team projects) or pk-owner (all) → may create progress reports.' }),
       })
       .meta({ description: 'UI hints for the APK (E1); the server guards stay authoritative.' }),
     employee: z.object({ id: z.number().int(), code: z.string(), name: z.string() }).nullable(),

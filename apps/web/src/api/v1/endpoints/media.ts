@@ -20,6 +20,8 @@ const COLLECTION: Record<string, CollectionSlug> = {
   attachments: 'media-attachments',
   // F4b attendance selfie (720 px, JPEG in / WebP stored, EXIF stripped — ADR 0004).
   selfies: 'media-selfies',
+  // E4 progress photos (1600 px JPEG, EXIF/GPS stripped; ≤ 5 per report — ADR 0004, US-10).
+  'progress-photos': 'media-progress-photos',
 }
 
 /**
@@ -69,6 +71,8 @@ const FILE_COLLECTION: Record<string, CollectionSlug> = {
   signatures: 'media-signatures',
   attachments: 'media-attachments',
   company: 'media-company',
+  // E4: readable by the uploader, office roles and readers of the owning progress report.
+  'progress-photos': 'media-progress-photos',
 }
 
 type MediaDoc = {

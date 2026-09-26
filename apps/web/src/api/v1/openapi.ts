@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { registerAttendancePaths } from './openapi-attendance'
 import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready, TestEmailQueued } from './schemas'
 import * as F from './schemas-flow'
+import * as P from './schemas-progress'
 import * as R from './schemas-reports'
 import * as S from './schemas-sync'
 
@@ -366,7 +367,7 @@ export function buildOpenApiDocument(version: string) {
     summary:
       'APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.',
     description:
-      'Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload: project_id OR cost_center_id; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN), attendance.on_behalf (payload SyncOnBehalfPayload, US-14: PM only, team location, not own, reason required; GPS + photo from the PM phone); progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).',
+      'Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload: project_id OR cost_center_id; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN), attendance.on_behalf (payload SyncOnBehalfPayload, US-14: PM only, team location, not own, reason required; GPS + photo from the PM phone); progress_report.draft_upsert (payload SyncProgressReportPayload; photos first with POST /media/progress-photos, ≤ 5; new report = PM of a team project or Direktur; edit = reporter within 24 h with base_rev + reason, else conflict/NOT_EDITABLE with server_report; company-settings.syncProgressReportsEnabled, else FEATURE_DISABLED; codes WEIGHTS_INCOMPLETE, PROGRESS_DECREASED, PHOTO_LIMIT, MEDIA_IN_USE, MEDIA_MISSING, FORBIDDEN). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).',
     security: [{ [bearer.name]: [] }],
     request: {
       headers: z.object({
@@ -377,6 +378,68 @@ export function buildOpenApiDocument(version: string) {
       body: jsonBody(S.SyncBatch),
     },
     responses: res(200, 'Per-item results', S.SyncBatchResponse, [400, 401, 403, 413, 426, 429]),
+  })
+
+  // ---- E4: project stages (G11), progress reports (T11, US-10/US-31), K-09 (US-12) ----
+  registry.registerPath({
+    method: 'get',
+    path: '/projects/progress',
+    summary: 'K-09 progress fisik vs anggaran per project (Finance/Direktur all, PM team): K-08 % vs Σ(weight × stage %), selisih + colour',
+    security,
+    request: { headers: deviceHeader, query: P.ProjectProgressQuery },
+    responses: res(200, 'Projects', P.ProjectProgressList, [400, 401, 403, 426, 429]),
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/projects/{id}/stages',
+    summary: 'Stage set of a readable project: weights, stage %, active total and project progress',
+    security,
+    request: { headers: deviceHeader, params: idParams('id') },
+    responses: res(200, 'Stages', P.StageSet, [401, 404, 426]),
+  })
+  registry.registerPath({
+    method: 'put',
+    path: '/projects/{id}/stages',
+    summary: 'Stage editor: save the whole active set (total weight = 100 %, G11); Direktur any project (add/deactivate), PM team projects (rename/reorder/re-weight); reason for weight changes (G7)',
+    security,
+    request: { headers: idem, params: idParams('id'), body: jsonBody(P.StageSetBody) },
+    responses: res(200, 'Saved set', P.StageSet, [400, 401, 403, 404, 409, 422, 426, 429]),
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/progress-reports',
+    summary: 'Progress reports in the caller scope (PM team, Direktur/Finance all), newest first (US-31), filter project/stage/date, cursor paging',
+    security,
+    request: { headers: deviceHeader, query: P.ProgressReportListQuery },
+    responses: res(200, 'Page', P.ProgressReportList, [400, 401, 426]),
+  })
+  registry.registerPath({
+    method: 'post',
+    path: '/progress-reports',
+    summary: 'Create a progress report (US-10): PM of the project or Direktur; photos from POST /media/progress-photos (≤ 5); stage % before → after and project progress in the same transaction. Replayed clientUuid → 200',
+    description: 'Problem `code`: FORBIDDEN (not PM of the project / Staff), WEIGHTS_INCOMPLETE (active stage weights ≠ 100 %), PROGRESS_DECREASED, PHOTO_LIMIT, MEDIA_MISSING, MEDIA_IN_USE, VALIDATION, STATE_CONFLICT (archived project / inactive stage).',
+    security,
+    request: { headers: idem, body: jsonBody(P.ProgressReportCreate) },
+    responses: {
+      ...res(201, 'Created', P.ProgressReport, [400, 401, 403, 404, 409, 422, 426, 429]),
+      200: { description: 'Existing report for this clientUuid', content: { 'application/json': { schema: P.ProgressReport } } },
+    },
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/progress-reports/{id}',
+    summary: 'Report detail with photos (file URLs under /media/progress-photos/{id}/file)',
+    security,
+    request: { headers: deviceHeader, params: idParams('id') },
+    responses: res(200, 'Report', P.ProgressReport, [401, 404, 426]),
+  })
+  registry.registerPath({
+    method: 'patch',
+    path: '/progress-reports/{id}',
+    summary: 'Edit within 24 h by the reporter (reason required): work/issues, add photos (total ≤ 5), correct pctAfter on the latest report of the stage',
+    security,
+    request: { headers: idem, params: idParams('id'), body: jsonBody(P.ProgressReportUpdate) },
+    responses: res(200, 'Report after the edit', P.ProgressReport, [400, 401, 403, 404, 409, 422, 426, 429]),
   })
 
   // ---- F3 dashboards & reports (docs/proyekkas/f3) ----------------------------------------------

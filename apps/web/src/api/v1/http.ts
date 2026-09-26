@@ -64,7 +64,7 @@ async function minAppVersion(req: PayloadRequest): Promise<string | null> {
 
 export type V1Options<B extends z.ZodType | undefined> = {
   path: string
-  method: 'get' | 'post' | 'patch'
+  method: 'get' | 'post' | 'patch' | 'put'
   /** 'public' = no authentication (health only). Default: any authenticated user. */
   auth?: 'public' | 'user'
   roles?: Role[]
@@ -186,7 +186,12 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
         }
         if (err instanceof APIError && err.status < 500) {
           const errors = (err.data as { errors?: unknown } | null | undefined)?.errors
-          return problem(err.status, err.isPublic ? err.message : 'Request rejected', err.isPublic && Array.isArray(errors) ? { errors } : {})
+          // Domain errors may carry a stable machine code (e.g. E4 ProgressError: PHOTO_LIMIT, WEIGHTS_INCOMPLETE).
+          const code = (err as { pkCode?: unknown }).pkCode
+          return problem(err.status, err.isPublic ? err.message : 'Request rejected', {
+            ...(err.isPublic && Array.isArray(errors) ? { errors } : {}),
+            ...(err.isPublic && typeof code === 'string' ? { code } : {}),
+          })
         }
         const pg = err as { code?: string; message?: string }
         if (typeof pg.code === 'string' && /^(42501|23505|23514|P0001)$/.test(pg.code)) {

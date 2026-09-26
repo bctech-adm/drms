@@ -29,6 +29,7 @@ import { AttendanceReject, recordAttendance, userOfEmployee } from '@/domain/att
 
 import { attendanceTimeOf, employeeOfUser } from './attendance'
 import { judgeTime, type TimeVerdict } from './clock'
+import { applyProgressReport, ProgressSyncReject } from './progress'
 
 /**
  * POST /api/v1/sync/batch — offline queue replay (ADR 0010 "Sync contract").
@@ -50,7 +51,9 @@ import { judgeTime, type TimeVerdict } from './clock'
  *   domain/attendance/record.ts): assigned project/cost center with a geofence, inside radius
  *   (+ capped GPS accuracy), not mocked, selfie uploaded by the caller, one check-in and one
  *   check-out per employee/location/local date; on-behalf = PM of the team location only (US-14).
- *   Progress reports: accepted by the schema, answered `unsupported` (F5).
+ * - Progress reports (E4, company-settings.syncProgressReportsEnabled): `progress_report.draft_upsert`
+ *   creates a report through the same domain service as POST /api/v1/progress-reports, or edits one
+ *   (reporter, ≤ 24 h, base_rev = server rev else conflict + server_report) — ./progress.ts.
  */
 
 type SyncError = { code: string; field?: string; message: string }
@@ -84,9 +87,9 @@ type Outcome = {
 type ItemCtx = { req: PayloadRequest; uid: number; item: SyncItemIn }
 
 /** Server switches + company timezone, read once per batch. */
-type Features = { drafts: boolean; attendance: boolean; timezone: string }
+type Features = { drafts: boolean; attendance: boolean; progress: boolean; timezone: string }
 
-const UNSUPPORTED: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['progress_report.draft_upsert'])
+const UNSUPPORTED: ReadonlySet<SyncItemType> = new Set<SyncItemType>([])
 const ATTENDANCE: ReadonlySet<SyncItemType> = new Set<SyncItemType>(['attendance.check_in', 'attendance.check_out', 'attendance.on_behalf'])
 
 const reject = (code: string, message: string, field?: string, target: SyncReject['target'] = null): never => {
@@ -490,9 +493,9 @@ async function store(c: ItemCtx, batch: SyncBatchIn, deviceId: string, verdict: 
   await writeAudit(req, [
     {
       action: 'sync_offline',
-      docType: ATTENDANCE.has(item.type) ? 'attendance' : 'expense_request',
+      docType: ATTENDANCE.has(item.type) ? 'attendance' : item.type === 'progress_report.draft_upsert' ? 'progress_report' : 'expense_request',
       docId: result.server_id ?? undefined,
-      docNo: result.server_copy?.doc_no ?? undefined,
+      docNo: result.server_copy?.doc_no ?? result.server_report?.doc_no ?? undefined,
       field: item.type,
       newValue: {
         client_uuid: item.client_uuid,
@@ -531,10 +534,20 @@ async function checkDependencies(req: PayloadRequest, uid: number, item: SyncIte
 
 /** Domain/DB error → sync error codes (never internals). null = unexpected (item deferred). */
 function mapError(err: unknown): SyncError[] | null {
-  if (err instanceof SyncReject) return err.errors
+  if (err instanceof SyncReject || err instanceof ProgressSyncReject) return err.errors
   if (err instanceof APIError && err.status < 500) {
     const message = err.isPublic ? err.message : 'Ditolak.'
-    const code = err.status === 403 || err.status === 401 ? 'FORBIDDEN' : err.status === 404 ? 'NOT_FOUND' : err.status === 409 ? 'STATE_CONFLICT' : 'VALIDATION'
+    const pkCode = (err as { pkCode?: unknown }).pkCode // E4 ProgressError: stable domain code
+    const code =
+      typeof pkCode === 'string'
+        ? pkCode
+        : err.status === 403 || err.status === 401
+          ? 'FORBIDDEN'
+          : err.status === 404
+            ? 'NOT_FOUND'
+            : err.status === 409
+              ? 'STATE_CONFLICT'
+              : 'VALIDATION'
     const list = (err.data as { errors?: Array<{ path?: string; field?: string; message?: string }> } | null | undefined)?.errors
     if (Array.isArray(list) && list.length > 0 && (err.isPublic || err instanceof ValidationError)) {
       return list.map((e) => ({ code, field: `payload.${toSnake(e.path ?? e.field ?? '')}`.replace(/\.$/, ''), message: e.message ?? message }))
@@ -594,9 +607,26 @@ async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: st
       const stored = await readStored(req, item.client_uuid)
       if (stored) return duplicateOf(stored, uid, base)
       const isAttendance = ATTENDANCE.has(item.type)
+      const isProgress = item.type === 'progress_report.draft_upsert'
       if (isAttendance && !features.attendance) reject('FEATURE_DISABLED', 'Absensi dari aplikasi belum diaktifkan server (Setting perusahaan).')
-      if (!isAttendance && !features.drafts) reject('FEATURE_DISABLED', 'Sinkronisasi draft pengajuan sedang dinonaktifkan server.')
+      if (isProgress && !features.progress) reject('FEATURE_DISABLED', 'Laporan progress dari aplikasi sedang dinonaktifkan server (Setting perusahaan).')
+      if (!isAttendance && !isProgress && !features.drafts) reject('FEATURE_DISABLED', 'Sinkronisasi draft pengajuan sedang dinonaktifkan server.')
       await checkDependencies(req, uid, item)
+      if (isProgress) {
+        const po = await applyProgressReport(c, verdict, receivedAt)
+        const result: SyncResultOut = {
+          ...base,
+          status: po.status,
+          server_id: String(po.id),
+          rev: po.rev,
+          flags: [...base.flags, ...po.flags],
+          errors: po.errors,
+          server_copy: null,
+          server_report: po.copy,
+        }
+        await store(c, batch, deviceId, verdict, result)
+        return result
+      }
       const out = isAttendance
         ? await applyAttendance(c, verdict, receivedAt, features)
         : item.type === 'expense_request.draft_delete'
@@ -622,13 +652,15 @@ async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: st
       return { ...base, status: 'deferred', errors: [{ code: 'INTERNAL', message: 'Server sedang bermasalah; item dikirim ulang nanti.' }] }
     }
     const target = err instanceof SyncReject ? err.target : null
+    const report = err instanceof ProgressSyncReject ? err : null
     const rejected: SyncResultOut = {
       ...base,
       status: 'rejected',
-      server_id: target ? String(target.id) : null,
-      rev: target?.copy?.rev ?? null,
+      server_id: target ? String(target.id) : report?.id ? String(report.id) : null,
+      rev: target?.copy?.rev ?? report?.copy?.rev ?? null,
       errors,
       server_copy: target?.copy ?? null,
+      ...(item.type === 'progress_report.draft_upsert' ? { server_report: report?.copy ?? null } : {}),
     }
     return withReqTransaction(req, async () => {
       await lockItem(req, item.client_uuid)
@@ -643,10 +675,11 @@ async function processItem(req: PayloadRequest, batch: SyncBatchIn, deviceId: st
 export async function processBatch(req: PayloadRequest, batch: SyncBatchIn, deviceId: string) {
   const uid = userId(req)
   if (uid === undefined) throw new APIError('Unauthorized', 401)
-  const s = (await settings(req)) as { syncExpenseDraftsEnabled?: boolean | null; syncAttendanceEnabled?: boolean | null; timezone?: string | null }
+  const s = (await settings(req)) as { syncExpenseDraftsEnabled?: boolean | null; syncAttendanceEnabled?: boolean | null; syncProgressReportsEnabled?: boolean | null; timezone?: string | null }
   const features: Features = {
     drafts: s.syncExpenseDraftsEnabled !== false,
     attendance: s.syncAttendanceEnabled === true,
+    progress: s.syncProgressReportsEnabled !== false,
     timezone: s.timezone || DEFAULT_TZ,
   }
   const results: SyncResultOut[] = []

@@ -385,7 +385,7 @@ export const HistoryItem = z
   .meta({ id: 'HistoryItem' })
 export const History = z.object({ items: z.array(HistoryItem) }).meta({ id: 'History' })
 
-export const MediaKindEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'selfies']).meta({ id: 'MediaKind' })
+export const MediaKindEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'selfies', 'progress-photos']).meta({ id: 'MediaKind' })
 export const MediaUploaded = z
   .object({ id, kind: MediaKindEnum, mimeType: z.string().nullable(), filesize: z.number().int().nullable(), width: z.number().int().nullable(), height: z.number().int().nullable(), sha256Original: z.string().nullable() })
   .meta({ id: 'MediaUploaded' })
@@ -538,7 +538,7 @@ export const NotificationQuery = z
   .meta({ id: 'NotificationQuery' })
 export const ReadAllResult = z.object({ updated: z.number().int() }).meta({ id: 'NotificationsReadAll' })
 
-export const FileCollectionEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'company']).meta({ id: 'FileCollection' })
+export const FileCollectionEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'company', 'progress-photos']).meta({ id: 'FileCollection' })
 export const PdfQuery = z.object({ variant: z.enum(['standard', 'internal']).optional().meta({ description: 'internal = with receipt validation flags (Finance/Owner/Admin).' }) }).meta({ id: 'PdfQuery' })
 
 export const ApprovalInbox = z
