@@ -440,7 +440,8 @@ describe('selfie viewer (Q-33) and retention (dry run)', () => {
     expect(now).toMatchObject({ months: 12, candidates: 0 })
     const face = (await sqlAs('app', 'SELECT id FROM media_selfies ORDER BY id LIMIT 1')).rows[0].id
     await p.update({ collection: 'employees', id: w.emp.admin, data: { faceRefPhoto: face }, overrideAccess: true /* SYSTEM-WRITE: fixture */ })
-    const total = (await sqlAs('app', 'SELECT count(*)::int AS n FROM media_selfies')).rows[0].n
+    // removed_at: s2b-attendance-web-reminders may have purged selfies first (file order is not fixed)
+    const total = (await sqlAs('app', 'SELECT count(*)::int AS n FROM media_selfies WHERE removed_at IS NULL')).rows[0].n
     const later = await selfieRetentionPlan(p, new Date(Date.now() + 400 * 86_400_000))
     expect(later.candidates).toBe(total - 1)
     expect(later.sampleIds).not.toContain(face)
