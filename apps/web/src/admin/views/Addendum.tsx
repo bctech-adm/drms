@@ -16,7 +16,8 @@ import { DEFAULT_TZ } from '@/lib/time'
 import { KAS_STYLE } from '@/admin/components/kas/style'
 
 import { F3Root } from './f3-ui'
-import { Alert, dateTimeId, Frame } from './progress-ui'
+import { Frame } from './frame'
+import { Alert, dateTimeId } from './progress-ui'
 import { Bento, Card, DashHead, DataTable, EmptyState, KpiRow, KpiTile, pctText, rp, rpShort, StatusPill, VIZ_STYLE, type Col } from './viz'
 
 /**

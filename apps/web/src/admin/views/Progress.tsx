@@ -16,7 +16,8 @@ import { withReqTransaction } from '@/lib/system-tx'
 import { DEFAULT_TZ } from '@/lib/time'
 
 import { ChartHover } from './ChartHover'
-import { Alert, dateId, dateTimeId, Frame, ProgressLegend, ProgressTable, ProgressTonePill, ProgressVsBudgetRows } from './progress-ui'
+import { Frame } from './frame'
+import { Alert, dateId, dateTimeId, ProgressLegend, ProgressTable, ProgressTonePill, ProgressVsBudgetRows } from './progress-ui'
 import { Bento, Card, DashHead, DataTable, EmptyState, KpiRow, KpiTile, pctText, rp, StatusPill, TableView, type Col } from './viz'
 
 /**

@@ -1,16 +1,11 @@
-import { DefaultTemplate } from '@payloadcms/next/templates'
-import { Gutter } from '@payloadcms/ui'
-import type { AdminViewServerProps } from 'payload'
 import Link from 'next/link'
 import React from 'react'
 
-import { KAS_STYLE } from '@/admin/components/kas/style'
 import { MONTHS_SHORT } from '@/domain/reports/rules'
 import type { PillTone } from '@/domain/reports/viz'
 import type { ProjectProgress } from '@/domain/reports/progress'
 
-import { F3Root } from './f3-ui'
-import { EmptyState, pctText, rp, StatusPill, VIZ_STYLE } from './viz'
+import { EmptyState, pctText, rp, StatusPill } from './viz'
 
 /**
  * E4/E5 admin kit (Sprint S2 web A): shared pieces of the progress, progress-report and addendum
@@ -70,32 +65,6 @@ export const PROGRESS_STYLE = `
 .pk-f3 form.pk-filter .pk-kbtn { align-self: flex-end; }
 @media (max-width: 559px) { .pk-f3 .pk-dash-head .pk-kact { width: 100%; } .pk-f3 .pk-dash-head .pk-kact > * { flex: 1 1 auto; } }
 `
-
-/** DefaultTemplate (nav + header) around a pk-f3 root with the dashboard + progress styles. */
-export function Frame({ props, name, children }: { props: AdminViewServerProps; name: string; children: React.ReactNode }) {
-  const { initPageResult, params, searchParams } = props
-  return (
-    <DefaultTemplate
-      i18n={initPageResult.req.i18n}
-      locale={initPageResult.locale}
-      params={params}
-      payload={initPageResult.req.payload}
-      permissions={initPageResult.permissions}
-      searchParams={searchParams}
-      user={initPageResult.req.user ?? undefined}
-      visibleEntities={initPageResult.visibleEntities}
-    >
-      <Gutter>
-        <F3Root name={name}>
-          <style>{VIZ_STYLE}</style>
-          <style>{KAS_STYLE}</style>
-          <style>{PROGRESS_STYLE}</style>
-          {children}
-        </F3Root>
-      </Gutter>
-    </DefaultTemplate>
-  )
-}
 
 export function Alert({ tone, children, attr }: { tone: 'ok' | 'bad' | 'info'; children: React.ReactNode; attr?: string }) {
   return (
