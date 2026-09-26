@@ -22,7 +22,7 @@ class UnauthorizedException extends ApiException {
 }
 
 /// 401 `code: DEVICE_REVOKED`: the token is still valid but this install was revoked or marked lost
-/// (Admin/Owner or the user on another device, ADR 0003 §5). No refresh is attempted: the session
+/// (Admin/Direktur or the user on another device, ADR 0003 §5). No refresh is attempted: the session
 /// ends at once and the next login registers a fresh install id.
 class DeviceRevokedException extends UnauthorizedException {
   const DeviceRevokedException();
@@ -31,7 +31,7 @@ class DeviceRevokedException extends UnauthorizedException {
 }
 
 const deviceRevokedMessage =
-    'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.';
+    'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Direktur. Silakan masuk kembali atau hubungi Admin.';
 
 /// 426: APK older than company-settings.minAppVersion.
 class UpgradeRequiredException extends ApiException {

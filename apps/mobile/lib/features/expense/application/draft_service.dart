@@ -94,6 +94,28 @@ class DraftService {
     });
   }
 
+  /// Opens a SERVER Draft in the offline editor (E3-d: after "Tarik kembali" or "Ajukan ulang", US-04/06).
+  /// The server copy is authoritative: the local draft is (re)built from it, keeps the server id and
+  /// `rev` (so the next offline edit is an ordinary `draft_upsert` with `base_rev`), and pending queue
+  /// items of an older local copy are superseded. Receipts stay on the server (read-only on the phone).
+  Future<DraftRequest> importServerDraft(String sub, ExpenseDetail detail) async {
+    if (detail.status != RequestStatus.draft) {
+      throw const ProblemException(status: 409, detail: 'Pengajuan ini bukan draft lagi. Muat ulang.');
+    }
+    final own = detail.clientUuid;
+    final uuid = own != null && isUuid(own) ? own : _uuid.v7();
+    final draft = draftFromServer(
+      detail,
+      clientUuid: uuid,
+      receiptUuid: (id) => _uuid.v5(Namespace.url.value, 'pk-server-receipt:${detail.id}:$id'),
+    );
+    return lock.run(() async {
+      await outbox.supersede(sub, uuid);
+      await drafts.save(sub, draft);
+      return draft;
+    });
+  }
+
   /// "Ajukan" — online only. Creates the server draft through `/api/v1` (idempotent by clientUuid)
   /// when the offline queue has not delivered it yet, uploads the receipts, then submits.
   Future<ExpenseDetail> submit(String sub, DraftRequest draft) async {

@@ -585,7 +585,7 @@ as int,
 /// @nodoc
 mixin _$ExpenseLine {
 
- String get id; int get no; String? get description; double? get qty; RefItem? get uom; int? get unitPrice; int? get unitPriceDisplay; int get total; String? get notes; RefItem? get category; String? get vehiclePlate;
+ String get id; int get no; String? get description; double? get qty; RefItem? get uom; int? get unitPrice; int? get unitPriceDisplay; int get total; String? get notes; RefItem? get category; String? get vehiclePlate; int? get vehicleId;
 /// Create a copy of ExpenseLine
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -597,20 +597,20 @@ $ExpenseLineCopyWith<ExpenseLine> get copyWith => _$ExpenseLineCopyWithImpl<Expe
 @override
 bool operator ==(Object other) {
   final _this = this as ExpenseLine;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpenseLine&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.no, _this.no) || other.no == _this.no)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.qty, _this.qty) || other.qty == _this.qty)&&(identical(other.uom, _this.uom) || other.uom == _this.uom)&&(identical(other.unitPrice, _this.unitPrice) || other.unitPrice == _this.unitPrice)&&(identical(other.unitPriceDisplay, _this.unitPriceDisplay) || other.unitPriceDisplay == _this.unitPriceDisplay)&&(identical(other.total, _this.total) || other.total == _this.total)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&(identical(other.category, _this.category) || other.category == _this.category)&&(identical(other.vehiclePlate, _this.vehiclePlate) || other.vehiclePlate == _this.vehiclePlate));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpenseLine&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.no, _this.no) || other.no == _this.no)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.qty, _this.qty) || other.qty == _this.qty)&&(identical(other.uom, _this.uom) || other.uom == _this.uom)&&(identical(other.unitPrice, _this.unitPrice) || other.unitPrice == _this.unitPrice)&&(identical(other.unitPriceDisplay, _this.unitPriceDisplay) || other.unitPriceDisplay == _this.unitPriceDisplay)&&(identical(other.total, _this.total) || other.total == _this.total)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&(identical(other.category, _this.category) || other.category == _this.category)&&(identical(other.vehiclePlate, _this.vehiclePlate) || other.vehiclePlate == _this.vehiclePlate)&&(identical(other.vehicleId, _this.vehicleId) || other.vehicleId == _this.vehicleId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ExpenseLine;
-  return Object.hash(runtimeType,_this.id,_this.no,_this.description,_this.qty,_this.uom,_this.unitPrice,_this.unitPriceDisplay,_this.total,_this.notes,_this.category,_this.vehiclePlate);
+  return Object.hash(runtimeType,_this.id,_this.no,_this.description,_this.qty,_this.uom,_this.unitPrice,_this.unitPriceDisplay,_this.total,_this.notes,_this.category,_this.vehiclePlate,_this.vehicleId);
 }
 
 @override
 String toString() {
   final _this = this as ExpenseLine;
-  return 'ExpenseLine(id: ${_this.id}, no: ${_this.no}, description: ${_this.description}, qty: ${_this.qty}, uom: ${_this.uom}, unitPrice: ${_this.unitPrice}, unitPriceDisplay: ${_this.unitPriceDisplay}, total: ${_this.total}, notes: ${_this.notes}, category: ${_this.category}, vehiclePlate: ${_this.vehiclePlate})';
+  return 'ExpenseLine(id: ${_this.id}, no: ${_this.no}, description: ${_this.description}, qty: ${_this.qty}, uom: ${_this.uom}, unitPrice: ${_this.unitPrice}, unitPriceDisplay: ${_this.unitPriceDisplay}, total: ${_this.total}, notes: ${_this.notes}, category: ${_this.category}, vehiclePlate: ${_this.vehiclePlate}, vehicleId: ${_this.vehicleId})';
 }
 
 
@@ -621,7 +621,7 @@ abstract mixin class $ExpenseLineCopyWith<$Res>  {
   factory $ExpenseLineCopyWith(ExpenseLine value, $Res Function(ExpenseLine) _then) = _$ExpenseLineCopyWithImpl;
 @useResult
 $Res call({
- String id, int no, String? description, double? qty, RefItem? uom, int? unitPrice, int? unitPriceDisplay, int total, String? notes, RefItem? category, String? vehiclePlate
+ String id, int no, String? description, double? qty, RefItem? uom, int? unitPrice, int? unitPriceDisplay, int total, String? notes, RefItem? category, String? vehiclePlate, int? vehicleId
 });
 
 
@@ -638,7 +638,7 @@ class _$ExpenseLineCopyWithImpl<$Res>
 
 /// Create a copy of ExpenseLine
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? no = null,Object? description = freezed,Object? qty = freezed,Object? uom = freezed,Object? unitPrice = freezed,Object? unitPriceDisplay = freezed,Object? total = null,Object? notes = freezed,Object? category = freezed,Object? vehiclePlate = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? no = null,Object? description = freezed,Object? qty = freezed,Object? uom = freezed,Object? unitPrice = freezed,Object? unitPriceDisplay = freezed,Object? total = null,Object? notes = freezed,Object? category = freezed,Object? vehiclePlate = freezed,Object? vehicleId = freezed,}) {
   return _then(ExpenseLine(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,no: null == no ? _self.no : no // ignore: cast_nullable_to_non_nullable
@@ -651,7 +651,8 @@ as int?,total: null == total ? _self.total : total // ignore: cast_nullable_to_n
 as int,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
 as String?,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as RefItem?,vehiclePlate: freezed == vehiclePlate ? _self.vehiclePlate : vehiclePlate // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,vehicleId: freezed == vehicleId ? _self.vehicleId : vehicleId // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 /// Create a copy of ExpenseLine
@@ -760,10 +761,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int no,  String? description,  double? qty,  RefItem? uom,  int? unitPrice,  int? unitPriceDisplay,  int total,  String? notes,  RefItem? category,  String? vehiclePlate)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int no,  String? description,  double? qty,  RefItem? uom,  int? unitPrice,  int? unitPriceDisplay,  int total,  String? notes,  RefItem? category,  String? vehiclePlate,  int? vehicleId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ExpenseLine() when $default != null:
-return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.unitPrice,_that.unitPriceDisplay,_that.total,_that.notes,_that.category,_that.vehiclePlate);case _:
+return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.unitPrice,_that.unitPriceDisplay,_that.total,_that.notes,_that.category,_that.vehiclePlate,_that.vehicleId);case _:
   return orElse();
 
 }
@@ -781,10 +782,10 @@ return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.un
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int no,  String? description,  double? qty,  RefItem? uom,  int? unitPrice,  int? unitPriceDisplay,  int total,  String? notes,  RefItem? category,  String? vehiclePlate)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int no,  String? description,  double? qty,  RefItem? uom,  int? unitPrice,  int? unitPriceDisplay,  int total,  String? notes,  RefItem? category,  String? vehiclePlate,  int? vehicleId)  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseLine():
-return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.unitPrice,_that.unitPriceDisplay,_that.total,_that.notes,_that.category,_that.vehiclePlate);case _:
+return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.unitPrice,_that.unitPriceDisplay,_that.total,_that.notes,_that.category,_that.vehiclePlate,_that.vehicleId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -801,10 +802,10 @@ return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.un
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int no,  String? description,  double? qty,  RefItem? uom,  int? unitPrice,  int? unitPriceDisplay,  int total,  String? notes,  RefItem? category,  String? vehiclePlate)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int no,  String? description,  double? qty,  RefItem? uom,  int? unitPrice,  int? unitPriceDisplay,  int total,  String? notes,  RefItem? category,  String? vehiclePlate,  int? vehicleId)?  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseLine() when $default != null:
-return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.unitPrice,_that.unitPriceDisplay,_that.total,_that.notes,_that.category,_that.vehiclePlate);case _:
+return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.unitPrice,_that.unitPriceDisplay,_that.total,_that.notes,_that.category,_that.vehiclePlate,_that.vehicleId);case _:
   return null;
 
 }
@@ -816,7 +817,7 @@ return $default(_that.id,_that.no,_that.description,_that.qty,_that.uom,_that.un
 
 
 class _ExpenseLine implements ExpenseLine {
-  const _ExpenseLine({required this.id, required this.no, this.description, this.qty, this.uom, this.unitPrice, this.unitPriceDisplay, required this.total, this.notes, this.category, this.vehiclePlate});
+  const _ExpenseLine({required this.id, required this.no, this.description, this.qty, this.uom, this.unitPrice, this.unitPriceDisplay, required this.total, this.notes, this.category, this.vehiclePlate, this.vehicleId});
   
 
 @override final  String id;
@@ -830,6 +831,7 @@ class _ExpenseLine implements ExpenseLine {
 @override final  String? notes;
 @override final  RefItem? category;
 @override final  String? vehiclePlate;
+@override final  int? vehicleId;
 
 /// Create a copy of ExpenseLine
 /// with the given fields replaced by the non-null parameter values.
@@ -841,18 +843,18 @@ _$ExpenseLineCopyWith<_ExpenseLine> get copyWith => __$ExpenseLineCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpenseLine&&(identical(other.id, id) || other.id == id)&&(identical(other.no, no) || other.no == no)&&(identical(other.description, description) || other.description == description)&&(identical(other.qty, qty) || other.qty == qty)&&(identical(other.uom, uom) || other.uom == uom)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.unitPriceDisplay, unitPriceDisplay) || other.unitPriceDisplay == unitPriceDisplay)&&(identical(other.total, total) || other.total == total)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.category, category) || other.category == category)&&(identical(other.vehiclePlate, vehiclePlate) || other.vehiclePlate == vehiclePlate));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpenseLine&&(identical(other.id, id) || other.id == id)&&(identical(other.no, no) || other.no == no)&&(identical(other.description, description) || other.description == description)&&(identical(other.qty, qty) || other.qty == qty)&&(identical(other.uom, uom) || other.uom == uom)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.unitPriceDisplay, unitPriceDisplay) || other.unitPriceDisplay == unitPriceDisplay)&&(identical(other.total, total) || other.total == total)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.category, category) || other.category == category)&&(identical(other.vehiclePlate, vehiclePlate) || other.vehiclePlate == vehiclePlate)&&(identical(other.vehicleId, vehicleId) || other.vehicleId == vehicleId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,no,description,qty,uom,unitPrice,unitPriceDisplay,total,notes,category,vehiclePlate);
+    return Object.hash(runtimeType,id,no,description,qty,uom,unitPrice,unitPriceDisplay,total,notes,category,vehiclePlate,vehicleId);
 }
 
 @override
 String toString() {
-    return 'ExpenseLine(id: $id, no: $no, description: $description, qty: $qty, uom: $uom, unitPrice: $unitPrice, unitPriceDisplay: $unitPriceDisplay, total: $total, notes: $notes, category: $category, vehiclePlate: $vehiclePlate)';
+    return 'ExpenseLine(id: $id, no: $no, description: $description, qty: $qty, uom: $uom, unitPrice: $unitPrice, unitPriceDisplay: $unitPriceDisplay, total: $total, notes: $notes, category: $category, vehiclePlate: $vehiclePlate, vehicleId: $vehicleId)';
 }
 
 
@@ -863,7 +865,7 @@ abstract mixin class _$ExpenseLineCopyWith<$Res> implements $ExpenseLineCopyWith
   factory _$ExpenseLineCopyWith(_ExpenseLine value, $Res Function(_ExpenseLine) _then) = __$ExpenseLineCopyWithImpl;
 @override @useResult
 $Res call({
- String id, int no, String? description, double? qty, RefItem? uom, int? unitPrice, int? unitPriceDisplay, int total, String? notes, RefItem? category, String? vehiclePlate
+ String id, int no, String? description, double? qty, RefItem? uom, int? unitPrice, int? unitPriceDisplay, int total, String? notes, RefItem? category, String? vehiclePlate, int? vehicleId
 });
 
 
@@ -880,7 +882,7 @@ class __$ExpenseLineCopyWithImpl<$Res>
 
 /// Create a copy of ExpenseLine
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? no = null,Object? description = freezed,Object? qty = freezed,Object? uom = freezed,Object? unitPrice = freezed,Object? unitPriceDisplay = freezed,Object? total = null,Object? notes = freezed,Object? category = freezed,Object? vehiclePlate = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? no = null,Object? description = freezed,Object? qty = freezed,Object? uom = freezed,Object? unitPrice = freezed,Object? unitPriceDisplay = freezed,Object? total = null,Object? notes = freezed,Object? category = freezed,Object? vehiclePlate = freezed,Object? vehicleId = freezed,}) {
   return _then(_ExpenseLine(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,no: null == no ? _self.no : no // ignore: cast_nullable_to_non_nullable
@@ -893,7 +895,8 @@ as int?,total: null == total ? _self.total : total // ignore: cast_nullable_to_n
 as int,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
 as String?,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
 as RefItem?,vehiclePlate: freezed == vehiclePlate ? _self.vehiclePlate : vehiclePlate // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,vehicleId: freezed == vehicleId ? _self.vehicleId : vehicleId // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -2362,9 +2365,282 @@ as int?,
 }
 
 /// @nodoc
+mixin _$SkippedPosition {
+
+ SignPosition get position; int get level; String? get role; String? get reason;
+/// Create a copy of SkippedPosition
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SkippedPositionCopyWith<SkippedPosition> get copyWith => _$SkippedPositionCopyWithImpl<SkippedPosition>(this as SkippedPosition, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as SkippedPosition;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkippedPosition&&(identical(other.position, _this.position) || other.position == _this.position)&&(identical(other.level, _this.level) || other.level == _this.level)&&(identical(other.role, _this.role) || other.role == _this.role)&&(identical(other.reason, _this.reason) || other.reason == _this.reason));
+}
+
+
+@override
+int get hashCode {
+  final _this = this as SkippedPosition;
+  return Object.hash(runtimeType,_this.position,_this.level,_this.role,_this.reason);
+}
+
+@override
+String toString() {
+  final _this = this as SkippedPosition;
+  return 'SkippedPosition(position: ${_this.position}, level: ${_this.level}, role: ${_this.role}, reason: ${_this.reason})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SkippedPositionCopyWith<$Res>  {
+  factory $SkippedPositionCopyWith(SkippedPosition value, $Res Function(SkippedPosition) _then) = _$SkippedPositionCopyWithImpl;
+@useResult
+$Res call({
+ SignPosition position, int level, String? role, String? reason
+});
+
+
+
+
+}
+/// @nodoc
+class _$SkippedPositionCopyWithImpl<$Res>
+    implements $SkippedPositionCopyWith<$Res> {
+  _$SkippedPositionCopyWithImpl(this._self, this._then);
+
+  final SkippedPosition _self;
+  final $Res Function(SkippedPosition) _then;
+
+/// Create a copy of SkippedPosition
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? position = null,Object? level = null,Object? role = freezed,Object? reason = freezed,}) {
+  return _then(SkippedPosition(
+position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as SignPosition,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
+as int,role: freezed == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [SkippedPosition].
+extension SkippedPositionPatterns on SkippedPosition {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SkippedPosition value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _SkippedPosition() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SkippedPosition value)  $default,){
+final _that = this;
+switch (_that) {
+case _SkippedPosition():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SkippedPosition value)?  $default,){
+final _that = this;
+switch (_that) {
+case _SkippedPosition() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( SignPosition position,  int level,  String? role,  String? reason)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _SkippedPosition() when $default != null:
+return $default(_that.position,_that.level,_that.role,_that.reason);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( SignPosition position,  int level,  String? role,  String? reason)  $default,) {final _that = this;
+switch (_that) {
+case _SkippedPosition():
+return $default(_that.position,_that.level,_that.role,_that.reason);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( SignPosition position,  int level,  String? role,  String? reason)?  $default,) {final _that = this;
+switch (_that) {
+case _SkippedPosition() when $default != null:
+return $default(_that.position,_that.level,_that.role,_that.reason);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _SkippedPosition implements SkippedPosition {
+  const _SkippedPosition({required this.position, required this.level, this.role, this.reason});
+  
+
+@override final  SignPosition position;
+@override final  int level;
+@override final  String? role;
+@override final  String? reason;
+
+/// Create a copy of SkippedPosition
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SkippedPositionCopyWith<_SkippedPosition> get copyWith => __$SkippedPositionCopyWithImpl<_SkippedPosition>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkippedPosition&&(identical(other.position, position) || other.position == position)&&(identical(other.level, level) || other.level == level)&&(identical(other.role, role) || other.role == role)&&(identical(other.reason, reason) || other.reason == reason));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,position,level,role,reason);
+}
+
+@override
+String toString() {
+    return 'SkippedPosition(position: $position, level: $level, role: $role, reason: $reason)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SkippedPositionCopyWith<$Res> implements $SkippedPositionCopyWith<$Res> {
+  factory _$SkippedPositionCopyWith(_SkippedPosition value, $Res Function(_SkippedPosition) _then) = __$SkippedPositionCopyWithImpl;
+@override @useResult
+$Res call({
+ SignPosition position, int level, String? role, String? reason
+});
+
+
+
+
+}
+/// @nodoc
+class __$SkippedPositionCopyWithImpl<$Res>
+    implements _$SkippedPositionCopyWith<$Res> {
+  __$SkippedPositionCopyWithImpl(this._self, this._then);
+
+  final _SkippedPosition _self;
+  final $Res Function(_SkippedPosition) _then;
+
+/// Create a copy of SkippedPosition
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? position = null,Object? level = null,Object? role = freezed,Object? reason = freezed,}) {
+  return _then(_SkippedPosition(
+position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as SignPosition,level: null == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
+as int,role: freezed == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$ApprovalRuleInfo {
 
- String get name; String get acknowledge; String? get acknowledgeDelegatedTo; List<RuleStep> get steps;
+ String get name; String get acknowledge; String? get acknowledgeDelegatedTo; String? get acknowledgeBy; String? get acknowledgeRole; List<String> get decisionRoles; List<SkippedPosition> get skipped; List<RuleStep> get steps;
 /// Create a copy of ApprovalRuleInfo
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2376,20 +2652,20 @@ $ApprovalRuleInfoCopyWith<ApprovalRuleInfo> get copyWith => _$ApprovalRuleInfoCo
 @override
 bool operator ==(Object other) {
   final _this = this as ApprovalRuleInfo;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApprovalRuleInfo&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.acknowledge, _this.acknowledge) || other.acknowledge == _this.acknowledge)&&(identical(other.acknowledgeDelegatedTo, _this.acknowledgeDelegatedTo) || other.acknowledgeDelegatedTo == _this.acknowledgeDelegatedTo)&&const DeepCollectionEquality().equals(other.steps, _this.steps));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApprovalRuleInfo&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.acknowledge, _this.acknowledge) || other.acknowledge == _this.acknowledge)&&(identical(other.acknowledgeDelegatedTo, _this.acknowledgeDelegatedTo) || other.acknowledgeDelegatedTo == _this.acknowledgeDelegatedTo)&&(identical(other.acknowledgeBy, _this.acknowledgeBy) || other.acknowledgeBy == _this.acknowledgeBy)&&(identical(other.acknowledgeRole, _this.acknowledgeRole) || other.acknowledgeRole == _this.acknowledgeRole)&&const DeepCollectionEquality().equals(other.decisionRoles, _this.decisionRoles)&&const DeepCollectionEquality().equals(other.skipped, _this.skipped)&&const DeepCollectionEquality().equals(other.steps, _this.steps));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ApprovalRuleInfo;
-  return Object.hash(runtimeType,_this.name,_this.acknowledge,_this.acknowledgeDelegatedTo,const DeepCollectionEquality().hash(_this.steps));
+  return Object.hash(runtimeType,_this.name,_this.acknowledge,_this.acknowledgeDelegatedTo,_this.acknowledgeBy,_this.acknowledgeRole,const DeepCollectionEquality().hash(_this.decisionRoles),const DeepCollectionEquality().hash(_this.skipped),const DeepCollectionEquality().hash(_this.steps));
 }
 
 @override
 String toString() {
   final _this = this as ApprovalRuleInfo;
-  return 'ApprovalRuleInfo(name: ${_this.name}, acknowledge: ${_this.acknowledge}, acknowledgeDelegatedTo: ${_this.acknowledgeDelegatedTo}, steps: ${_this.steps})';
+  return 'ApprovalRuleInfo(name: ${_this.name}, acknowledge: ${_this.acknowledge}, acknowledgeDelegatedTo: ${_this.acknowledgeDelegatedTo}, acknowledgeBy: ${_this.acknowledgeBy}, acknowledgeRole: ${_this.acknowledgeRole}, decisionRoles: ${_this.decisionRoles}, skipped: ${_this.skipped}, steps: ${_this.steps})';
 }
 
 
@@ -2400,7 +2676,7 @@ abstract mixin class $ApprovalRuleInfoCopyWith<$Res>  {
   factory $ApprovalRuleInfoCopyWith(ApprovalRuleInfo value, $Res Function(ApprovalRuleInfo) _then) = _$ApprovalRuleInfoCopyWithImpl;
 @useResult
 $Res call({
- String name, String acknowledge, String? acknowledgeDelegatedTo, List<RuleStep> steps
+ String name, String acknowledge, String? acknowledgeDelegatedTo, String? acknowledgeBy, String? acknowledgeRole, List<String> decisionRoles, List<SkippedPosition> skipped, List<RuleStep> steps
 });
 
 
@@ -2417,12 +2693,16 @@ class _$ApprovalRuleInfoCopyWithImpl<$Res>
 
 /// Create a copy of ApprovalRuleInfo
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? acknowledge = null,Object? acknowledgeDelegatedTo = freezed,Object? steps = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? acknowledge = null,Object? acknowledgeDelegatedTo = freezed,Object? acknowledgeBy = freezed,Object? acknowledgeRole = freezed,Object? decisionRoles = null,Object? skipped = null,Object? steps = null,}) {
   return _then(ApprovalRuleInfo(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,acknowledge: null == acknowledge ? _self.acknowledge : acknowledge // ignore: cast_nullable_to_non_nullable
 as String,acknowledgeDelegatedTo: freezed == acknowledgeDelegatedTo ? _self.acknowledgeDelegatedTo : acknowledgeDelegatedTo // ignore: cast_nullable_to_non_nullable
-as String?,steps: null == steps ? _self.steps : steps // ignore: cast_nullable_to_non_nullable
+as String?,acknowledgeBy: freezed == acknowledgeBy ? _self.acknowledgeBy : acknowledgeBy // ignore: cast_nullable_to_non_nullable
+as String?,acknowledgeRole: freezed == acknowledgeRole ? _self.acknowledgeRole : acknowledgeRole // ignore: cast_nullable_to_non_nullable
+as String?,decisionRoles: null == decisionRoles ? _self.decisionRoles : decisionRoles // ignore: cast_nullable_to_non_nullable
+as List<String>,skipped: null == skipped ? _self.skipped : skipped // ignore: cast_nullable_to_non_nullable
+as List<SkippedPosition>,steps: null == steps ? _self.steps : steps // ignore: cast_nullable_to_non_nullable
 as List<RuleStep>,
   ));
 }
@@ -2508,10 +2788,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String acknowledge,  String? acknowledgeDelegatedTo,  List<RuleStep> steps)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String acknowledge,  String? acknowledgeDelegatedTo,  String? acknowledgeBy,  String? acknowledgeRole,  List<String> decisionRoles,  List<SkippedPosition> skipped,  List<RuleStep> steps)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ApprovalRuleInfo() when $default != null:
-return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.steps);case _:
+return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.acknowledgeBy,_that.acknowledgeRole,_that.decisionRoles,_that.skipped,_that.steps);case _:
   return orElse();
 
 }
@@ -2529,10 +2809,10 @@ return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String acknowledge,  String? acknowledgeDelegatedTo,  List<RuleStep> steps)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String acknowledge,  String? acknowledgeDelegatedTo,  String? acknowledgeBy,  String? acknowledgeRole,  List<String> decisionRoles,  List<SkippedPosition> skipped,  List<RuleStep> steps)  $default,) {final _that = this;
 switch (_that) {
 case _ApprovalRuleInfo():
-return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.steps);case _:
+return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.acknowledgeBy,_that.acknowledgeRole,_that.decisionRoles,_that.skipped,_that.steps);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -2549,10 +2829,10 @@ return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String acknowledge,  String? acknowledgeDelegatedTo,  List<RuleStep> steps)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String acknowledge,  String? acknowledgeDelegatedTo,  String? acknowledgeBy,  String? acknowledgeRole,  List<String> decisionRoles,  List<SkippedPosition> skipped,  List<RuleStep> steps)?  $default,) {final _that = this;
 switch (_that) {
 case _ApprovalRuleInfo() when $default != null:
-return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.steps);case _:
+return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.acknowledgeBy,_that.acknowledgeRole,_that.decisionRoles,_that.skipped,_that.steps);case _:
   return null;
 
 }
@@ -2563,13 +2843,29 @@ return $default(_that.name,_that.acknowledge,_that.acknowledgeDelegatedTo,_that.
 /// @nodoc
 
 
-class _ApprovalRuleInfo implements ApprovalRuleInfo {
-  const _ApprovalRuleInfo({required this.name, required this.acknowledge, this.acknowledgeDelegatedTo,  List<RuleStep> steps = const []}): _steps = steps;
+class _ApprovalRuleInfo extends ApprovalRuleInfo {
+  const _ApprovalRuleInfo({required this.name, required this.acknowledge, this.acknowledgeDelegatedTo, this.acknowledgeBy, this.acknowledgeRole,  List<String> decisionRoles = const [],  List<SkippedPosition> skipped = const [],  List<RuleStep> steps = const []}): _decisionRoles = decisionRoles,_skipped = skipped,_steps = steps,super._();
   
 
 @override final  String name;
 @override final  String acknowledge;
 @override final  String? acknowledgeDelegatedTo;
+@override final  String? acknowledgeBy;
+@override final  String? acknowledgeRole;
+ final  List<String> _decisionRoles;
+@override@JsonKey() List<String> get decisionRoles {
+  if (_decisionRoles is EqualUnmodifiableListView) return _decisionRoles;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_decisionRoles);
+}
+
+ final  List<SkippedPosition> _skipped;
+@override@JsonKey() List<SkippedPosition> get skipped {
+  if (_skipped is EqualUnmodifiableListView) return _skipped;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_skipped);
+}
+
  final  List<RuleStep> _steps;
 @override@JsonKey() List<RuleStep> get steps {
   if (_steps is EqualUnmodifiableListView) return _steps;
@@ -2588,18 +2884,18 @@ _$ApprovalRuleInfoCopyWith<_ApprovalRuleInfo> get copyWith => __$ApprovalRuleInf
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApprovalRuleInfo&&(identical(other.name, name) || other.name == name)&&(identical(other.acknowledge, acknowledge) || other.acknowledge == acknowledge)&&(identical(other.acknowledgeDelegatedTo, acknowledgeDelegatedTo) || other.acknowledgeDelegatedTo == acknowledgeDelegatedTo)&&const DeepCollectionEquality().equals(other.steps, _steps));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApprovalRuleInfo&&(identical(other.name, name) || other.name == name)&&(identical(other.acknowledge, acknowledge) || other.acknowledge == acknowledge)&&(identical(other.acknowledgeDelegatedTo, acknowledgeDelegatedTo) || other.acknowledgeDelegatedTo == acknowledgeDelegatedTo)&&(identical(other.acknowledgeBy, acknowledgeBy) || other.acknowledgeBy == acknowledgeBy)&&(identical(other.acknowledgeRole, acknowledgeRole) || other.acknowledgeRole == acknowledgeRole)&&const DeepCollectionEquality().equals(other.decisionRoles, _decisionRoles)&&const DeepCollectionEquality().equals(other.skipped, _skipped)&&const DeepCollectionEquality().equals(other.steps, _steps));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,name,acknowledge,acknowledgeDelegatedTo,const DeepCollectionEquality().hash(_steps));
+    return Object.hash(runtimeType,name,acknowledge,acknowledgeDelegatedTo,acknowledgeBy,acknowledgeRole,const DeepCollectionEquality().hash(_decisionRoles),const DeepCollectionEquality().hash(_skipped),const DeepCollectionEquality().hash(_steps));
 }
 
 @override
 String toString() {
-    return 'ApprovalRuleInfo(name: $name, acknowledge: $acknowledge, acknowledgeDelegatedTo: $acknowledgeDelegatedTo, steps: $steps)';
+    return 'ApprovalRuleInfo(name: $name, acknowledge: $acknowledge, acknowledgeDelegatedTo: $acknowledgeDelegatedTo, acknowledgeBy: $acknowledgeBy, acknowledgeRole: $acknowledgeRole, decisionRoles: $decisionRoles, skipped: $skipped, steps: $steps)';
 }
 
 
@@ -2610,7 +2906,7 @@ abstract mixin class _$ApprovalRuleInfoCopyWith<$Res> implements $ApprovalRuleIn
   factory _$ApprovalRuleInfoCopyWith(_ApprovalRuleInfo value, $Res Function(_ApprovalRuleInfo) _then) = __$ApprovalRuleInfoCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String acknowledge, String? acknowledgeDelegatedTo, List<RuleStep> steps
+ String name, String acknowledge, String? acknowledgeDelegatedTo, String? acknowledgeBy, String? acknowledgeRole, List<String> decisionRoles, List<SkippedPosition> skipped, List<RuleStep> steps
 });
 
 
@@ -2627,12 +2923,16 @@ class __$ApprovalRuleInfoCopyWithImpl<$Res>
 
 /// Create a copy of ApprovalRuleInfo
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? acknowledge = null,Object? acknowledgeDelegatedTo = freezed,Object? steps = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? acknowledge = null,Object? acknowledgeDelegatedTo = freezed,Object? acknowledgeBy = freezed,Object? acknowledgeRole = freezed,Object? decisionRoles = null,Object? skipped = null,Object? steps = null,}) {
   return _then(_ApprovalRuleInfo(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,acknowledge: null == acknowledge ? _self.acknowledge : acknowledge // ignore: cast_nullable_to_non_nullable
 as String,acknowledgeDelegatedTo: freezed == acknowledgeDelegatedTo ? _self.acknowledgeDelegatedTo : acknowledgeDelegatedTo // ignore: cast_nullable_to_non_nullable
-as String?,steps: null == steps ? _self._steps : steps // ignore: cast_nullable_to_non_nullable
+as String?,acknowledgeBy: freezed == acknowledgeBy ? _self.acknowledgeBy : acknowledgeBy // ignore: cast_nullable_to_non_nullable
+as String?,acknowledgeRole: freezed == acknowledgeRole ? _self.acknowledgeRole : acknowledgeRole // ignore: cast_nullable_to_non_nullable
+as String?,decisionRoles: null == decisionRoles ? _self._decisionRoles : decisionRoles // ignore: cast_nullable_to_non_nullable
+as List<String>,skipped: null == skipped ? _self._skipped : skipped // ignore: cast_nullable_to_non_nullable
+as List<SkippedPosition>,steps: null == steps ? _self._steps : steps // ignore: cast_nullable_to_non_nullable
 as List<RuleStep>,
   ));
 }
@@ -3195,7 +3495,7 @@ as double?,
 /// @nodoc
 mixin _$ExpenseDetail {
 
- int get id; String? get docNo; String? get clientUuid; RequestType get type; String get typeLabel; RequestStatus get status; String get statusLabel; String get title; int get grandTotal; int? get approvedAmount; String? get requestDate; String? get neededDate; String? get notes; RefItem? get project; RefItem? get costCenter; List<RefItem> get requesters; String? get createdByName; String? get bankName; String? get bankAccountNo; String? get bankAccountHolder; List<ExpenseLine> get lines; List<ReceiptInfo> get receipts; List<ApprovalEntry> get approvals; ApprovalRuleInfo? get approvalRule; int get approvalCycle; int? get currentLevel; List<FlagInfo> get flags; BudgetImpact get budget; List<TransferInfo> get transfers; int get transferredTotal; SettlementInfo? get settlement; Set<String> get allowedActions; String? get rejectReason; String? get cancelReason; String? get submittedAt; String? get updatedAt;
+ int get id; String? get docNo; String? get clientUuid; RequestType get type; String get typeLabel; RequestStatus get status; String get statusLabel; String get title; int get grandTotal; int? get approvedAmount; String? get requestDate; String? get neededDate; String? get notes; RefItem? get project; RefItem? get costCenter; List<RefItem> get requesters; String? get createdByName; String? get bankName; String? get bankAccountNo; String? get bankAccountHolder; List<ExpenseLine> get lines; List<ReceiptInfo> get receipts; List<ApprovalEntry> get approvals; ApprovalRuleInfo? get approvalRule; int get approvalCycle; int? get currentLevel; List<FlagInfo> get flags; BudgetImpact get budget; List<TransferInfo> get transfers; int get transferredTotal; SettlementInfo? get settlement; Set<String> get allowedActions; String? get rejectReason; String? get cancelReason; String? get submittedAt; String? get updatedAt; int? get rev; int? get resubmitOfId; int? get createdById; String? get periodFrom; String? get periodTo; int? get bankAccountId;
 /// Create a copy of ExpenseDetail
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3207,20 +3507,20 @@ $ExpenseDetailCopyWith<ExpenseDetail> get copyWith => _$ExpenseDetailCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as ExpenseDetail;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpenseDetail&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.docNo, _this.docNo) || other.docNo == _this.docNo)&&(identical(other.clientUuid, _this.clientUuid) || other.clientUuid == _this.clientUuid)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.typeLabel, _this.typeLabel) || other.typeLabel == _this.typeLabel)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.statusLabel, _this.statusLabel) || other.statusLabel == _this.statusLabel)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.grandTotal, _this.grandTotal) || other.grandTotal == _this.grandTotal)&&(identical(other.approvedAmount, _this.approvedAmount) || other.approvedAmount == _this.approvedAmount)&&(identical(other.requestDate, _this.requestDate) || other.requestDate == _this.requestDate)&&(identical(other.neededDate, _this.neededDate) || other.neededDate == _this.neededDate)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&(identical(other.project, _this.project) || other.project == _this.project)&&(identical(other.costCenter, _this.costCenter) || other.costCenter == _this.costCenter)&&const DeepCollectionEquality().equals(other.requesters, _this.requesters)&&(identical(other.createdByName, _this.createdByName) || other.createdByName == _this.createdByName)&&(identical(other.bankName, _this.bankName) || other.bankName == _this.bankName)&&(identical(other.bankAccountNo, _this.bankAccountNo) || other.bankAccountNo == _this.bankAccountNo)&&(identical(other.bankAccountHolder, _this.bankAccountHolder) || other.bankAccountHolder == _this.bankAccountHolder)&&const DeepCollectionEquality().equals(other.lines, _this.lines)&&const DeepCollectionEquality().equals(other.receipts, _this.receipts)&&const DeepCollectionEquality().equals(other.approvals, _this.approvals)&&(identical(other.approvalRule, _this.approvalRule) || other.approvalRule == _this.approvalRule)&&(identical(other.approvalCycle, _this.approvalCycle) || other.approvalCycle == _this.approvalCycle)&&(identical(other.currentLevel, _this.currentLevel) || other.currentLevel == _this.currentLevel)&&const DeepCollectionEquality().equals(other.flags, _this.flags)&&(identical(other.budget, _this.budget) || other.budget == _this.budget)&&const DeepCollectionEquality().equals(other.transfers, _this.transfers)&&(identical(other.transferredTotal, _this.transferredTotal) || other.transferredTotal == _this.transferredTotal)&&(identical(other.settlement, _this.settlement) || other.settlement == _this.settlement)&&const DeepCollectionEquality().equals(other.allowedActions, _this.allowedActions)&&(identical(other.rejectReason, _this.rejectReason) || other.rejectReason == _this.rejectReason)&&(identical(other.cancelReason, _this.cancelReason) || other.cancelReason == _this.cancelReason)&&(identical(other.submittedAt, _this.submittedAt) || other.submittedAt == _this.submittedAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ExpenseDetail&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.docNo, _this.docNo) || other.docNo == _this.docNo)&&(identical(other.clientUuid, _this.clientUuid) || other.clientUuid == _this.clientUuid)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.typeLabel, _this.typeLabel) || other.typeLabel == _this.typeLabel)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.statusLabel, _this.statusLabel) || other.statusLabel == _this.statusLabel)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.grandTotal, _this.grandTotal) || other.grandTotal == _this.grandTotal)&&(identical(other.approvedAmount, _this.approvedAmount) || other.approvedAmount == _this.approvedAmount)&&(identical(other.requestDate, _this.requestDate) || other.requestDate == _this.requestDate)&&(identical(other.neededDate, _this.neededDate) || other.neededDate == _this.neededDate)&&(identical(other.notes, _this.notes) || other.notes == _this.notes)&&(identical(other.project, _this.project) || other.project == _this.project)&&(identical(other.costCenter, _this.costCenter) || other.costCenter == _this.costCenter)&&const DeepCollectionEquality().equals(other.requesters, _this.requesters)&&(identical(other.createdByName, _this.createdByName) || other.createdByName == _this.createdByName)&&(identical(other.bankName, _this.bankName) || other.bankName == _this.bankName)&&(identical(other.bankAccountNo, _this.bankAccountNo) || other.bankAccountNo == _this.bankAccountNo)&&(identical(other.bankAccountHolder, _this.bankAccountHolder) || other.bankAccountHolder == _this.bankAccountHolder)&&const DeepCollectionEquality().equals(other.lines, _this.lines)&&const DeepCollectionEquality().equals(other.receipts, _this.receipts)&&const DeepCollectionEquality().equals(other.approvals, _this.approvals)&&(identical(other.approvalRule, _this.approvalRule) || other.approvalRule == _this.approvalRule)&&(identical(other.approvalCycle, _this.approvalCycle) || other.approvalCycle == _this.approvalCycle)&&(identical(other.currentLevel, _this.currentLevel) || other.currentLevel == _this.currentLevel)&&const DeepCollectionEquality().equals(other.flags, _this.flags)&&(identical(other.budget, _this.budget) || other.budget == _this.budget)&&const DeepCollectionEquality().equals(other.transfers, _this.transfers)&&(identical(other.transferredTotal, _this.transferredTotal) || other.transferredTotal == _this.transferredTotal)&&(identical(other.settlement, _this.settlement) || other.settlement == _this.settlement)&&const DeepCollectionEquality().equals(other.allowedActions, _this.allowedActions)&&(identical(other.rejectReason, _this.rejectReason) || other.rejectReason == _this.rejectReason)&&(identical(other.cancelReason, _this.cancelReason) || other.cancelReason == _this.cancelReason)&&(identical(other.submittedAt, _this.submittedAt) || other.submittedAt == _this.submittedAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.rev, _this.rev) || other.rev == _this.rev)&&(identical(other.resubmitOfId, _this.resubmitOfId) || other.resubmitOfId == _this.resubmitOfId)&&(identical(other.createdById, _this.createdById) || other.createdById == _this.createdById)&&(identical(other.periodFrom, _this.periodFrom) || other.periodFrom == _this.periodFrom)&&(identical(other.periodTo, _this.periodTo) || other.periodTo == _this.periodTo)&&(identical(other.bankAccountId, _this.bankAccountId) || other.bankAccountId == _this.bankAccountId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ExpenseDetail;
-  return Object.hashAll([runtimeType,_this.id,_this.docNo,_this.clientUuid,_this.type,_this.typeLabel,_this.status,_this.statusLabel,_this.title,_this.grandTotal,_this.approvedAmount,_this.requestDate,_this.neededDate,_this.notes,_this.project,_this.costCenter,const DeepCollectionEquality().hash(_this.requesters),_this.createdByName,_this.bankName,_this.bankAccountNo,_this.bankAccountHolder,const DeepCollectionEquality().hash(_this.lines),const DeepCollectionEquality().hash(_this.receipts),const DeepCollectionEquality().hash(_this.approvals),_this.approvalRule,_this.approvalCycle,_this.currentLevel,const DeepCollectionEquality().hash(_this.flags),_this.budget,const DeepCollectionEquality().hash(_this.transfers),_this.transferredTotal,_this.settlement,const DeepCollectionEquality().hash(_this.allowedActions),_this.rejectReason,_this.cancelReason,_this.submittedAt,_this.updatedAt]);
+  return Object.hashAll([runtimeType,_this.id,_this.docNo,_this.clientUuid,_this.type,_this.typeLabel,_this.status,_this.statusLabel,_this.title,_this.grandTotal,_this.approvedAmount,_this.requestDate,_this.neededDate,_this.notes,_this.project,_this.costCenter,const DeepCollectionEquality().hash(_this.requesters),_this.createdByName,_this.bankName,_this.bankAccountNo,_this.bankAccountHolder,const DeepCollectionEquality().hash(_this.lines),const DeepCollectionEquality().hash(_this.receipts),const DeepCollectionEquality().hash(_this.approvals),_this.approvalRule,_this.approvalCycle,_this.currentLevel,const DeepCollectionEquality().hash(_this.flags),_this.budget,const DeepCollectionEquality().hash(_this.transfers),_this.transferredTotal,_this.settlement,const DeepCollectionEquality().hash(_this.allowedActions),_this.rejectReason,_this.cancelReason,_this.submittedAt,_this.updatedAt,_this.rev,_this.resubmitOfId,_this.createdById,_this.periodFrom,_this.periodTo,_this.bankAccountId]);
 }
 
 @override
 String toString() {
   final _this = this as ExpenseDetail;
-  return 'ExpenseDetail(id: ${_this.id}, docNo: ${_this.docNo}, clientUuid: ${_this.clientUuid}, type: ${_this.type}, typeLabel: ${_this.typeLabel}, status: ${_this.status}, statusLabel: ${_this.statusLabel}, title: ${_this.title}, grandTotal: ${_this.grandTotal}, approvedAmount: ${_this.approvedAmount}, requestDate: ${_this.requestDate}, neededDate: ${_this.neededDate}, notes: ${_this.notes}, project: ${_this.project}, costCenter: ${_this.costCenter}, requesters: ${_this.requesters}, createdByName: ${_this.createdByName}, bankName: ${_this.bankName}, bankAccountNo: ${_this.bankAccountNo}, bankAccountHolder: ${_this.bankAccountHolder}, lines: ${_this.lines}, receipts: ${_this.receipts}, approvals: ${_this.approvals}, approvalRule: ${_this.approvalRule}, approvalCycle: ${_this.approvalCycle}, currentLevel: ${_this.currentLevel}, flags: ${_this.flags}, budget: ${_this.budget}, transfers: ${_this.transfers}, transferredTotal: ${_this.transferredTotal}, settlement: ${_this.settlement}, allowedActions: ${_this.allowedActions}, rejectReason: ${_this.rejectReason}, cancelReason: ${_this.cancelReason}, submittedAt: ${_this.submittedAt}, updatedAt: ${_this.updatedAt})';
+  return 'ExpenseDetail(id: ${_this.id}, docNo: ${_this.docNo}, clientUuid: ${_this.clientUuid}, type: ${_this.type}, typeLabel: ${_this.typeLabel}, status: ${_this.status}, statusLabel: ${_this.statusLabel}, title: ${_this.title}, grandTotal: ${_this.grandTotal}, approvedAmount: ${_this.approvedAmount}, requestDate: ${_this.requestDate}, neededDate: ${_this.neededDate}, notes: ${_this.notes}, project: ${_this.project}, costCenter: ${_this.costCenter}, requesters: ${_this.requesters}, createdByName: ${_this.createdByName}, bankName: ${_this.bankName}, bankAccountNo: ${_this.bankAccountNo}, bankAccountHolder: ${_this.bankAccountHolder}, lines: ${_this.lines}, receipts: ${_this.receipts}, approvals: ${_this.approvals}, approvalRule: ${_this.approvalRule}, approvalCycle: ${_this.approvalCycle}, currentLevel: ${_this.currentLevel}, flags: ${_this.flags}, budget: ${_this.budget}, transfers: ${_this.transfers}, transferredTotal: ${_this.transferredTotal}, settlement: ${_this.settlement}, allowedActions: ${_this.allowedActions}, rejectReason: ${_this.rejectReason}, cancelReason: ${_this.cancelReason}, submittedAt: ${_this.submittedAt}, updatedAt: ${_this.updatedAt}, rev: ${_this.rev}, resubmitOfId: ${_this.resubmitOfId}, createdById: ${_this.createdById}, periodFrom: ${_this.periodFrom}, periodTo: ${_this.periodTo}, bankAccountId: ${_this.bankAccountId})';
 }
 
 
@@ -3231,7 +3531,7 @@ abstract mixin class $ExpenseDetailCopyWith<$Res>  {
   factory $ExpenseDetailCopyWith(ExpenseDetail value, $Res Function(ExpenseDetail) _then) = _$ExpenseDetailCopyWithImpl;
 @useResult
 $Res call({
- int id, String? docNo, String? clientUuid, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, int grandTotal, int? approvedAmount, String? requestDate, String? neededDate, String? notes, RefItem? project, RefItem? costCenter, List<RefItem> requesters, String? createdByName, String? bankName, String? bankAccountNo, String? bankAccountHolder, List<ExpenseLine> lines, List<ReceiptInfo> receipts, List<ApprovalEntry> approvals, ApprovalRuleInfo? approvalRule, int approvalCycle, int? currentLevel, List<FlagInfo> flags, BudgetImpact budget, List<TransferInfo> transfers, int transferredTotal, SettlementInfo? settlement, Set<String> allowedActions, String? rejectReason, String? cancelReason, String? submittedAt, String? updatedAt
+ int id, String? docNo, String? clientUuid, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, int grandTotal, int? approvedAmount, String? requestDate, String? neededDate, String? notes, RefItem? project, RefItem? costCenter, List<RefItem> requesters, String? createdByName, String? bankName, String? bankAccountNo, String? bankAccountHolder, List<ExpenseLine> lines, List<ReceiptInfo> receipts, List<ApprovalEntry> approvals, ApprovalRuleInfo? approvalRule, int approvalCycle, int? currentLevel, List<FlagInfo> flags, BudgetImpact budget, List<TransferInfo> transfers, int transferredTotal, SettlementInfo? settlement, Set<String> allowedActions, String? rejectReason, String? cancelReason, String? submittedAt, String? updatedAt, int? rev, int? resubmitOfId, int? createdById, String? periodFrom, String? periodTo, int? bankAccountId
 });
 
 
@@ -3248,7 +3548,7 @@ class _$ExpenseDetailCopyWithImpl<$Res>
 
 /// Create a copy of ExpenseDetail
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? docNo = freezed,Object? clientUuid = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? grandTotal = null,Object? approvedAmount = freezed,Object? requestDate = freezed,Object? neededDate = freezed,Object? notes = freezed,Object? project = freezed,Object? costCenter = freezed,Object? requesters = null,Object? createdByName = freezed,Object? bankName = freezed,Object? bankAccountNo = freezed,Object? bankAccountHolder = freezed,Object? lines = null,Object? receipts = null,Object? approvals = null,Object? approvalRule = freezed,Object? approvalCycle = null,Object? currentLevel = freezed,Object? flags = null,Object? budget = null,Object? transfers = null,Object? transferredTotal = null,Object? settlement = freezed,Object? allowedActions = null,Object? rejectReason = freezed,Object? cancelReason = freezed,Object? submittedAt = freezed,Object? updatedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? docNo = freezed,Object? clientUuid = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? grandTotal = null,Object? approvedAmount = freezed,Object? requestDate = freezed,Object? neededDate = freezed,Object? notes = freezed,Object? project = freezed,Object? costCenter = freezed,Object? requesters = null,Object? createdByName = freezed,Object? bankName = freezed,Object? bankAccountNo = freezed,Object? bankAccountHolder = freezed,Object? lines = null,Object? receipts = null,Object? approvals = null,Object? approvalRule = freezed,Object? approvalCycle = null,Object? currentLevel = freezed,Object? flags = null,Object? budget = null,Object? transfers = null,Object? transferredTotal = null,Object? settlement = freezed,Object? allowedActions = null,Object? rejectReason = freezed,Object? cancelReason = freezed,Object? submittedAt = freezed,Object? updatedAt = freezed,Object? rev = freezed,Object? resubmitOfId = freezed,Object? createdById = freezed,Object? periodFrom = freezed,Object? periodTo = freezed,Object? bankAccountId = freezed,}) {
   return _then(ExpenseDetail(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,docNo: freezed == docNo ? _self.docNo : docNo // ignore: cast_nullable_to_non_nullable
@@ -3286,7 +3586,13 @@ as Set<String>,rejectReason: freezed == rejectReason ? _self.rejectReason : reje
 as String?,cancelReason: freezed == cancelReason ? _self.cancelReason : cancelReason // ignore: cast_nullable_to_non_nullable
 as String?,submittedAt: freezed == submittedAt ? _self.submittedAt : submittedAt // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,rev: freezed == rev ? _self.rev : rev // ignore: cast_nullable_to_non_nullable
+as int?,resubmitOfId: freezed == resubmitOfId ? _self.resubmitOfId : resubmitOfId // ignore: cast_nullable_to_non_nullable
+as int?,createdById: freezed == createdById ? _self.createdById : createdById // ignore: cast_nullable_to_non_nullable
+as int?,periodFrom: freezed == periodFrom ? _self.periodFrom : periodFrom // ignore: cast_nullable_to_non_nullable
+as String?,periodTo: freezed == periodTo ? _self.periodTo : periodTo // ignore: cast_nullable_to_non_nullable
+as String?,bankAccountId: freezed == bankAccountId ? _self.bankAccountId : bankAccountId // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 /// Create a copy of ExpenseDetail
@@ -3428,10 +3734,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String? docNo,  String? clientUuid,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  int grandTotal,  int? approvedAmount,  String? requestDate,  String? neededDate,  String? notes,  RefItem? project,  RefItem? costCenter,  List<RefItem> requesters,  String? createdByName,  String? bankName,  String? bankAccountNo,  String? bankAccountHolder,  List<ExpenseLine> lines,  List<ReceiptInfo> receipts,  List<ApprovalEntry> approvals,  ApprovalRuleInfo? approvalRule,  int approvalCycle,  int? currentLevel,  List<FlagInfo> flags,  BudgetImpact budget,  List<TransferInfo> transfers,  int transferredTotal,  SettlementInfo? settlement,  Set<String> allowedActions,  String? rejectReason,  String? cancelReason,  String? submittedAt,  String? updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String? docNo,  String? clientUuid,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  int grandTotal,  int? approvedAmount,  String? requestDate,  String? neededDate,  String? notes,  RefItem? project,  RefItem? costCenter,  List<RefItem> requesters,  String? createdByName,  String? bankName,  String? bankAccountNo,  String? bankAccountHolder,  List<ExpenseLine> lines,  List<ReceiptInfo> receipts,  List<ApprovalEntry> approvals,  ApprovalRuleInfo? approvalRule,  int approvalCycle,  int? currentLevel,  List<FlagInfo> flags,  BudgetImpact budget,  List<TransferInfo> transfers,  int transferredTotal,  SettlementInfo? settlement,  Set<String> allowedActions,  String? rejectReason,  String? cancelReason,  String? submittedAt,  String? updatedAt,  int? rev,  int? resubmitOfId,  int? createdById,  String? periodFrom,  String? periodTo,  int? bankAccountId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ExpenseDetail() when $default != null:
-return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.grandTotal,_that.approvedAmount,_that.requestDate,_that.neededDate,_that.notes,_that.project,_that.costCenter,_that.requesters,_that.createdByName,_that.bankName,_that.bankAccountNo,_that.bankAccountHolder,_that.lines,_that.receipts,_that.approvals,_that.approvalRule,_that.approvalCycle,_that.currentLevel,_that.flags,_that.budget,_that.transfers,_that.transferredTotal,_that.settlement,_that.allowedActions,_that.rejectReason,_that.cancelReason,_that.submittedAt,_that.updatedAt);case _:
+return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.grandTotal,_that.approvedAmount,_that.requestDate,_that.neededDate,_that.notes,_that.project,_that.costCenter,_that.requesters,_that.createdByName,_that.bankName,_that.bankAccountNo,_that.bankAccountHolder,_that.lines,_that.receipts,_that.approvals,_that.approvalRule,_that.approvalCycle,_that.currentLevel,_that.flags,_that.budget,_that.transfers,_that.transferredTotal,_that.settlement,_that.allowedActions,_that.rejectReason,_that.cancelReason,_that.submittedAt,_that.updatedAt,_that.rev,_that.resubmitOfId,_that.createdById,_that.periodFrom,_that.periodTo,_that.bankAccountId);case _:
   return orElse();
 
 }
@@ -3449,10 +3755,10 @@ return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String? docNo,  String? clientUuid,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  int grandTotal,  int? approvedAmount,  String? requestDate,  String? neededDate,  String? notes,  RefItem? project,  RefItem? costCenter,  List<RefItem> requesters,  String? createdByName,  String? bankName,  String? bankAccountNo,  String? bankAccountHolder,  List<ExpenseLine> lines,  List<ReceiptInfo> receipts,  List<ApprovalEntry> approvals,  ApprovalRuleInfo? approvalRule,  int approvalCycle,  int? currentLevel,  List<FlagInfo> flags,  BudgetImpact budget,  List<TransferInfo> transfers,  int transferredTotal,  SettlementInfo? settlement,  Set<String> allowedActions,  String? rejectReason,  String? cancelReason,  String? submittedAt,  String? updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String? docNo,  String? clientUuid,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  int grandTotal,  int? approvedAmount,  String? requestDate,  String? neededDate,  String? notes,  RefItem? project,  RefItem? costCenter,  List<RefItem> requesters,  String? createdByName,  String? bankName,  String? bankAccountNo,  String? bankAccountHolder,  List<ExpenseLine> lines,  List<ReceiptInfo> receipts,  List<ApprovalEntry> approvals,  ApprovalRuleInfo? approvalRule,  int approvalCycle,  int? currentLevel,  List<FlagInfo> flags,  BudgetImpact budget,  List<TransferInfo> transfers,  int transferredTotal,  SettlementInfo? settlement,  Set<String> allowedActions,  String? rejectReason,  String? cancelReason,  String? submittedAt,  String? updatedAt,  int? rev,  int? resubmitOfId,  int? createdById,  String? periodFrom,  String? periodTo,  int? bankAccountId)  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseDetail():
-return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.grandTotal,_that.approvedAmount,_that.requestDate,_that.neededDate,_that.notes,_that.project,_that.costCenter,_that.requesters,_that.createdByName,_that.bankName,_that.bankAccountNo,_that.bankAccountHolder,_that.lines,_that.receipts,_that.approvals,_that.approvalRule,_that.approvalCycle,_that.currentLevel,_that.flags,_that.budget,_that.transfers,_that.transferredTotal,_that.settlement,_that.allowedActions,_that.rejectReason,_that.cancelReason,_that.submittedAt,_that.updatedAt);case _:
+return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.grandTotal,_that.approvedAmount,_that.requestDate,_that.neededDate,_that.notes,_that.project,_that.costCenter,_that.requesters,_that.createdByName,_that.bankName,_that.bankAccountNo,_that.bankAccountHolder,_that.lines,_that.receipts,_that.approvals,_that.approvalRule,_that.approvalCycle,_that.currentLevel,_that.flags,_that.budget,_that.transfers,_that.transferredTotal,_that.settlement,_that.allowedActions,_that.rejectReason,_that.cancelReason,_that.submittedAt,_that.updatedAt,_that.rev,_that.resubmitOfId,_that.createdById,_that.periodFrom,_that.periodTo,_that.bankAccountId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3469,10 +3775,10 @@ return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String? docNo,  String? clientUuid,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  int grandTotal,  int? approvedAmount,  String? requestDate,  String? neededDate,  String? notes,  RefItem? project,  RefItem? costCenter,  List<RefItem> requesters,  String? createdByName,  String? bankName,  String? bankAccountNo,  String? bankAccountHolder,  List<ExpenseLine> lines,  List<ReceiptInfo> receipts,  List<ApprovalEntry> approvals,  ApprovalRuleInfo? approvalRule,  int approvalCycle,  int? currentLevel,  List<FlagInfo> flags,  BudgetImpact budget,  List<TransferInfo> transfers,  int transferredTotal,  SettlementInfo? settlement,  Set<String> allowedActions,  String? rejectReason,  String? cancelReason,  String? submittedAt,  String? updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String? docNo,  String? clientUuid,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  int grandTotal,  int? approvedAmount,  String? requestDate,  String? neededDate,  String? notes,  RefItem? project,  RefItem? costCenter,  List<RefItem> requesters,  String? createdByName,  String? bankName,  String? bankAccountNo,  String? bankAccountHolder,  List<ExpenseLine> lines,  List<ReceiptInfo> receipts,  List<ApprovalEntry> approvals,  ApprovalRuleInfo? approvalRule,  int approvalCycle,  int? currentLevel,  List<FlagInfo> flags,  BudgetImpact budget,  List<TransferInfo> transfers,  int transferredTotal,  SettlementInfo? settlement,  Set<String> allowedActions,  String? rejectReason,  String? cancelReason,  String? submittedAt,  String? updatedAt,  int? rev,  int? resubmitOfId,  int? createdById,  String? periodFrom,  String? periodTo,  int? bankAccountId)?  $default,) {final _that = this;
 switch (_that) {
 case _ExpenseDetail() when $default != null:
-return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.grandTotal,_that.approvedAmount,_that.requestDate,_that.neededDate,_that.notes,_that.project,_that.costCenter,_that.requesters,_that.createdByName,_that.bankName,_that.bankAccountNo,_that.bankAccountHolder,_that.lines,_that.receipts,_that.approvals,_that.approvalRule,_that.approvalCycle,_that.currentLevel,_that.flags,_that.budget,_that.transfers,_that.transferredTotal,_that.settlement,_that.allowedActions,_that.rejectReason,_that.cancelReason,_that.submittedAt,_that.updatedAt);case _:
+return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.grandTotal,_that.approvedAmount,_that.requestDate,_that.neededDate,_that.notes,_that.project,_that.costCenter,_that.requesters,_that.createdByName,_that.bankName,_that.bankAccountNo,_that.bankAccountHolder,_that.lines,_that.receipts,_that.approvals,_that.approvalRule,_that.approvalCycle,_that.currentLevel,_that.flags,_that.budget,_that.transfers,_that.transferredTotal,_that.settlement,_that.allowedActions,_that.rejectReason,_that.cancelReason,_that.submittedAt,_that.updatedAt,_that.rev,_that.resubmitOfId,_that.createdById,_that.periodFrom,_that.periodTo,_that.bankAccountId);case _:
   return null;
 
 }
@@ -3484,7 +3790,7 @@ return $default(_that.id,_that.docNo,_that.clientUuid,_that.type,_that.typeLabel
 
 
 class _ExpenseDetail implements ExpenseDetail {
-  const _ExpenseDetail({required this.id, this.docNo, this.clientUuid, required this.type, required this.typeLabel, required this.status, required this.statusLabel, required this.title, required this.grandTotal, this.approvedAmount, this.requestDate, this.neededDate, this.notes, this.project, this.costCenter,  List<RefItem> requesters = const [], this.createdByName, this.bankName, this.bankAccountNo, this.bankAccountHolder,  List<ExpenseLine> lines = const [],  List<ReceiptInfo> receipts = const [],  List<ApprovalEntry> approvals = const [], this.approvalRule, this.approvalCycle = 1, this.currentLevel,  List<FlagInfo> flags = const [], this.budget = const BudgetImpact(basis: 'none'),  List<TransferInfo> transfers = const [], this.transferredTotal = 0, this.settlement,  Set<String> allowedActions = const <String>{}, this.rejectReason, this.cancelReason, this.submittedAt, this.updatedAt}): _requesters = requesters,_lines = lines,_receipts = receipts,_approvals = approvals,_flags = flags,_transfers = transfers,_allowedActions = allowedActions;
+  const _ExpenseDetail({required this.id, this.docNo, this.clientUuid, required this.type, required this.typeLabel, required this.status, required this.statusLabel, required this.title, required this.grandTotal, this.approvedAmount, this.requestDate, this.neededDate, this.notes, this.project, this.costCenter,  List<RefItem> requesters = const [], this.createdByName, this.bankName, this.bankAccountNo, this.bankAccountHolder,  List<ExpenseLine> lines = const [],  List<ReceiptInfo> receipts = const [],  List<ApprovalEntry> approvals = const [], this.approvalRule, this.approvalCycle = 1, this.currentLevel,  List<FlagInfo> flags = const [], this.budget = const BudgetImpact(basis: 'none'),  List<TransferInfo> transfers = const [], this.transferredTotal = 0, this.settlement,  Set<String> allowedActions = const <String>{}, this.rejectReason, this.cancelReason, this.submittedAt, this.updatedAt, this.rev, this.resubmitOfId, this.createdById, this.periodFrom, this.periodTo, this.bankAccountId}): _requesters = requesters,_lines = lines,_receipts = receipts,_approvals = approvals,_flags = flags,_transfers = transfers,_allowedActions = allowedActions;
   
 
 @override final  int id;
@@ -3565,6 +3871,12 @@ class _ExpenseDetail implements ExpenseDetail {
 @override final  String? cancelReason;
 @override final  String? submittedAt;
 @override final  String? updatedAt;
+@override final  int? rev;
+@override final  int? resubmitOfId;
+@override final  int? createdById;
+@override final  String? periodFrom;
+@override final  String? periodTo;
+@override final  int? bankAccountId;
 
 /// Create a copy of ExpenseDetail
 /// with the given fields replaced by the non-null parameter values.
@@ -3576,18 +3888,18 @@ _$ExpenseDetailCopyWith<_ExpenseDetail> get copyWith => __$ExpenseDetailCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpenseDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.docNo, docNo) || other.docNo == docNo)&&(identical(other.clientUuid, clientUuid) || other.clientUuid == clientUuid)&&(identical(other.type, type) || other.type == type)&&(identical(other.typeLabel, typeLabel) || other.typeLabel == typeLabel)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.title, title) || other.title == title)&&(identical(other.grandTotal, grandTotal) || other.grandTotal == grandTotal)&&(identical(other.approvedAmount, approvedAmount) || other.approvedAmount == approvedAmount)&&(identical(other.requestDate, requestDate) || other.requestDate == requestDate)&&(identical(other.neededDate, neededDate) || other.neededDate == neededDate)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.project, project) || other.project == project)&&(identical(other.costCenter, costCenter) || other.costCenter == costCenter)&&const DeepCollectionEquality().equals(other.requesters, _requesters)&&(identical(other.createdByName, createdByName) || other.createdByName == createdByName)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.bankAccountNo, bankAccountNo) || other.bankAccountNo == bankAccountNo)&&(identical(other.bankAccountHolder, bankAccountHolder) || other.bankAccountHolder == bankAccountHolder)&&const DeepCollectionEquality().equals(other.lines, _lines)&&const DeepCollectionEquality().equals(other.receipts, _receipts)&&const DeepCollectionEquality().equals(other.approvals, _approvals)&&(identical(other.approvalRule, approvalRule) || other.approvalRule == approvalRule)&&(identical(other.approvalCycle, approvalCycle) || other.approvalCycle == approvalCycle)&&(identical(other.currentLevel, currentLevel) || other.currentLevel == currentLevel)&&const DeepCollectionEquality().equals(other.flags, _flags)&&(identical(other.budget, budget) || other.budget == budget)&&const DeepCollectionEquality().equals(other.transfers, _transfers)&&(identical(other.transferredTotal, transferredTotal) || other.transferredTotal == transferredTotal)&&(identical(other.settlement, settlement) || other.settlement == settlement)&&const DeepCollectionEquality().equals(other.allowedActions, _allowedActions)&&(identical(other.rejectReason, rejectReason) || other.rejectReason == rejectReason)&&(identical(other.cancelReason, cancelReason) || other.cancelReason == cancelReason)&&(identical(other.submittedAt, submittedAt) || other.submittedAt == submittedAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ExpenseDetail&&(identical(other.id, id) || other.id == id)&&(identical(other.docNo, docNo) || other.docNo == docNo)&&(identical(other.clientUuid, clientUuid) || other.clientUuid == clientUuid)&&(identical(other.type, type) || other.type == type)&&(identical(other.typeLabel, typeLabel) || other.typeLabel == typeLabel)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.title, title) || other.title == title)&&(identical(other.grandTotal, grandTotal) || other.grandTotal == grandTotal)&&(identical(other.approvedAmount, approvedAmount) || other.approvedAmount == approvedAmount)&&(identical(other.requestDate, requestDate) || other.requestDate == requestDate)&&(identical(other.neededDate, neededDate) || other.neededDate == neededDate)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.project, project) || other.project == project)&&(identical(other.costCenter, costCenter) || other.costCenter == costCenter)&&const DeepCollectionEquality().equals(other.requesters, _requesters)&&(identical(other.createdByName, createdByName) || other.createdByName == createdByName)&&(identical(other.bankName, bankName) || other.bankName == bankName)&&(identical(other.bankAccountNo, bankAccountNo) || other.bankAccountNo == bankAccountNo)&&(identical(other.bankAccountHolder, bankAccountHolder) || other.bankAccountHolder == bankAccountHolder)&&const DeepCollectionEquality().equals(other.lines, _lines)&&const DeepCollectionEquality().equals(other.receipts, _receipts)&&const DeepCollectionEquality().equals(other.approvals, _approvals)&&(identical(other.approvalRule, approvalRule) || other.approvalRule == approvalRule)&&(identical(other.approvalCycle, approvalCycle) || other.approvalCycle == approvalCycle)&&(identical(other.currentLevel, currentLevel) || other.currentLevel == currentLevel)&&const DeepCollectionEquality().equals(other.flags, _flags)&&(identical(other.budget, budget) || other.budget == budget)&&const DeepCollectionEquality().equals(other.transfers, _transfers)&&(identical(other.transferredTotal, transferredTotal) || other.transferredTotal == transferredTotal)&&(identical(other.settlement, settlement) || other.settlement == settlement)&&const DeepCollectionEquality().equals(other.allowedActions, _allowedActions)&&(identical(other.rejectReason, rejectReason) || other.rejectReason == rejectReason)&&(identical(other.cancelReason, cancelReason) || other.cancelReason == cancelReason)&&(identical(other.submittedAt, submittedAt) || other.submittedAt == submittedAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.rev, rev) || other.rev == rev)&&(identical(other.resubmitOfId, resubmitOfId) || other.resubmitOfId == resubmitOfId)&&(identical(other.createdById, createdById) || other.createdById == createdById)&&(identical(other.periodFrom, periodFrom) || other.periodFrom == periodFrom)&&(identical(other.periodTo, periodTo) || other.periodTo == periodTo)&&(identical(other.bankAccountId, bankAccountId) || other.bankAccountId == bankAccountId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hashAll([runtimeType,id,docNo,clientUuid,type,typeLabel,status,statusLabel,title,grandTotal,approvedAmount,requestDate,neededDate,notes,project,costCenter,const DeepCollectionEquality().hash(_requesters),createdByName,bankName,bankAccountNo,bankAccountHolder,const DeepCollectionEquality().hash(_lines),const DeepCollectionEquality().hash(_receipts),const DeepCollectionEquality().hash(_approvals),approvalRule,approvalCycle,currentLevel,const DeepCollectionEquality().hash(_flags),budget,const DeepCollectionEquality().hash(_transfers),transferredTotal,settlement,const DeepCollectionEquality().hash(_allowedActions),rejectReason,cancelReason,submittedAt,updatedAt]);
+    return Object.hashAll([runtimeType,id,docNo,clientUuid,type,typeLabel,status,statusLabel,title,grandTotal,approvedAmount,requestDate,neededDate,notes,project,costCenter,const DeepCollectionEquality().hash(_requesters),createdByName,bankName,bankAccountNo,bankAccountHolder,const DeepCollectionEquality().hash(_lines),const DeepCollectionEquality().hash(_receipts),const DeepCollectionEquality().hash(_approvals),approvalRule,approvalCycle,currentLevel,const DeepCollectionEquality().hash(_flags),budget,const DeepCollectionEquality().hash(_transfers),transferredTotal,settlement,const DeepCollectionEquality().hash(_allowedActions),rejectReason,cancelReason,submittedAt,updatedAt,rev,resubmitOfId,createdById,periodFrom,periodTo,bankAccountId]);
 }
 
 @override
 String toString() {
-    return 'ExpenseDetail(id: $id, docNo: $docNo, clientUuid: $clientUuid, type: $type, typeLabel: $typeLabel, status: $status, statusLabel: $statusLabel, title: $title, grandTotal: $grandTotal, approvedAmount: $approvedAmount, requestDate: $requestDate, neededDate: $neededDate, notes: $notes, project: $project, costCenter: $costCenter, requesters: $requesters, createdByName: $createdByName, bankName: $bankName, bankAccountNo: $bankAccountNo, bankAccountHolder: $bankAccountHolder, lines: $lines, receipts: $receipts, approvals: $approvals, approvalRule: $approvalRule, approvalCycle: $approvalCycle, currentLevel: $currentLevel, flags: $flags, budget: $budget, transfers: $transfers, transferredTotal: $transferredTotal, settlement: $settlement, allowedActions: $allowedActions, rejectReason: $rejectReason, cancelReason: $cancelReason, submittedAt: $submittedAt, updatedAt: $updatedAt)';
+    return 'ExpenseDetail(id: $id, docNo: $docNo, clientUuid: $clientUuid, type: $type, typeLabel: $typeLabel, status: $status, statusLabel: $statusLabel, title: $title, grandTotal: $grandTotal, approvedAmount: $approvedAmount, requestDate: $requestDate, neededDate: $neededDate, notes: $notes, project: $project, costCenter: $costCenter, requesters: $requesters, createdByName: $createdByName, bankName: $bankName, bankAccountNo: $bankAccountNo, bankAccountHolder: $bankAccountHolder, lines: $lines, receipts: $receipts, approvals: $approvals, approvalRule: $approvalRule, approvalCycle: $approvalCycle, currentLevel: $currentLevel, flags: $flags, budget: $budget, transfers: $transfers, transferredTotal: $transferredTotal, settlement: $settlement, allowedActions: $allowedActions, rejectReason: $rejectReason, cancelReason: $cancelReason, submittedAt: $submittedAt, updatedAt: $updatedAt, rev: $rev, resubmitOfId: $resubmitOfId, createdById: $createdById, periodFrom: $periodFrom, periodTo: $periodTo, bankAccountId: $bankAccountId)';
 }
 
 
@@ -3598,7 +3910,7 @@ abstract mixin class _$ExpenseDetailCopyWith<$Res> implements $ExpenseDetailCopy
   factory _$ExpenseDetailCopyWith(_ExpenseDetail value, $Res Function(_ExpenseDetail) _then) = __$ExpenseDetailCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String? docNo, String? clientUuid, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, int grandTotal, int? approvedAmount, String? requestDate, String? neededDate, String? notes, RefItem? project, RefItem? costCenter, List<RefItem> requesters, String? createdByName, String? bankName, String? bankAccountNo, String? bankAccountHolder, List<ExpenseLine> lines, List<ReceiptInfo> receipts, List<ApprovalEntry> approvals, ApprovalRuleInfo? approvalRule, int approvalCycle, int? currentLevel, List<FlagInfo> flags, BudgetImpact budget, List<TransferInfo> transfers, int transferredTotal, SettlementInfo? settlement, Set<String> allowedActions, String? rejectReason, String? cancelReason, String? submittedAt, String? updatedAt
+ int id, String? docNo, String? clientUuid, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, int grandTotal, int? approvedAmount, String? requestDate, String? neededDate, String? notes, RefItem? project, RefItem? costCenter, List<RefItem> requesters, String? createdByName, String? bankName, String? bankAccountNo, String? bankAccountHolder, List<ExpenseLine> lines, List<ReceiptInfo> receipts, List<ApprovalEntry> approvals, ApprovalRuleInfo? approvalRule, int approvalCycle, int? currentLevel, List<FlagInfo> flags, BudgetImpact budget, List<TransferInfo> transfers, int transferredTotal, SettlementInfo? settlement, Set<String> allowedActions, String? rejectReason, String? cancelReason, String? submittedAt, String? updatedAt, int? rev, int? resubmitOfId, int? createdById, String? periodFrom, String? periodTo, int? bankAccountId
 });
 
 
@@ -3615,7 +3927,7 @@ class __$ExpenseDetailCopyWithImpl<$Res>
 
 /// Create a copy of ExpenseDetail
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? docNo = freezed,Object? clientUuid = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? grandTotal = null,Object? approvedAmount = freezed,Object? requestDate = freezed,Object? neededDate = freezed,Object? notes = freezed,Object? project = freezed,Object? costCenter = freezed,Object? requesters = null,Object? createdByName = freezed,Object? bankName = freezed,Object? bankAccountNo = freezed,Object? bankAccountHolder = freezed,Object? lines = null,Object? receipts = null,Object? approvals = null,Object? approvalRule = freezed,Object? approvalCycle = null,Object? currentLevel = freezed,Object? flags = null,Object? budget = null,Object? transfers = null,Object? transferredTotal = null,Object? settlement = freezed,Object? allowedActions = null,Object? rejectReason = freezed,Object? cancelReason = freezed,Object? submittedAt = freezed,Object? updatedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? docNo = freezed,Object? clientUuid = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? grandTotal = null,Object? approvedAmount = freezed,Object? requestDate = freezed,Object? neededDate = freezed,Object? notes = freezed,Object? project = freezed,Object? costCenter = freezed,Object? requesters = null,Object? createdByName = freezed,Object? bankName = freezed,Object? bankAccountNo = freezed,Object? bankAccountHolder = freezed,Object? lines = null,Object? receipts = null,Object? approvals = null,Object? approvalRule = freezed,Object? approvalCycle = null,Object? currentLevel = freezed,Object? flags = null,Object? budget = null,Object? transfers = null,Object? transferredTotal = null,Object? settlement = freezed,Object? allowedActions = null,Object? rejectReason = freezed,Object? cancelReason = freezed,Object? submittedAt = freezed,Object? updatedAt = freezed,Object? rev = freezed,Object? resubmitOfId = freezed,Object? createdById = freezed,Object? periodFrom = freezed,Object? periodTo = freezed,Object? bankAccountId = freezed,}) {
   return _then(_ExpenseDetail(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,docNo: freezed == docNo ? _self.docNo : docNo // ignore: cast_nullable_to_non_nullable
@@ -3653,7 +3965,13 @@ as Set<String>,rejectReason: freezed == rejectReason ? _self.rejectReason : reje
 as String?,cancelReason: freezed == cancelReason ? _self.cancelReason : cancelReason // ignore: cast_nullable_to_non_nullable
 as String?,submittedAt: freezed == submittedAt ? _self.submittedAt : submittedAt // ignore: cast_nullable_to_non_nullable
 as String?,updatedAt: freezed == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,rev: freezed == rev ? _self.rev : rev // ignore: cast_nullable_to_non_nullable
+as int?,resubmitOfId: freezed == resubmitOfId ? _self.resubmitOfId : resubmitOfId // ignore: cast_nullable_to_non_nullable
+as int?,createdById: freezed == createdById ? _self.createdById : createdById // ignore: cast_nullable_to_non_nullable
+as int?,periodFrom: freezed == periodFrom ? _self.periodFrom : periodFrom // ignore: cast_nullable_to_non_nullable
+as String?,periodTo: freezed == periodTo ? _self.periodTo : periodTo // ignore: cast_nullable_to_non_nullable
+as String?,bankAccountId: freezed == bankAccountId ? _self.bankAccountId : bankAccountId // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -3720,7 +4038,7 @@ $SettlementInfoCopyWith<$Res>? get settlement {
 /// @nodoc
 mixin _$InboxItem {
 
- int get id; String? get docNo; RequestType get type; String get typeLabel; RequestStatus get status; String get statusLabel; String get title; String get scope; String get requesters; int get grandTotal; String? get neededDate; String get step; int? get level; BudgetImpact get budget; bool get budgetOverWarn; int get warningFlags; int get infoFlags;
+ int get id; String? get docNo; RequestType get type; String get typeLabel; RequestStatus get status; String get statusLabel; String get title; String get scope; String get requesters; int get grandTotal; String? get neededDate; String get step; int? get level; String? get stepLabel; bool get decisionFlow; BudgetImpact get budget; bool get budgetOverWarn; int get warningFlags; int get infoFlags;
 /// Create a copy of InboxItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -3732,20 +4050,20 @@ $InboxItemCopyWith<InboxItem> get copyWith => _$InboxItemCopyWithImpl<InboxItem>
 @override
 bool operator ==(Object other) {
   final _this = this as InboxItem;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InboxItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.docNo, _this.docNo) || other.docNo == _this.docNo)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.typeLabel, _this.typeLabel) || other.typeLabel == _this.typeLabel)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.statusLabel, _this.statusLabel) || other.statusLabel == _this.statusLabel)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.scope, _this.scope) || other.scope == _this.scope)&&(identical(other.requesters, _this.requesters) || other.requesters == _this.requesters)&&(identical(other.grandTotal, _this.grandTotal) || other.grandTotal == _this.grandTotal)&&(identical(other.neededDate, _this.neededDate) || other.neededDate == _this.neededDate)&&(identical(other.step, _this.step) || other.step == _this.step)&&(identical(other.level, _this.level) || other.level == _this.level)&&(identical(other.budget, _this.budget) || other.budget == _this.budget)&&(identical(other.budgetOverWarn, _this.budgetOverWarn) || other.budgetOverWarn == _this.budgetOverWarn)&&(identical(other.warningFlags, _this.warningFlags) || other.warningFlags == _this.warningFlags)&&(identical(other.infoFlags, _this.infoFlags) || other.infoFlags == _this.infoFlags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InboxItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.docNo, _this.docNo) || other.docNo == _this.docNo)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.typeLabel, _this.typeLabel) || other.typeLabel == _this.typeLabel)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.statusLabel, _this.statusLabel) || other.statusLabel == _this.statusLabel)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.scope, _this.scope) || other.scope == _this.scope)&&(identical(other.requesters, _this.requesters) || other.requesters == _this.requesters)&&(identical(other.grandTotal, _this.grandTotal) || other.grandTotal == _this.grandTotal)&&(identical(other.neededDate, _this.neededDate) || other.neededDate == _this.neededDate)&&(identical(other.step, _this.step) || other.step == _this.step)&&(identical(other.level, _this.level) || other.level == _this.level)&&(identical(other.stepLabel, _this.stepLabel) || other.stepLabel == _this.stepLabel)&&(identical(other.decisionFlow, _this.decisionFlow) || other.decisionFlow == _this.decisionFlow)&&(identical(other.budget, _this.budget) || other.budget == _this.budget)&&(identical(other.budgetOverWarn, _this.budgetOverWarn) || other.budgetOverWarn == _this.budgetOverWarn)&&(identical(other.warningFlags, _this.warningFlags) || other.warningFlags == _this.warningFlags)&&(identical(other.infoFlags, _this.infoFlags) || other.infoFlags == _this.infoFlags));
 }
 
 
 @override
 int get hashCode {
   final _this = this as InboxItem;
-  return Object.hash(runtimeType,_this.id,_this.docNo,_this.type,_this.typeLabel,_this.status,_this.statusLabel,_this.title,_this.scope,_this.requesters,_this.grandTotal,_this.neededDate,_this.step,_this.level,_this.budget,_this.budgetOverWarn,_this.warningFlags,_this.infoFlags);
+  return Object.hashAll([runtimeType,_this.id,_this.docNo,_this.type,_this.typeLabel,_this.status,_this.statusLabel,_this.title,_this.scope,_this.requesters,_this.grandTotal,_this.neededDate,_this.step,_this.level,_this.stepLabel,_this.decisionFlow,_this.budget,_this.budgetOverWarn,_this.warningFlags,_this.infoFlags]);
 }
 
 @override
 String toString() {
   final _this = this as InboxItem;
-  return 'InboxItem(id: ${_this.id}, docNo: ${_this.docNo}, type: ${_this.type}, typeLabel: ${_this.typeLabel}, status: ${_this.status}, statusLabel: ${_this.statusLabel}, title: ${_this.title}, scope: ${_this.scope}, requesters: ${_this.requesters}, grandTotal: ${_this.grandTotal}, neededDate: ${_this.neededDate}, step: ${_this.step}, level: ${_this.level}, budget: ${_this.budget}, budgetOverWarn: ${_this.budgetOverWarn}, warningFlags: ${_this.warningFlags}, infoFlags: ${_this.infoFlags})';
+  return 'InboxItem(id: ${_this.id}, docNo: ${_this.docNo}, type: ${_this.type}, typeLabel: ${_this.typeLabel}, status: ${_this.status}, statusLabel: ${_this.statusLabel}, title: ${_this.title}, scope: ${_this.scope}, requesters: ${_this.requesters}, grandTotal: ${_this.grandTotal}, neededDate: ${_this.neededDate}, step: ${_this.step}, level: ${_this.level}, stepLabel: ${_this.stepLabel}, decisionFlow: ${_this.decisionFlow}, budget: ${_this.budget}, budgetOverWarn: ${_this.budgetOverWarn}, warningFlags: ${_this.warningFlags}, infoFlags: ${_this.infoFlags})';
 }
 
 
@@ -3756,7 +4074,7 @@ abstract mixin class $InboxItemCopyWith<$Res>  {
   factory $InboxItemCopyWith(InboxItem value, $Res Function(InboxItem) _then) = _$InboxItemCopyWithImpl;
 @useResult
 $Res call({
- int id, String? docNo, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, String scope, String requesters, int grandTotal, String? neededDate, String step, int? level, BudgetImpact budget, bool budgetOverWarn, int warningFlags, int infoFlags
+ int id, String? docNo, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, String scope, String requesters, int grandTotal, String? neededDate, String step, int? level, String? stepLabel, bool decisionFlow, BudgetImpact budget, bool budgetOverWarn, int warningFlags, int infoFlags
 });
 
 
@@ -3773,7 +4091,7 @@ class _$InboxItemCopyWithImpl<$Res>
 
 /// Create a copy of InboxItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? docNo = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? scope = null,Object? requesters = null,Object? grandTotal = null,Object? neededDate = freezed,Object? step = null,Object? level = freezed,Object? budget = null,Object? budgetOverWarn = null,Object? warningFlags = null,Object? infoFlags = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? docNo = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? scope = null,Object? requesters = null,Object? grandTotal = null,Object? neededDate = freezed,Object? step = null,Object? level = freezed,Object? stepLabel = freezed,Object? decisionFlow = null,Object? budget = null,Object? budgetOverWarn = null,Object? warningFlags = null,Object? infoFlags = null,}) {
   return _then(InboxItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,docNo: freezed == docNo ? _self.docNo : docNo // ignore: cast_nullable_to_non_nullable
@@ -3788,7 +4106,9 @@ as String,grandTotal: null == grandTotal ? _self.grandTotal : grandTotal // igno
 as int,neededDate: freezed == neededDate ? _self.neededDate : neededDate // ignore: cast_nullable_to_non_nullable
 as String?,step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as String,level: freezed == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
-as int?,budget: null == budget ? _self.budget : budget // ignore: cast_nullable_to_non_nullable
+as int?,stepLabel: freezed == stepLabel ? _self.stepLabel : stepLabel // ignore: cast_nullable_to_non_nullable
+as String?,decisionFlow: null == decisionFlow ? _self.decisionFlow : decisionFlow // ignore: cast_nullable_to_non_nullable
+as bool,budget: null == budget ? _self.budget : budget // ignore: cast_nullable_to_non_nullable
 as BudgetImpact,budgetOverWarn: null == budgetOverWarn ? _self.budgetOverWarn : budgetOverWarn // ignore: cast_nullable_to_non_nullable
 as bool,warningFlags: null == warningFlags ? _self.warningFlags : warningFlags // ignore: cast_nullable_to_non_nullable
 as int,infoFlags: null == infoFlags ? _self.infoFlags : infoFlags // ignore: cast_nullable_to_non_nullable
@@ -3886,10 +4206,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String? docNo,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  String scope,  String requesters,  int grandTotal,  String? neededDate,  String step,  int? level,  BudgetImpact budget,  bool budgetOverWarn,  int warningFlags,  int infoFlags)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String? docNo,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  String scope,  String requesters,  int grandTotal,  String? neededDate,  String step,  int? level,  String? stepLabel,  bool decisionFlow,  BudgetImpact budget,  bool budgetOverWarn,  int warningFlags,  int infoFlags)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _InboxItem() when $default != null:
-return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.scope,_that.requesters,_that.grandTotal,_that.neededDate,_that.step,_that.level,_that.budget,_that.budgetOverWarn,_that.warningFlags,_that.infoFlags);case _:
+return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.scope,_that.requesters,_that.grandTotal,_that.neededDate,_that.step,_that.level,_that.stepLabel,_that.decisionFlow,_that.budget,_that.budgetOverWarn,_that.warningFlags,_that.infoFlags);case _:
   return orElse();
 
 }
@@ -3907,10 +4227,10 @@ return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String? docNo,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  String scope,  String requesters,  int grandTotal,  String? neededDate,  String step,  int? level,  BudgetImpact budget,  bool budgetOverWarn,  int warningFlags,  int infoFlags)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String? docNo,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  String scope,  String requesters,  int grandTotal,  String? neededDate,  String step,  int? level,  String? stepLabel,  bool decisionFlow,  BudgetImpact budget,  bool budgetOverWarn,  int warningFlags,  int infoFlags)  $default,) {final _that = this;
 switch (_that) {
 case _InboxItem():
-return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.scope,_that.requesters,_that.grandTotal,_that.neededDate,_that.step,_that.level,_that.budget,_that.budgetOverWarn,_that.warningFlags,_that.infoFlags);case _:
+return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.scope,_that.requesters,_that.grandTotal,_that.neededDate,_that.step,_that.level,_that.stepLabel,_that.decisionFlow,_that.budget,_that.budgetOverWarn,_that.warningFlags,_that.infoFlags);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -3927,10 +4247,10 @@ return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String? docNo,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  String scope,  String requesters,  int grandTotal,  String? neededDate,  String step,  int? level,  BudgetImpact budget,  bool budgetOverWarn,  int warningFlags,  int infoFlags)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String? docNo,  RequestType type,  String typeLabel,  RequestStatus status,  String statusLabel,  String title,  String scope,  String requesters,  int grandTotal,  String? neededDate,  String step,  int? level,  String? stepLabel,  bool decisionFlow,  BudgetImpact budget,  bool budgetOverWarn,  int warningFlags,  int infoFlags)?  $default,) {final _that = this;
 switch (_that) {
 case _InboxItem() when $default != null:
-return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.scope,_that.requesters,_that.grandTotal,_that.neededDate,_that.step,_that.level,_that.budget,_that.budgetOverWarn,_that.warningFlags,_that.infoFlags);case _:
+return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_that.statusLabel,_that.title,_that.scope,_that.requesters,_that.grandTotal,_that.neededDate,_that.step,_that.level,_that.stepLabel,_that.decisionFlow,_that.budget,_that.budgetOverWarn,_that.warningFlags,_that.infoFlags);case _:
   return null;
 
 }
@@ -3942,7 +4262,7 @@ return $default(_that.id,_that.docNo,_that.type,_that.typeLabel,_that.status,_th
 
 
 class _InboxItem implements InboxItem {
-  const _InboxItem({required this.id, this.docNo, required this.type, required this.typeLabel, required this.status, required this.statusLabel, required this.title, required this.scope, required this.requesters, required this.grandTotal, this.neededDate, required this.step, this.level, required this.budget, this.budgetOverWarn = false, this.warningFlags = 0, this.infoFlags = 0});
+  const _InboxItem({required this.id, this.docNo, required this.type, required this.typeLabel, required this.status, required this.statusLabel, required this.title, required this.scope, required this.requesters, required this.grandTotal, this.neededDate, required this.step, this.level, this.stepLabel, this.decisionFlow = false, required this.budget, this.budgetOverWarn = false, this.warningFlags = 0, this.infoFlags = 0});
   
 
 @override final  int id;
@@ -3958,6 +4278,8 @@ class _InboxItem implements InboxItem {
 @override final  String? neededDate;
 @override final  String step;
 @override final  int? level;
+@override final  String? stepLabel;
+@override@JsonKey() final  bool decisionFlow;
 @override final  BudgetImpact budget;
 @override@JsonKey() final  bool budgetOverWarn;
 @override@JsonKey() final  int warningFlags;
@@ -3973,18 +4295,18 @@ _$InboxItemCopyWith<_InboxItem> get copyWith => __$InboxItemCopyWithImpl<_InboxI
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _InboxItem&&(identical(other.id, id) || other.id == id)&&(identical(other.docNo, docNo) || other.docNo == docNo)&&(identical(other.type, type) || other.type == type)&&(identical(other.typeLabel, typeLabel) || other.typeLabel == typeLabel)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.title, title) || other.title == title)&&(identical(other.scope, scope) || other.scope == scope)&&(identical(other.requesters, requesters) || other.requesters == requesters)&&(identical(other.grandTotal, grandTotal) || other.grandTotal == grandTotal)&&(identical(other.neededDate, neededDate) || other.neededDate == neededDate)&&(identical(other.step, step) || other.step == step)&&(identical(other.level, level) || other.level == level)&&(identical(other.budget, budget) || other.budget == budget)&&(identical(other.budgetOverWarn, budgetOverWarn) || other.budgetOverWarn == budgetOverWarn)&&(identical(other.warningFlags, warningFlags) || other.warningFlags == warningFlags)&&(identical(other.infoFlags, infoFlags) || other.infoFlags == infoFlags));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _InboxItem&&(identical(other.id, id) || other.id == id)&&(identical(other.docNo, docNo) || other.docNo == docNo)&&(identical(other.type, type) || other.type == type)&&(identical(other.typeLabel, typeLabel) || other.typeLabel == typeLabel)&&(identical(other.status, status) || other.status == status)&&(identical(other.statusLabel, statusLabel) || other.statusLabel == statusLabel)&&(identical(other.title, title) || other.title == title)&&(identical(other.scope, scope) || other.scope == scope)&&(identical(other.requesters, requesters) || other.requesters == requesters)&&(identical(other.grandTotal, grandTotal) || other.grandTotal == grandTotal)&&(identical(other.neededDate, neededDate) || other.neededDate == neededDate)&&(identical(other.step, step) || other.step == step)&&(identical(other.level, level) || other.level == level)&&(identical(other.stepLabel, stepLabel) || other.stepLabel == stepLabel)&&(identical(other.decisionFlow, decisionFlow) || other.decisionFlow == decisionFlow)&&(identical(other.budget, budget) || other.budget == budget)&&(identical(other.budgetOverWarn, budgetOverWarn) || other.budgetOverWarn == budgetOverWarn)&&(identical(other.warningFlags, warningFlags) || other.warningFlags == warningFlags)&&(identical(other.infoFlags, infoFlags) || other.infoFlags == infoFlags));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,docNo,type,typeLabel,status,statusLabel,title,scope,requesters,grandTotal,neededDate,step,level,budget,budgetOverWarn,warningFlags,infoFlags);
+    return Object.hashAll([runtimeType,id,docNo,type,typeLabel,status,statusLabel,title,scope,requesters,grandTotal,neededDate,step,level,stepLabel,decisionFlow,budget,budgetOverWarn,warningFlags,infoFlags]);
 }
 
 @override
 String toString() {
-    return 'InboxItem(id: $id, docNo: $docNo, type: $type, typeLabel: $typeLabel, status: $status, statusLabel: $statusLabel, title: $title, scope: $scope, requesters: $requesters, grandTotal: $grandTotal, neededDate: $neededDate, step: $step, level: $level, budget: $budget, budgetOverWarn: $budgetOverWarn, warningFlags: $warningFlags, infoFlags: $infoFlags)';
+    return 'InboxItem(id: $id, docNo: $docNo, type: $type, typeLabel: $typeLabel, status: $status, statusLabel: $statusLabel, title: $title, scope: $scope, requesters: $requesters, grandTotal: $grandTotal, neededDate: $neededDate, step: $step, level: $level, stepLabel: $stepLabel, decisionFlow: $decisionFlow, budget: $budget, budgetOverWarn: $budgetOverWarn, warningFlags: $warningFlags, infoFlags: $infoFlags)';
 }
 
 
@@ -3995,7 +4317,7 @@ abstract mixin class _$InboxItemCopyWith<$Res> implements $InboxItemCopyWith<$Re
   factory _$InboxItemCopyWith(_InboxItem value, $Res Function(_InboxItem) _then) = __$InboxItemCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String? docNo, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, String scope, String requesters, int grandTotal, String? neededDate, String step, int? level, BudgetImpact budget, bool budgetOverWarn, int warningFlags, int infoFlags
+ int id, String? docNo, RequestType type, String typeLabel, RequestStatus status, String statusLabel, String title, String scope, String requesters, int grandTotal, String? neededDate, String step, int? level, String? stepLabel, bool decisionFlow, BudgetImpact budget, bool budgetOverWarn, int warningFlags, int infoFlags
 });
 
 
@@ -4012,7 +4334,7 @@ class __$InboxItemCopyWithImpl<$Res>
 
 /// Create a copy of InboxItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? docNo = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? scope = null,Object? requesters = null,Object? grandTotal = null,Object? neededDate = freezed,Object? step = null,Object? level = freezed,Object? budget = null,Object? budgetOverWarn = null,Object? warningFlags = null,Object? infoFlags = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? docNo = freezed,Object? type = null,Object? typeLabel = null,Object? status = null,Object? statusLabel = null,Object? title = null,Object? scope = null,Object? requesters = null,Object? grandTotal = null,Object? neededDate = freezed,Object? step = null,Object? level = freezed,Object? stepLabel = freezed,Object? decisionFlow = null,Object? budget = null,Object? budgetOverWarn = null,Object? warningFlags = null,Object? infoFlags = null,}) {
   return _then(_InboxItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,docNo: freezed == docNo ? _self.docNo : docNo // ignore: cast_nullable_to_non_nullable
@@ -4027,7 +4349,9 @@ as String,grandTotal: null == grandTotal ? _self.grandTotal : grandTotal // igno
 as int,neededDate: freezed == neededDate ? _self.neededDate : neededDate // ignore: cast_nullable_to_non_nullable
 as String?,step: null == step ? _self.step : step // ignore: cast_nullable_to_non_nullable
 as String,level: freezed == level ? _self.level : level // ignore: cast_nullable_to_non_nullable
-as int?,budget: null == budget ? _self.budget : budget // ignore: cast_nullable_to_non_nullable
+as int?,stepLabel: freezed == stepLabel ? _self.stepLabel : stepLabel // ignore: cast_nullable_to_non_nullable
+as String?,decisionFlow: null == decisionFlow ? _self.decisionFlow : decisionFlow // ignore: cast_nullable_to_non_nullable
+as bool,budget: null == budget ? _self.budget : budget // ignore: cast_nullable_to_non_nullable
 as BudgetImpact,budgetOverWarn: null == budgetOverWarn ? _self.budgetOverWarn : budgetOverWarn // ignore: cast_nullable_to_non_nullable
 as bool,warningFlags: null == warningFlags ? _self.warningFlags : warningFlags // ignore: cast_nullable_to_non_nullable
 as int,infoFlags: null == infoFlags ? _self.infoFlags : infoFlags // ignore: cast_nullable_to_non_nullable
@@ -4045,6 +4369,311 @@ $BudgetImpactCopyWith<$Res> get budget {
     return _then(_self.copyWith(budget: value));
   });
 }
+}
+
+/// @nodoc
+mixin _$HistoryEntry {
+
+ String get serverTime; String get action; String? get field; int? get lineNo; Object? get oldValue; Object? get newValue; String? get statusFrom; String? get statusTo; String? get reason; int? get userId; String? get userName; String? get source; String? get appVersion; String? get deviceId; String get docType; String? get docNo;
+/// Create a copy of HistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$HistoryEntryCopyWith<HistoryEntry> get copyWith => _$HistoryEntryCopyWithImpl<HistoryEntry>(this as HistoryEntry, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as HistoryEntry;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HistoryEntry&&(identical(other.serverTime, _this.serverTime) || other.serverTime == _this.serverTime)&&(identical(other.action, _this.action) || other.action == _this.action)&&(identical(other.field, _this.field) || other.field == _this.field)&&(identical(other.lineNo, _this.lineNo) || other.lineNo == _this.lineNo)&&const DeepCollectionEquality().equals(other.oldValue, _this.oldValue)&&const DeepCollectionEquality().equals(other.newValue, _this.newValue)&&(identical(other.statusFrom, _this.statusFrom) || other.statusFrom == _this.statusFrom)&&(identical(other.statusTo, _this.statusTo) || other.statusTo == _this.statusTo)&&(identical(other.reason, _this.reason) || other.reason == _this.reason)&&(identical(other.userId, _this.userId) || other.userId == _this.userId)&&(identical(other.userName, _this.userName) || other.userName == _this.userName)&&(identical(other.source, _this.source) || other.source == _this.source)&&(identical(other.appVersion, _this.appVersion) || other.appVersion == _this.appVersion)&&(identical(other.deviceId, _this.deviceId) || other.deviceId == _this.deviceId)&&(identical(other.docType, _this.docType) || other.docType == _this.docType)&&(identical(other.docNo, _this.docNo) || other.docNo == _this.docNo));
+}
+
+
+@override
+int get hashCode {
+  final _this = this as HistoryEntry;
+  return Object.hash(runtimeType,_this.serverTime,_this.action,_this.field,_this.lineNo,const DeepCollectionEquality().hash(_this.oldValue),const DeepCollectionEquality().hash(_this.newValue),_this.statusFrom,_this.statusTo,_this.reason,_this.userId,_this.userName,_this.source,_this.appVersion,_this.deviceId,_this.docType,_this.docNo);
+}
+
+@override
+String toString() {
+  final _this = this as HistoryEntry;
+  return 'HistoryEntry(serverTime: ${_this.serverTime}, action: ${_this.action}, field: ${_this.field}, lineNo: ${_this.lineNo}, oldValue: ${_this.oldValue}, newValue: ${_this.newValue}, statusFrom: ${_this.statusFrom}, statusTo: ${_this.statusTo}, reason: ${_this.reason}, userId: ${_this.userId}, userName: ${_this.userName}, source: ${_this.source}, appVersion: ${_this.appVersion}, deviceId: ${_this.deviceId}, docType: ${_this.docType}, docNo: ${_this.docNo})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $HistoryEntryCopyWith<$Res>  {
+  factory $HistoryEntryCopyWith(HistoryEntry value, $Res Function(HistoryEntry) _then) = _$HistoryEntryCopyWithImpl;
+@useResult
+$Res call({
+ String serverTime, String action, String? field, int? lineNo, Object? oldValue, Object? newValue, String? statusFrom, String? statusTo, String? reason, int? userId, String? userName, String? source, String? appVersion, String? deviceId, String docType, String? docNo
+});
+
+
+
+
+}
+/// @nodoc
+class _$HistoryEntryCopyWithImpl<$Res>
+    implements $HistoryEntryCopyWith<$Res> {
+  _$HistoryEntryCopyWithImpl(this._self, this._then);
+
+  final HistoryEntry _self;
+  final $Res Function(HistoryEntry) _then;
+
+/// Create a copy of HistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? serverTime = null,Object? action = null,Object? field = freezed,Object? lineNo = freezed,Object? oldValue = freezed,Object? newValue = freezed,Object? statusFrom = freezed,Object? statusTo = freezed,Object? reason = freezed,Object? userId = freezed,Object? userName = freezed,Object? source = freezed,Object? appVersion = freezed,Object? deviceId = freezed,Object? docType = null,Object? docNo = freezed,}) {
+  return _then(HistoryEntry(
+serverTime: null == serverTime ? _self.serverTime : serverTime // ignore: cast_nullable_to_non_nullable
+as String,action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
+as String,field: freezed == field ? _self.field : field // ignore: cast_nullable_to_non_nullable
+as String?,lineNo: freezed == lineNo ? _self.lineNo : lineNo // ignore: cast_nullable_to_non_nullable
+as int?,oldValue: freezed == oldValue ? _self.oldValue : oldValue ,newValue: freezed == newValue ? _self.newValue : newValue ,statusFrom: freezed == statusFrom ? _self.statusFrom : statusFrom // ignore: cast_nullable_to_non_nullable
+as String?,statusTo: freezed == statusTo ? _self.statusTo : statusTo // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,userId: freezed == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as int?,userName: freezed == userName ? _self.userName : userName // ignore: cast_nullable_to_non_nullable
+as String?,source: freezed == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
+as String?,appVersion: freezed == appVersion ? _self.appVersion : appVersion // ignore: cast_nullable_to_non_nullable
+as String?,deviceId: freezed == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
+as String?,docType: null == docType ? _self.docType : docType // ignore: cast_nullable_to_non_nullable
+as String,docNo: freezed == docNo ? _self.docNo : docNo // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [HistoryEntry].
+extension HistoryEntryPatterns on HistoryEntry {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _HistoryEntry value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _HistoryEntry() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _HistoryEntry value)  $default,){
+final _that = this;
+switch (_that) {
+case _HistoryEntry():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _HistoryEntry value)?  $default,){
+final _that = this;
+switch (_that) {
+case _HistoryEntry() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String serverTime,  String action,  String? field,  int? lineNo,  Object? oldValue,  Object? newValue,  String? statusFrom,  String? statusTo,  String? reason,  int? userId,  String? userName,  String? source,  String? appVersion,  String? deviceId,  String docType,  String? docNo)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _HistoryEntry() when $default != null:
+return $default(_that.serverTime,_that.action,_that.field,_that.lineNo,_that.oldValue,_that.newValue,_that.statusFrom,_that.statusTo,_that.reason,_that.userId,_that.userName,_that.source,_that.appVersion,_that.deviceId,_that.docType,_that.docNo);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String serverTime,  String action,  String? field,  int? lineNo,  Object? oldValue,  Object? newValue,  String? statusFrom,  String? statusTo,  String? reason,  int? userId,  String? userName,  String? source,  String? appVersion,  String? deviceId,  String docType,  String? docNo)  $default,) {final _that = this;
+switch (_that) {
+case _HistoryEntry():
+return $default(_that.serverTime,_that.action,_that.field,_that.lineNo,_that.oldValue,_that.newValue,_that.statusFrom,_that.statusTo,_that.reason,_that.userId,_that.userName,_that.source,_that.appVersion,_that.deviceId,_that.docType,_that.docNo);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String serverTime,  String action,  String? field,  int? lineNo,  Object? oldValue,  Object? newValue,  String? statusFrom,  String? statusTo,  String? reason,  int? userId,  String? userName,  String? source,  String? appVersion,  String? deviceId,  String docType,  String? docNo)?  $default,) {final _that = this;
+switch (_that) {
+case _HistoryEntry() when $default != null:
+return $default(_that.serverTime,_that.action,_that.field,_that.lineNo,_that.oldValue,_that.newValue,_that.statusFrom,_that.statusTo,_that.reason,_that.userId,_that.userName,_that.source,_that.appVersion,_that.deviceId,_that.docType,_that.docNo);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _HistoryEntry implements HistoryEntry {
+  const _HistoryEntry({required this.serverTime, required this.action, this.field, this.lineNo, this.oldValue, this.newValue, this.statusFrom, this.statusTo, this.reason, this.userId, this.userName, this.source, this.appVersion, this.deviceId, required this.docType, this.docNo});
+  
+
+@override final  String serverTime;
+@override final  String action;
+@override final  String? field;
+@override final  int? lineNo;
+@override final  Object? oldValue;
+@override final  Object? newValue;
+@override final  String? statusFrom;
+@override final  String? statusTo;
+@override final  String? reason;
+@override final  int? userId;
+@override final  String? userName;
+@override final  String? source;
+@override final  String? appVersion;
+@override final  String? deviceId;
+@override final  String docType;
+@override final  String? docNo;
+
+/// Create a copy of HistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$HistoryEntryCopyWith<_HistoryEntry> get copyWith => __$HistoryEntryCopyWithImpl<_HistoryEntry>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _HistoryEntry&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime)&&(identical(other.action, action) || other.action == action)&&(identical(other.field, field) || other.field == field)&&(identical(other.lineNo, lineNo) || other.lineNo == lineNo)&&const DeepCollectionEquality().equals(other.oldValue, oldValue)&&const DeepCollectionEquality().equals(other.newValue, newValue)&&(identical(other.statusFrom, statusFrom) || other.statusFrom == statusFrom)&&(identical(other.statusTo, statusTo) || other.statusTo == statusTo)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.userName, userName) || other.userName == userName)&&(identical(other.source, source) || other.source == source)&&(identical(other.appVersion, appVersion) || other.appVersion == appVersion)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.docType, docType) || other.docType == docType)&&(identical(other.docNo, docNo) || other.docNo == docNo));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,serverTime,action,field,lineNo,const DeepCollectionEquality().hash(oldValue),const DeepCollectionEquality().hash(newValue),statusFrom,statusTo,reason,userId,userName,source,appVersion,deviceId,docType,docNo);
+}
+
+@override
+String toString() {
+    return 'HistoryEntry(serverTime: $serverTime, action: $action, field: $field, lineNo: $lineNo, oldValue: $oldValue, newValue: $newValue, statusFrom: $statusFrom, statusTo: $statusTo, reason: $reason, userId: $userId, userName: $userName, source: $source, appVersion: $appVersion, deviceId: $deviceId, docType: $docType, docNo: $docNo)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$HistoryEntryCopyWith<$Res> implements $HistoryEntryCopyWith<$Res> {
+  factory _$HistoryEntryCopyWith(_HistoryEntry value, $Res Function(_HistoryEntry) _then) = __$HistoryEntryCopyWithImpl;
+@override @useResult
+$Res call({
+ String serverTime, String action, String? field, int? lineNo, Object? oldValue, Object? newValue, String? statusFrom, String? statusTo, String? reason, int? userId, String? userName, String? source, String? appVersion, String? deviceId, String docType, String? docNo
+});
+
+
+
+
+}
+/// @nodoc
+class __$HistoryEntryCopyWithImpl<$Res>
+    implements _$HistoryEntryCopyWith<$Res> {
+  __$HistoryEntryCopyWithImpl(this._self, this._then);
+
+  final _HistoryEntry _self;
+  final $Res Function(_HistoryEntry) _then;
+
+/// Create a copy of HistoryEntry
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? serverTime = null,Object? action = null,Object? field = freezed,Object? lineNo = freezed,Object? oldValue = freezed,Object? newValue = freezed,Object? statusFrom = freezed,Object? statusTo = freezed,Object? reason = freezed,Object? userId = freezed,Object? userName = freezed,Object? source = freezed,Object? appVersion = freezed,Object? deviceId = freezed,Object? docType = null,Object? docNo = freezed,}) {
+  return _then(_HistoryEntry(
+serverTime: null == serverTime ? _self.serverTime : serverTime // ignore: cast_nullable_to_non_nullable
+as String,action: null == action ? _self.action : action // ignore: cast_nullable_to_non_nullable
+as String,field: freezed == field ? _self.field : field // ignore: cast_nullable_to_non_nullable
+as String?,lineNo: freezed == lineNo ? _self.lineNo : lineNo // ignore: cast_nullable_to_non_nullable
+as int?,oldValue: freezed == oldValue ? _self.oldValue : oldValue ,newValue: freezed == newValue ? _self.newValue : newValue ,statusFrom: freezed == statusFrom ? _self.statusFrom : statusFrom // ignore: cast_nullable_to_non_nullable
+as String?,statusTo: freezed == statusTo ? _self.statusTo : statusTo // ignore: cast_nullable_to_non_nullable
+as String?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,userId: freezed == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as int?,userName: freezed == userName ? _self.userName : userName // ignore: cast_nullable_to_non_nullable
+as String?,source: freezed == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
+as String?,appVersion: freezed == appVersion ? _self.appVersion : appVersion // ignore: cast_nullable_to_non_nullable
+as String?,deviceId: freezed == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
+as String?,docType: null == docType ? _self.docType : docType // ignore: cast_nullable_to_non_nullable
+as String,docNo: freezed == docNo ? _self.docNo : docNo // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
 }
 
 // dart format on

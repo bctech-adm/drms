@@ -115,6 +115,8 @@ class DraftRepository {
             serverRev: Value(d.serverRev),
             syncState: Value(d.syncState.name),
             lastError: Value(d.lastError),
+            // Saving always means "open draft" (re-importing a server draft revives a deleted local copy).
+            deleted: const Value(false),
             createdAt: existing?.createdAt ?? ts,
             updatedAt: ts,
           ),

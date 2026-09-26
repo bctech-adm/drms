@@ -133,3 +133,14 @@ Mitigations accepted with this deviation:
 ## Proposed CLAUDE.md changes (need user approval; author does not edit)
 
 None.
+
+## Revision 2026-09-26 — prod uses the same login (user decision K3, GATE G1-3)
+
+- `plans/fase1-golive.md` K3 / G1-3 (approved 2026-09-26): the prod APK logs in like staging. Branch
+  `feat/mobile-e1-e3` sets `config/prod.json` `PK_LOGIN_MODE=password`; the "Staging only" consequence above no
+  longer holds for the APK config.
+- **Prerequisite (E10, infra):** Direct Access Grants on client `proyekkas-mobile` in realm `drms`, no OTP
+  required action for APK users. Until then a prod APK answers "Login langsung belum diaktifkan di server".
+- The RFC 9700 / RFC 8252 deviation now applies to production too; the mitigations above (TLS only, no
+  credential storage, brute-force lockout, refresh-token rotation) stay mandatory. Rollback unchanged (build with
+  `PK_LOGIN_MODE=browser`, turn Direct Access Grants off in realm `drms`).

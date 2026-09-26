@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **E1 APK + E3 APK parity** (`apps/mobile`, fase1-golive §E1 AC-10, §E3-b/c/d; branch `feat/mobile-e1-e3`):
+  - Approval inbox/tab from `GET /api/v1/me` `capabilities.approvalInbox` (Direktur + Finance, ADR 0013), no longer
+    `owner || pm`; PM gets a read-only **team monitor** (home KPIs from `/dashboard/pm`, "Tim" tab = `scope=team`).
+    Inbox cards show the server `stepLabel`; the Direktur's "Diketahui" is a "Setujui (Diketahui)" decision;
+    403 on a decision shows why and reloads. Timeline: "Diketahui (Direktur)", "Approval (Finance)", skipped
+    positions "(tidak berlaku — pemohon)"; pre-E1 snapshots keep the PM label. "Owner" → "Direktur" in the app.
+  - Requester parity with the web: "Tarik kembali ke Draft" / "Batalkan pengajuan" (reason ≥ 3), "Ajukan ulang"
+    (rejected → new draft), "Ubah & ajukan di HP" imports a server draft into the offline editor (server receipts
+    read-only, `draft_upsert` identifies it by `request_id`); "Riwayat" screen (`GET …/history`, web labels).
+  - Home KPI cards for Direktur/Finance (`/dashboard/owner|finance`, same data as the web Beranda) with sparklines,
+    a budget meter and a tappable monthly cash-flow chart.
+  - Background sync with WorkManager (`workmanager` 0.10.10): periodic 15 min + one-off after an unfinished run;
+    encrypted DB + token store opened in the task isolate; one token owner per process.
+  - Unknown routes show an Indonesian error page; release builds show readable text instead of a grey box
+    (salvaged from `fix/mobile-login-redirect`).
+  - CI: job `release-prod` (main / tag `mobile-vX.Y.Z`, environment `android-release-prod` approval, production key
+    from environment secrets, SHA-256 printed, `apksigner` check, secret scan). No key is created by CI.
+  - `config/prod.json` login mode = `password` (K3 / G1-3; needs Direct Access Grants in realm `drms`, E10).
 - **E2 — web Finance UI for cash** (`apps/web`, fase1-golive §E2, US-23/US-24, ADR 0005; branch
   `feat/e2-finance-cash-ui`): admin views `/admin/kas` (buku kas with filters akun/periode/project/pusat biaya/arah/
   status, saldo per akun tiles, void rows kept and linked to their jurnal balik), `/admin/kas/baru` (kas masuk/keluar:

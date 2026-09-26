@@ -6,6 +6,7 @@ import 'package:signature/signature.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/format/rupiah.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../../shared/widgets/async_body.dart';
@@ -86,6 +87,10 @@ class _DecisionSheetState extends ConsumerState<DecisionSheet> {
         reason: isReject ? _reason.text.trim() : null,
       );
       if (mounted) Navigator.of(context).pop(true);
+    } on ProblemException catch (e) {
+      // 403: the server refused the decision (ADR 0013: only Direktur/Finance decide; also a request
+      // that moved on meanwhile). Show a clear reason; the caller reloads the detail and the inbox.
+      if (mounted) setState(() => _error = e.status == 403 ? t.decisionForbidden : errorText(e));
     } on Object catch (e) {
       if (mounted) setState(() => _error = errorText(e));
     } finally {
@@ -97,8 +102,9 @@ class _DecisionSheetState extends ConsumerState<DecisionSheet> {
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
     final d = widget.detail;
+    final direktur = d.approvalRule?.decisionFlow ?? false;
     final title = switch (widget.decision) {
-      Decision.acknowledge => t.decisionTitleAcknowledge,
+      Decision.acknowledge => direktur ? t.decisionTitleAcknowledgeDirektur : t.decisionTitleAcknowledge,
       Decision.approve => t.decisionTitleApprove,
       Decision.reject => t.decisionTitleReject,
     };
@@ -111,6 +117,11 @@ class _DecisionSheetState extends ConsumerState<DecisionSheet> {
           children: [
             Text(title, style: Theme.of(context).textTheme.titleLarge),
             Text('${d.docNo ?? ''} ${d.title}\n${formatRupiah(d.grandTotal)}'),
+            if (widget.decision == Decision.acknowledge && direktur)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(t.decisionHintDirektur, key: const Key('decision-hint-direktur')),
+              ),
             const SizedBox(height: 12),
             if (widget.decision == Decision.reject)
               TextField(

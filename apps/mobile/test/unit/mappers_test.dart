@@ -46,11 +46,47 @@ void main() {
     final p = userProfileFromJson(meJson(roles: ['pk-staff', 'pk-pm', 'unknown-role']));
     expect(p.roles, {Role.staff, Role.pm});
     expect(p.homeKind, HomeKind.pm);
-    expect(p.hasApprovalInbox, isTrue);
+    // ADR 0013: PM monitors only (no inbox); without `capabilities` (cached pre-E1 /me) the roles decide.
+    expect(p.hasApprovalInbox, isFalse);
+    expect(p.hasTeamMonitor, isTrue);
     expect(p.timezone, 'Asia/Makassar');
     expect(p.imageTargets.receiptsMaxPx, 2000);
-    expect(userProfileFromJson(meJson(roles: ['pk-owner'])).homeKind, HomeKind.owner);
+    expect(userProfileFromJson(meJson(roles: ['pk-owner'])).homeKind, HomeKind.direktur);
     expect(userProfileFromJson(meJson(roles: ['pk-finance'])).canCreateRequests, isFalse);
+  });
+
+  test('me capabilities (E1) drive inbox / team monitor, not role hardcoding', () {
+    final fin = userProfileFromJson({
+      ...meJson(roles: ['pk-finance']),
+      'capabilities': {'approvalInbox': true, 'teamMonitor': false},
+    });
+    expect(fin.hasApprovalInbox, isTrue);
+    expect(fin.hasTeamMonitor, isFalse);
+    expect(fin.homeKind, HomeKind.finance);
+    // The server is authoritative: a capability the roles would not give is still honoured.
+    final pm = userProfileFromJson({
+      ...meJson(roles: ['pk-pm']),
+      'capabilities': {'approvalInbox': false, 'teamMonitor': true},
+    });
+    expect(pm.hasApprovalInbox, isFalse);
+    expect(pm.hasTeamMonitor, isTrue);
+    expect(userProfileFromJson(meJson(roles: ['pk-owner'])).hasApprovalInbox, isTrue);
+    expect(userProfileFromJson(meJson(roles: ['pk-owner', 'pk-pm'])).roleLabels, 'PM, Direktur');
+  });
+
+  test('inbox item E1 fields: stepLabel and decisionFlow', () {
+    final i = inboxItemFromJson({
+      ...(inboxJson()['items'] as List).first as Map<String, dynamic>,
+      'step': 'acknowledge',
+      'level': null,
+      'stepLabel': 'Persetujuan Direktur (Diketahui)',
+      'decisionFlow': true,
+    });
+    expect(i.stepLabel, 'Persetujuan Direktur (Diketahui)');
+    expect(i.decisionFlow, isTrue);
+    final old = inboxItemFromJson((inboxJson()['items'] as List).first as Map<String, dynamic>);
+    expect(old.stepLabel, isNull);
+    expect(old.decisionFlow, isFalse);
   });
 
   test('draft → create body (openapi ExpenseRequestCreate)', () {

@@ -165,7 +165,7 @@ void main() {
     );
     expect(
       find.text(
-        'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.',
+        'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Direktur. Silakan masuk kembali atau hubungi Admin.',
       ),
       findsOneWidget,
     );

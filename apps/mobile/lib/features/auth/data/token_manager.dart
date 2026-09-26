@@ -15,8 +15,12 @@ import 'oidc_client.dart';
 /// decision 3). Keycloak rotates refresh tokens (Revoke Refresh Token = on), so a refresh is
 /// single-flight and the NEW refresh token is persisted before the new access token is used.
 class TokenManager implements TokenSource {
-  TokenManager({required this.env, required this.store, Dio? tokenDio, this.onSessionEnded})
+  TokenManager({required this.env, required this.store, Dio? tokenDio, this.onSessionEnded, this.beforeRefresh})
     : _dio = tokenDio ?? createIdpDio();
+
+  /// Awaited before every refresh. The UI isolate passes `waitForBackgroundSync` so it never rotates
+  /// the refresh token while a WorkManager run in another isolate holds it (E3-b).
+  final Future<void> Function()? beforeRefresh;
 
   final AppEnv env;
   final SecureStore store;
@@ -101,6 +105,8 @@ class TokenManager implements TokenSource {
 
   Future<String?> _doRefresh() async {
     final generation = _generation;
+    await beforeRefresh?.call();
+    // Read after the wait: a background run may have rotated (and stored) the refresh token.
     final refresh = await store.read(SecureKeys.refreshToken);
     if (refresh == null) return null;
     Response<dynamic> res;

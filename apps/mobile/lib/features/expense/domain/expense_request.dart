@@ -43,6 +43,7 @@ abstract class ExpenseLine with _$ExpenseLine {
     String? notes,
     RefItem? category,
     String? vehiclePlate,
+    int? vehicleId,
   }) = _ExpenseLine;
 }
 
@@ -147,14 +148,37 @@ abstract class RuleStep with _$RuleStep {
   const factory RuleStep({required int level, String? approverRole, int? approverUserId}) = _RuleStep;
 }
 
+/// A decision position skipped at submit because its only holders are the requester/creator (ADR 0013
+/// G1-2). Shown as "(tidak berlaku — pemohon)".
+@freezed
+abstract class SkippedPosition with _$SkippedPosition {
+  const factory SkippedPosition({required SignPosition position, required int level, String? role, String? reason}) =
+      _SkippedPosition;
+}
+
+/// `ExpenseRequestDetail.approvalRule` — the rule snapshot taken at submit.
 @freezed
 abstract class ApprovalRuleInfo with _$ApprovalRuleInfo {
+  const ApprovalRuleInfo._();
   const factory ApprovalRuleInfo({
     required String name,
     required String acknowledge, // required | optional | none
     String? acknowledgeDelegatedTo,
+    String? acknowledgeBy, // scope_manager (pre-E1 PM) | role | user
+    String? acknowledgeRole, // pk-owner = Direktur (ADR 0013)
+    @Default([]) List<String> decisionRoles, // [pk-owner, pk-finance]; empty = pre-E1 snapshot
+    @Default([]) List<SkippedPosition> skipped,
     @Default([]) List<RuleStep> steps,
   }) = _ApprovalRuleInfo;
+
+  /// Snapshot taken under ADR 0013 (Direktur "Diketahui" = approval, then Finance).
+  bool get decisionFlow => decisionRoles.isNotEmpty;
+
+  /// Pre-E1 snapshot where the PM / cost-center manager gave "Diketahui".
+  bool get legacyPmAcknowledge => acknowledgeBy == 'scope_manager';
+
+  bool isSkipped(SignPosition p, [int? level]) =>
+      skipped.any((s) => s.position == p && (level == null || s.level == level));
 }
 
 @freezed
@@ -218,6 +242,12 @@ abstract class ExpenseDetail with _$ExpenseDetail {
     String? cancelReason,
     String? submittedAt,
     String? updatedAt,
+    int? rev,
+    int? resubmitOfId,
+    int? createdById,
+    String? periodFrom,
+    String? periodTo,
+    int? bankAccountId,
   }) = _ExpenseDetail;
 }
 
@@ -238,9 +268,34 @@ abstract class InboxItem with _$InboxItem {
     String? neededDate,
     required String step, // acknowledge | approve
     int? level,
+    String? stepLabel, // "Persetujuan Direktur (Diketahui)" | "Approval level n" (server text, E1)
+    @Default(false) bool decisionFlow, // ADR 0013 request (acknowledge = Direktur approval)
     required BudgetImpact budget,
     @Default(false) bool budgetOverWarn,
     @Default(0) int warningFlags,
     @Default(0) int infoFlags,
   }) = _InboxItem;
+}
+
+/// `History.items[]` — one audit row of the request or a satellite (receipt, transfer, LPJ, cash entry).
+@freezed
+abstract class HistoryEntry with _$HistoryEntry {
+  const factory HistoryEntry({
+    required String serverTime,
+    required String action,
+    String? field,
+    int? lineNo,
+    Object? oldValue,
+    Object? newValue,
+    String? statusFrom,
+    String? statusTo,
+    String? reason,
+    int? userId,
+    String? userName,
+    String? source,
+    String? appVersion,
+    String? deviceId,
+    required String docType,
+    String? docNo,
+  }) = _HistoryEntry;
 }

@@ -220,7 +220,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRevoked.
   ///
   /// In id, this message translates to:
-  /// **'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.'**
+  /// **'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Direktur. Silakan masuk kembali atau hubungi Admin.'**
   String get deviceRevoked;
 
   /// No description provided for @stagingBadge.
@@ -394,7 +394,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeHint.
   ///
   /// In id, this message translates to:
-  /// **'Antrian transfer, verifikasi nota, dan kas dikerjakan di web admin.'**
+  /// **'Transfer, verifikasi nota/LPJ, dan buku kas dikerjakan di web admin.'**
   String get financeHint;
 
   /// No description provided for @inboxCount.
@@ -1524,6 +1524,420 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Ketuk untuk cek koneksi.'**
   String get offlineRecheck;
+
+  /// No description provided for @stepAcknowledgeDirektur.
+  ///
+  /// In id, this message translates to:
+  /// **'Persetujuan Direktur (Diketahui)'**
+  String get stepAcknowledgeDirektur;
+
+  /// No description provided for @budgetOverWarn.
+  ///
+  /// In id, this message translates to:
+  /// **'Melewati batas peringatan anggaran'**
+  String get budgetOverWarn;
+
+  /// No description provided for @decisionForbidden.
+  ///
+  /// In id, this message translates to:
+  /// **'Anda tidak dapat memutuskan pengajuan ini. Hanya Direktur (Diketahui) dan Finance (Approval) yang memutuskan, dan hanya pada gilirannya. Data dimuat ulang.'**
+  String get decisionForbidden;
+
+  /// No description provided for @decisionTitleAcknowledgeDirektur.
+  ///
+  /// In id, this message translates to:
+  /// **'Setujui sebagai Direktur (Diketahui)'**
+  String get decisionTitleAcknowledgeDirektur;
+
+  /// No description provided for @decisionHintDirektur.
+  ///
+  /// In id, this message translates to:
+  /// **'Persetujuan Direktur tercatat sebagai \"Diketahui\". Setelah itu pengajuan diteruskan ke Finance untuk Approval.'**
+  String get decisionHintDirektur;
+
+  /// No description provided for @actionAcknowledgeDirektur.
+  ///
+  /// In id, this message translates to:
+  /// **'Setujui (Diketahui)'**
+  String get actionAcknowledgeDirektur;
+
+  /// No description provided for @historyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Riwayat'**
+  String get historyTitle;
+
+  /// No description provided for @historyEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada riwayat.'**
+  String get historyEmpty;
+
+  /// No description provided for @historyField.
+  ///
+  /// In id, this message translates to:
+  /// **'Field'**
+  String get historyField;
+
+  /// No description provided for @historyChange.
+  ///
+  /// In id, this message translates to:
+  /// **'Lama → Baru'**
+  String get historyChange;
+
+  /// No description provided for @historyReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan'**
+  String get historyReason;
+
+  /// No description provided for @historySource.
+  ///
+  /// In id, this message translates to:
+  /// **'Sumber'**
+  String get historySource;
+
+  /// No description provided for @serverReceiptLocked.
+  ///
+  /// In id, this message translates to:
+  /// **'Nota sudah di server — tidak dapat diubah dari HP.'**
+  String get serverReceiptLocked;
+
+  /// No description provided for @lifecycleActionsTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Aksi pengajuan'**
+  String get lifecycleActionsTitle;
+
+  /// No description provided for @actionEditOnPhone.
+  ///
+  /// In id, this message translates to:
+  /// **'Ubah & ajukan di HP'**
+  String get actionEditOnPhone;
+
+  /// No description provided for @actionResubmit.
+  ///
+  /// In id, this message translates to:
+  /// **'Ajukan ulang (buat draft baru)'**
+  String get actionResubmit;
+
+  /// No description provided for @actionWithdraw.
+  ///
+  /// In id, this message translates to:
+  /// **'Tarik kembali ke Draft'**
+  String get actionWithdraw;
+
+  /// No description provided for @actionCancelRequest.
+  ///
+  /// In id, this message translates to:
+  /// **'Batalkan pengajuan'**
+  String get actionCancelRequest;
+
+  /// No description provided for @editOnWebHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Draft ini diubah lewat web (peran Anda tidak membuat pengajuan di HP).'**
+  String get editOnWebHint;
+
+  /// No description provided for @withdrawReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan tarik kembali'**
+  String get withdrawReason;
+
+  /// No description provided for @withdrawHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengajuan kembali ke Draft; ubah lalu ajukan lagi.'**
+  String get withdrawHint;
+
+  /// No description provided for @cancelReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan pembatalan'**
+  String get cancelReason;
+
+  /// No description provided for @cancelHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengajuan dibatalkan dan tidak diproses lagi.'**
+  String get cancelHint;
+
+  /// No description provided for @withdrawDone.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengajuan ditarik kembali ke Draft; silakan ubah lalu kirim lagi.'**
+  String get withdrawDone;
+
+  /// No description provided for @cancelDone.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengajuan dibatalkan.'**
+  String get cancelDone;
+
+  /// No description provided for @resubmitConfirm.
+  ///
+  /// In id, this message translates to:
+  /// **'Buat draft baru dari pengajuan yang ditolak ini?'**
+  String get resubmitConfirm;
+
+  /// No description provided for @resubmitDone.
+  ///
+  /// In id, this message translates to:
+  /// **'Draft baru dibuat dari pengajuan yang ditolak. Periksa, ubah bila perlu, lalu ajukan.'**
+  String get resubmitDone;
+
+  /// No description provided for @tabTeam.
+  ///
+  /// In id, this message translates to:
+  /// **'Tim'**
+  String get tabTeam;
+
+  /// No description provided for @teamReadOnlyHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Pantauan tim — hanya lihat. Persetujuan dilakukan Direktur dan Finance.'**
+  String get teamReadOnlyHint;
+
+  /// No description provided for @teamNoScope.
+  ///
+  /// In id, this message translates to:
+  /// **'Anda belum menjadi PM project atau penanggung jawab pusat biaya.'**
+  String get teamNoScope;
+
+  /// No description provided for @kpiSummaryTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Ringkasan'**
+  String get kpiSummaryTitle;
+
+  /// No description provided for @kpiTeamTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pantauan tim'**
+  String get kpiTeamTitle;
+
+  /// No description provided for @homeActionsTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Aksi'**
+  String get homeActionsTitle;
+
+  /// No description provided for @kpiUnavailable.
+  ///
+  /// In id, this message translates to:
+  /// **'Ringkasan belum bisa dimuat'**
+  String get kpiUnavailable;
+
+  /// No description provided for @kpiCashTotal.
+  ///
+  /// In id, this message translates to:
+  /// **'Saldo kas total'**
+  String get kpiCashTotal;
+
+  /// No description provided for @kpiMonthInOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Bulan ini +{cashIn} / −{cashOut}'**
+  String kpiMonthInOut(String cashIn, String cashOut);
+
+  /// No description provided for @kpiBalanceTrend.
+  ///
+  /// In id, this message translates to:
+  /// **'Tren saldo akhir bulan'**
+  String get kpiBalanceTrend;
+
+  /// No description provided for @kpiWaiting.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengajuan menunggu'**
+  String get kpiWaiting;
+
+  /// No description provided for @kpiWaitingSplit.
+  ///
+  /// In id, this message translates to:
+  /// **'Diketahui {ack} · Approval {approval}'**
+  String kpiWaitingSplit(int ack, int approval);
+
+  /// No description provided for @kpiWaitingForMe.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} menunggu saya'**
+  String kpiWaitingForMe(int count);
+
+  /// No description provided for @kpiOldest.
+  ///
+  /// In id, this message translates to:
+  /// **'tertua {days} hari'**
+  String kpiOldest(int days);
+
+  /// No description provided for @kpiDisbursedMonth.
+  ///
+  /// In id, this message translates to:
+  /// **'Pencairan bulan ini'**
+  String get kpiDisbursedMonth;
+
+  /// No description provided for @kpiDisbursedNet.
+  ///
+  /// In id, this message translates to:
+  /// **'{amount} dicairkan bersih'**
+  String kpiDisbursedNet(String amount);
+
+  /// No description provided for @kpiDisbursedTrend.
+  ///
+  /// In id, this message translates to:
+  /// **'Tren pencairan bersih per bulan'**
+  String get kpiDisbursedTrend;
+
+  /// No description provided for @kpiBudgetRealized.
+  ///
+  /// In id, this message translates to:
+  /// **'Realisasi vs anggaran'**
+  String get kpiBudgetRealized;
+
+  /// No description provided for @kpiOfBudget.
+  ///
+  /// In id, this message translates to:
+  /// **'{realized} dari RAB {budget}'**
+  String kpiOfBudget(String realized, String budget);
+
+  /// No description provided for @kpiBudgetAlerts.
+  ///
+  /// In id, this message translates to:
+  /// **'{over} lewat RAB · {warn} waspada'**
+  String kpiBudgetAlerts(int over, int warn);
+
+  /// No description provided for @kpiCashFlowTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Arus kas bulanan'**
+  String get kpiCashFlowTitle;
+
+  /// No description provided for @kpiCashFlowSubtitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Masuk vs keluar, tanpa transaksi yang di-void. Ketuk bulan untuk melihat angkanya.'**
+  String get kpiCashFlowSubtitle;
+
+  /// No description provided for @kpiCashFlowSubtitleFinance.
+  ///
+  /// In id, this message translates to:
+  /// **'Buku kas, termasuk koreksi void. Ketuk bulan untuk melihat angkanya.'**
+  String get kpiCashFlowSubtitleFinance;
+
+  /// No description provided for @kpiIn.
+  ///
+  /// In id, this message translates to:
+  /// **'Masuk'**
+  String get kpiIn;
+
+  /// No description provided for @kpiOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Keluar'**
+  String get kpiOut;
+
+  /// No description provided for @kpiTransferQueue.
+  ///
+  /// In id, this message translates to:
+  /// **'Antrian transfer'**
+  String get kpiTransferQueue;
+
+  /// No description provided for @kpiOverdue.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} lewat tanggal dibutuhkan'**
+  String kpiOverdue(int count);
+
+  /// No description provided for @kpiOnTime.
+  ///
+  /// In id, this message translates to:
+  /// **'Tepat waktu'**
+  String get kpiOnTime;
+
+  /// No description provided for @kpiToVerify.
+  ///
+  /// In id, this message translates to:
+  /// **'Menunggu verifikasi'**
+  String get kpiToVerify;
+
+  /// No description provided for @kpiToVerifySplit.
+  ///
+  /// In id, this message translates to:
+  /// **'{lpj} LPJ · {reimburse} nota reimburse'**
+  String kpiToVerifySplit(int lpj, int reimburse);
+
+  /// No description provided for @kpiLpjToSettle.
+  ///
+  /// In id, this message translates to:
+  /// **'Selisih LPJ'**
+  String get kpiLpjToSettle;
+
+  /// No description provided for @kpiAdvancesOverdue.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} uang muka terlambat LPJ'**
+  String kpiAdvancesOverdue(int count);
+
+  /// No description provided for @kpiTeamMonth.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengajuan tim bulan ini'**
+  String get kpiTeamMonth;
+
+  /// No description provided for @kpiTeamWaiting.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} menunggu persetujuan'**
+  String kpiTeamWaiting(int count);
+
+  /// No description provided for @kpiTeamTrend.
+  ///
+  /// In id, this message translates to:
+  /// **'Tren jumlah pengajuan tim'**
+  String get kpiTeamTrend;
+
+  /// No description provided for @kpiTeamLpj.
+  ///
+  /// In id, this message translates to:
+  /// **'Uang muka tim belum LPJ'**
+  String get kpiTeamLpj;
+
+  /// No description provided for @kpiLpjOverdue.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} terlambat'**
+  String kpiLpjOverdue(int count);
+
+  /// No description provided for @kpiLpjNoneOverdue.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada yang terlambat'**
+  String get kpiLpjNoneOverdue;
+
+  /// No description provided for @kpiTeamBudget.
+  ///
+  /// In id, this message translates to:
+  /// **'Realisasi anggaran project saya'**
+  String get kpiTeamBudget;
+
+  /// No description provided for @routeErrorTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Halaman tidak bisa dibuka'**
+  String get routeErrorTitle;
+
+  /// No description provided for @routeErrorBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Terjadi kesalahan saat membuka halaman ini. Kembali ke beranda lalu coba lagi.'**
+  String get routeErrorBody;
+
+  /// No description provided for @routeErrorHome.
+  ///
+  /// In id, this message translates to:
+  /// **'Ke beranda'**
+  String get routeErrorHome;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

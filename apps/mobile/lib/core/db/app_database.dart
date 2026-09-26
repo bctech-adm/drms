@@ -170,6 +170,9 @@ void applyCipherKey(CommonDatabase db, String key) {
     throw StateError('SQLite tanpa enkripsi (sqlite3mc tidak aktif)');
   }
   db.execute("PRAGMA key = '${key.replaceAll("'", "''")}';");
+  // E3-b: a WorkManager run may open a second connection to this file (own isolate); wait for its lock
+  // instead of failing with SQLITE_BUSY.
+  db.execute('PRAGMA busy_timeout = 5000;');
 }
 
 Future<String> loadOrCreateDbKey(SecureStore store) async {

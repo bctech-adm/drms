@@ -14,7 +14,7 @@ class InboxPage {
   final double budgetWarnPct;
 }
 
-/// Owner/PM inbox + decisions (US-26, US-42, US-43). Online-only.
+/// Direktur/Finance inbox + decisions (US-26, US-42, US-43, ADR 0013). Online-only.
 class ApprovalsApi {
   ApprovalsApi(this.client);
   final ApiClient client;

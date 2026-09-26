@@ -13,6 +13,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/expense/domain/request_status.dart';
 import '../features/expense/presentation/draft_editor_screen.dart';
+import '../features/expense/presentation/history_screen.dart';
 import '../features/expense/presentation/request_detail_screen.dart';
 import '../features/expense/presentation/requests_screen.dart';
 import '../features/home/presentation/home_screen.dart';
@@ -20,6 +21,7 @@ import '../features/home/presentation/home_shell.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
 import '../features/sync/presentation/queue_screen.dart';
+import 'route_error_screen.dart';
 
 /// Pure redirect rule (unit-tested): update gate → splash while starting → login when signed out.
 /// `/app/config` is NOT awaited: it loads in the background and the update gate redirects whenever it
@@ -49,6 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       auth: ref.read(authControllerProvider),
       gate: ref.read(versionGateProvider),
     ),
+    // Unknown location (e.g. an unexpected deep link or notification target) → a visible Indonesian
+    // error with a way home instead of go_router's default English page (WIP fix/mobile-login-redirect).
+    errorBuilder: (_, _) => const RouteErrorScreen(),
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
@@ -60,7 +65,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [GoRoute(path: '/home', builder: (_, _) => const HomeScreen())],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/requests', builder: (_, _) => const RequestsScreen())],
+            routes: [
+              GoRoute(
+                path: '/requests',
+                builder: (_, s) => RequestsScreen(initialTab: s.uri.queryParameters['tab']),
+              ),
+            ],
           ),
           StatefulShellBranch(
             routes: [GoRoute(path: '/inbox', builder: (_, _) => const InboxScreen())],
@@ -76,6 +86,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/requests/:id',
         builder: (_, s) => RequestDetailScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
+        routes: [
+          GoRoute(
+            path: 'history',
+            builder: (_, s) => HistoryScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
+          ),
+        ],
       ),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
       GoRoute(path: '/attendance', builder: (_, _) => const AttendanceScreen()),

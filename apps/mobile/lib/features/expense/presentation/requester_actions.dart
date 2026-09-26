@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../app/providers.dart';
@@ -156,6 +157,145 @@ class RequesterActionsSection extends ConsumerWidget {
     } finally {
       ref.invalidate(requestDetailProvider(detail.id));
     }
+  }
+}
+
+/// Request lifecycle actions of the requester, same endpoints/status/audit as the web
+/// (`apps/web/src/admin/components/RequesterActions.tsx`, US-04/US-06): "Tarik kembali ke Draft"
+/// (reason), "Batalkan pengajuan" (reason), "Ajukan ulang" (rejected → new draft) and — for a server
+/// Draft — "Ubah & ajukan di HP" (imports it into the offline editor). Online only; the buttons follow
+/// the server's `allowedActions`, the server re-checks every call.
+class RequestLifecycleActions extends ConsumerWidget {
+  const RequestLifecycleActions({super.key, required this.detail});
+  final ExpenseDetail detail;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
+    final a = detail.allowedActions;
+    final isDraft = detail.status == RequestStatus.draft;
+    final canEditHere = ref.watch(currentProfileProvider)?.canCreateRequests ?? false;
+    final buttons = <Widget>[
+      if (isDraft && canEditHere && (a.contains('edit') || a.contains('submit')))
+        OnlineOnlyButton(
+          key: const Key('action-edit-on-phone'),
+          label: t.actionEditOnPhone,
+          icon: Icons.edit_note,
+          onPressed: () => _openInEditor(context, ref, detail),
+        ),
+      if (a.contains('resubmit') && canEditHere)
+        OnlineOnlyButton(
+          key: const Key('action-resubmit'),
+          label: t.actionResubmit,
+          icon: Icons.replay,
+          onPressed: () => _resubmit(context, ref),
+        ),
+      if (a.contains('withdraw'))
+        OnlineOnlyButton(
+          key: const Key('action-withdraw'),
+          label: t.actionWithdraw,
+          icon: Icons.undo,
+          outlined: true,
+          onPressed: () => _withReason(context, ref, withdraw: true),
+        ),
+      if (a.contains('cancel'))
+        OnlineOnlyButton(
+          key: const Key('action-cancel'),
+          label: t.actionCancelRequest,
+          icon: Icons.block,
+          outlined: true,
+          onPressed: () => _withReason(context, ref, withdraw: false),
+        ),
+    ];
+    if (buttons.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 32),
+        Text(t.lifecycleActionsTitle, style: Theme.of(context).textTheme.titleMedium),
+        if (isDraft && !canEditHere) Padding(padding: const EdgeInsets.only(top: 4), child: Text(t.editOnWebHint)),
+        const SizedBox(height: 8),
+        for (final b in buttons) Padding(padding: const EdgeInsets.only(bottom: 8), child: b),
+      ],
+    );
+  }
+
+  void _refreshLists(WidgetRef ref) {
+    ref.invalidate(requestDetailProvider(detail.id));
+    ref.invalidate(requestListProvider);
+  }
+
+  Future<void> _withReason(BuildContext context, WidgetRef ref, {required bool withdraw}) async {
+    final t = AppLocalizations.of(context);
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => _TextPromptDialog(
+        title: withdraw ? t.actionWithdraw : t.actionCancelRequest,
+        label: withdraw ? t.withdrawReason : t.cancelReason,
+        hint: withdraw ? t.withdrawHint : t.cancelHint,
+        required: true,
+        fieldKey: Key(withdraw ? 'withdraw-reason' : 'cancel-reason'),
+      ),
+    );
+    if (reason == null || !context.mounted) return;
+    final api = ref.read(expenseApiProvider);
+    try {
+      final key = const Uuid().v7();
+      if (withdraw) {
+        await api.withdraw(detail.id, reason.trim(), idempotencyKey: key);
+      } else {
+        await api.cancel(detail.id, reason.trim(), idempotencyKey: key);
+      }
+      if (context.mounted) showSnack(context, withdraw ? t.withdrawDone : t.cancelDone);
+    } on Object catch (e) {
+      if (context.mounted) showSnack(context, errorText(e));
+    } finally {
+      _refreshLists(ref);
+    }
+  }
+
+  Future<void> _resubmit(BuildContext context, WidgetRef ref) async {
+    final t = AppLocalizations.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        content: Text(t.resubmitConfirm),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(t.cancel)),
+          FilledButton(
+            key: const Key('confirm-action'),
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(t.confirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    try {
+      // One key per original request: a retry after a lost answer returns the same new draft.
+      final created = await ref
+          .read(expenseApiProvider)
+          .resubmit(detail.id, idempotencyKey: const Uuid().v5(Namespace.url.value, 'pk-resubmit:${detail.id}'));
+      _refreshLists(ref);
+      if (!context.mounted) return;
+      showSnack(context, t.resubmitDone);
+      await _openInEditor(context, ref, created);
+    } on Object catch (e) {
+      if (context.mounted) showSnack(context, errorText(e));
+    }
+  }
+}
+
+/// Server Draft → local editor (fresh server copy first, so the import carries the current `rev`).
+Future<void> _openInEditor(BuildContext context, WidgetRef ref, ExpenseDetail d) async {
+  final sub = ref.read(currentSubProvider);
+  if (sub == null) return;
+  try {
+    final fresh = await ref.read(expenseApiProvider).detail(d.id);
+    final draft = await ref.read(draftServiceProvider).importServerDraft(sub, fresh);
+    if (context.mounted) await context.push('/drafts/${draft.clientUuid}');
+  } on Object catch (e) {
+    if (context.mounted) showSnack(context, errorText(e));
   }
 }
 

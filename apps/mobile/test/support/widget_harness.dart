@@ -40,6 +40,7 @@ UserProfile profile(Set<Role> roles) => UserProfile(
   email: 'doni@example.test',
   name: 'Doni Pratama',
   roles: roles,
+  capabilities: Capabilities.fromRoles(roles),
   employee: const Employee(id: 12, code: 'E12', name: 'Doni Pratama'),
 );
 
