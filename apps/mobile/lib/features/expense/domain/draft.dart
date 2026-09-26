@@ -31,6 +31,16 @@ abstract class DraftReceipt with _$DraftReceipt {
   }) = _DraftReceipt;
 }
 
+/// Placeholder `mediaUuid` of a receipt imported from a server draft (E3-d): the photo is already on
+/// the server, nothing is stored or uploaded from the phone.
+const serverMediaPrefix = 'server:';
+
+extension DraftReceiptServer on DraftReceipt {
+  /// Imported from the server (withdrawn / re-submitted draft): read-only on the phone, never re-sent in
+  /// `draft_upsert` (the server keeps receipts that are missing from the payload).
+  bool get isServerReceipt => mediaUuid.startsWith(serverMediaPrefix);
+}
+
 @freezed
 abstract class DraftLine with _$DraftLine {
   const factory DraftLine({
@@ -74,5 +84,7 @@ abstract class DraftRequest with _$DraftRequest {
 
   int get receiptCount => lines.fold(0, (n, l) => n + l.receipts.length);
 
-  Iterable<String> get mediaUuids => lines.expand((l) => l.receipts).map((r) => r.mediaUuid);
+  /// Local photos of this draft (server receipts of an imported draft have no local photo).
+  Iterable<String> get mediaUuids =>
+      lines.expand((l) => l.receipts).where((r) => !r.isServerReceipt).map((r) => r.mediaUuid);
 }

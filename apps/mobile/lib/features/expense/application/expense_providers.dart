@@ -29,7 +29,7 @@ class RequestListState {
   final bool loadingMore;
 }
 
-/// Server list, scope `mine` (Staff/PM) or `all` (Owner/Finance), cursor paging.
+/// Server list, scope `mine` (Staff/PM) or `all` (Direktur/Finance), cursor paging.
 final requestListProvider = AsyncNotifierProvider.family<RequestList, RequestListState, String>(RequestList.new);
 
 class RequestList extends AsyncNotifier<RequestListState> {

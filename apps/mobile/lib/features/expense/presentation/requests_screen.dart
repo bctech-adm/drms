@@ -21,30 +21,40 @@ String syncStateLabel(AppLocalizations t, DraftSyncState s) => switch (s) {
   DraftSyncState.submitted => t.syncStateSubmitted,
 };
 
-/// "Pengajuan": local drafts (offline-capable) + server list (scope mine; Owner/Finance: all).
+/// "Pengajuan": local drafts (offline-capable) + server list (scope mine; Direktur/Finance: all) and, for a
+/// PM, the team list (scope `team`, read-only monitoring — US-17, ADR 0013). `?tab=team` opens the team tab.
 class RequestsScreen extends ConsumerWidget {
-  const RequestsScreen({super.key});
+  const RequestsScreen({super.key, this.initialTab});
+  final String? initialTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = AppLocalizations.of(context);
     final profile = ref.watch(currentProfileProvider);
     final canCreate = profile?.canCreateRequests ?? false;
-    final scope = (profile?.homeKind == HomeKind.owner || profile?.homeKind == HomeKind.finance) ? 'all' : 'mine';
-    final sent = _SentList(scope: scope);
+    final team = profile?.hasTeamMonitor ?? false;
+    final scope = (profile?.homeKind == HomeKind.direktur || profile?.homeKind == HomeKind.finance) ? 'all' : 'mine';
+    final tabs = <(String, Tab, Widget)>[
+      if (canCreate) ('drafts', Tab(text: t.tabDrafts), const _DraftList()),
+      if (canCreate || team) ('sent', Tab(text: t.tabSent), _SentList(scope: scope)),
+      if (team)
+        ('team', Tab(key: const Key('tab-team'), text: t.tabTeam), const _SentList(scope: 'team', teamHint: true)),
+    ];
+    if (tabs.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(t.requestsTitle)),
+        body: _SentList(scope: scope),
+      );
+    }
+    final start = tabs.indexWhere((e) => e.$1 == initialTab);
     return DefaultTabController(
-      length: canCreate ? 2 : 1,
+      key: ValueKey('tabs-${tabs.length}-$initialTab'),
+      length: tabs.length,
+      initialIndex: start < 0 ? 0 : start,
       child: Scaffold(
         appBar: AppBar(
           title: Text(t.requestsTitle),
-          bottom: canCreate
-              ? TabBar(
-                  tabs: [
-                    Tab(text: t.tabDrafts),
-                    Tab(text: t.tabSent),
-                  ],
-                )
-              : null,
+          bottom: tabs.length > 1 ? TabBar(tabs: [for (final e in tabs) e.$2]) : null,
         ),
         floatingActionButton: canCreate
             ? FloatingActionButton.extended(
@@ -54,7 +64,7 @@ class RequestsScreen extends ConsumerWidget {
                 label: Text(t.editorNewTitle),
               )
             : null,
-        body: canCreate ? TabBarView(children: [const _DraftList(), sent]) : sent,
+        body: tabs.length > 1 ? TabBarView(children: [for (final e in tabs) e.$3]) : tabs.single.$3,
       ),
     );
   }
@@ -98,8 +108,9 @@ class _DraftList extends ConsumerWidget {
 }
 
 class _SentList extends ConsumerWidget {
-  const _SentList({required this.scope});
+  const _SentList({required this.scope, this.teamHint = false});
   final String scope;
+  final bool teamHint;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -121,9 +132,17 @@ class _SentList extends ConsumerWidget {
               )
             : ListView.separated(
                 padding: const EdgeInsets.only(bottom: 96),
-                itemCount: s.items.length + (s.nextCursor != null ? 1 : 0),
+                itemCount: s.items.length + (s.nextCursor != null ? 1 : 0) + (teamHint ? 1 : 0),
                 separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (_, i) {
+                itemBuilder: (_, index) {
+                  if (teamHint && index == 0) {
+                    return ListTile(
+                      key: const Key('team-readonly-hint'),
+                      leading: const Icon(Icons.visibility),
+                      title: Text(t.teamReadOnlyHint),
+                    );
+                  }
+                  final i = teamHint ? index - 1 : index;
                   if (i == s.items.length) {
                     return Padding(
                       padding: const EdgeInsets.all(16),

@@ -10,6 +10,8 @@ import 'package:proyekkas/features/approvals/presentation/inbox_screen.dart';
 import 'package:proyekkas/features/auth/application/auth_controller.dart';
 import 'package:proyekkas/features/auth/domain/user_profile.dart';
 import 'package:proyekkas/features/auth/presentation/login_screen.dart';
+import 'package:proyekkas/features/dashboard/domain/dashboard.dart';
+import 'package:proyekkas/features/dashboard/presentation/kpi_home.dart';
 import 'package:proyekkas/features/expense/application/expense_providers.dart';
 import 'package:proyekkas/features/expense/data/expense_mappers.dart';
 import 'package:proyekkas/features/expense/presentation/draft_editor_screen.dart';
@@ -73,7 +75,7 @@ void main() {
     });
   });
 
-  group('Approval (Owner)', () {
+  group('Approval (Direktur)', () {
     testWidgets('inbox shows budget impact %, over-warn marker and flags', (tester) async {
       await pumpScreen(
         tester,
@@ -88,7 +90,7 @@ void main() {
       expect(find.text('Service Tronton'), findsOneWidget);
       expect(find.textContaining('70,5% → 88,3%'), findsOneWidget);
       expect(find.textContaining('1 peringatan · 2 info'), findsOneWidget);
-      expect(find.byIcon(Icons.warning), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber), findsOneWidget);
       expect(find.text('Rp 1.447.500'), findsOneWidget);
     });
 
@@ -102,7 +104,7 @@ void main() {
           receiptThumbProvider(901).overrideWith((ref) => Future.error(const NetworkException())),
         ],
       );
-      expect(tester.widget<Text>(find.byKey(const Key('turn-text'))).data, 'Approval (Owner)');
+      expect(tester.widget<Text>(find.byKey(const Key('turn-text'))).data, 'Approval (Direktur)');
       expect(find.text('Satuan tidak wajar'), findsOneWidget);
       expect(find.byKey(const Key('action-approve')), findsOneWidget);
       expect(find.byKey(const Key('action-reject')), findsOneWidget);
@@ -189,12 +191,13 @@ void main() {
       expect(find.byKey(const Key('home-new-advance')), findsOneWidget);
     });
 
-    testWidgets('owner home: approval inbox with count, no create buttons', (tester) async {
+    testWidgets('Direktur home: approval inbox with count, no create buttons', (tester) async {
       await pumpScreen(
         tester,
         const HomeScreen(),
         auth: AuthSignedIn(profile: profile({Role.owner}), sub: 's'),
         overrides: [
+          direkturDashboardProvider.overrideWith((ref) async => DirekturDashboard.fromJson(direkturDashboardJson())),
           inboxProvider.overrideWith(
             (ref) async => InboxPage([inboxItemFromJson(inboxJson()['items'][0] as Map<String, dynamic>)], 85),
           ),

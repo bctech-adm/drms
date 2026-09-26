@@ -79,7 +79,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get deviceRevoked =>
-      'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.';
+      'Perangkat ini sudah dicabut dari akun Anda oleh Admin/Direktur. Silakan masuk kembali atau hubungi Admin.';
 
   @override
   String get stagingBadge => 'STAGING';
@@ -172,7 +172,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionAllRequests => 'Semua Pengajuan';
 
   @override
-  String get financeHint => 'Antrian transfer, verifikasi nota, dan kas dikerjakan di web admin.';
+  String get financeHint => 'Transfer, verifikasi nota/LPJ, dan buku kas dikerjakan di web admin.';
 
   @override
   String inboxCount(int count) {
@@ -764,4 +764,238 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get offlineRecheck => 'Ketuk untuk cek koneksi.';
+
+  @override
+  String get stepAcknowledgeDirektur => 'Persetujuan Direktur (Diketahui)';
+
+  @override
+  String get budgetOverWarn => 'Melewati batas peringatan anggaran';
+
+  @override
+  String get decisionForbidden =>
+      'Anda tidak dapat memutuskan pengajuan ini. Hanya Direktur (Diketahui) dan Finance (Approval) yang memutuskan, dan hanya pada gilirannya. Data dimuat ulang.';
+
+  @override
+  String get decisionTitleAcknowledgeDirektur => 'Setujui sebagai Direktur (Diketahui)';
+
+  @override
+  String get decisionHintDirektur =>
+      'Persetujuan Direktur tercatat sebagai \"Diketahui\". Setelah itu pengajuan diteruskan ke Finance untuk Approval.';
+
+  @override
+  String get actionAcknowledgeDirektur => 'Setujui (Diketahui)';
+
+  @override
+  String get historyTitle => 'Riwayat';
+
+  @override
+  String get historyEmpty => 'Belum ada riwayat.';
+
+  @override
+  String get historyField => 'Field';
+
+  @override
+  String get historyChange => 'Lama → Baru';
+
+  @override
+  String get historyReason => 'Alasan';
+
+  @override
+  String get historySource => 'Sumber';
+
+  @override
+  String get serverReceiptLocked => 'Nota sudah di server — tidak dapat diubah dari HP.';
+
+  @override
+  String get lifecycleActionsTitle => 'Aksi pengajuan';
+
+  @override
+  String get actionEditOnPhone => 'Ubah & ajukan di HP';
+
+  @override
+  String get actionResubmit => 'Ajukan ulang (buat draft baru)';
+
+  @override
+  String get actionWithdraw => 'Tarik kembali ke Draft';
+
+  @override
+  String get actionCancelRequest => 'Batalkan pengajuan';
+
+  @override
+  String get editOnWebHint => 'Draft ini diubah lewat web (peran Anda tidak membuat pengajuan di HP).';
+
+  @override
+  String get withdrawReason => 'Alasan tarik kembali';
+
+  @override
+  String get withdrawHint => 'Pengajuan kembali ke Draft; ubah lalu ajukan lagi.';
+
+  @override
+  String get cancelReason => 'Alasan pembatalan';
+
+  @override
+  String get cancelHint => 'Pengajuan dibatalkan dan tidak diproses lagi.';
+
+  @override
+  String get withdrawDone => 'Pengajuan ditarik kembali ke Draft; silakan ubah lalu kirim lagi.';
+
+  @override
+  String get cancelDone => 'Pengajuan dibatalkan.';
+
+  @override
+  String get resubmitConfirm => 'Buat draft baru dari pengajuan yang ditolak ini?';
+
+  @override
+  String get resubmitDone => 'Draft baru dibuat dari pengajuan yang ditolak. Periksa, ubah bila perlu, lalu ajukan.';
+
+  @override
+  String get tabTeam => 'Tim';
+
+  @override
+  String get teamReadOnlyHint => 'Pantauan tim — hanya lihat. Persetujuan dilakukan Direktur dan Finance.';
+
+  @override
+  String get teamNoScope => 'Anda belum menjadi PM project atau penanggung jawab pusat biaya.';
+
+  @override
+  String get kpiSummaryTitle => 'Ringkasan';
+
+  @override
+  String get kpiTeamTitle => 'Pantauan tim';
+
+  @override
+  String get homeActionsTitle => 'Aksi';
+
+  @override
+  String get kpiUnavailable => 'Ringkasan belum bisa dimuat';
+
+  @override
+  String get kpiCashTotal => 'Saldo kas total';
+
+  @override
+  String kpiMonthInOut(String cashIn, String cashOut) {
+    return 'Bulan ini +$cashIn / −$cashOut';
+  }
+
+  @override
+  String get kpiBalanceTrend => 'Tren saldo akhir bulan';
+
+  @override
+  String get kpiWaiting => 'Pengajuan menunggu';
+
+  @override
+  String kpiWaitingSplit(int ack, int approval) {
+    return 'Diketahui $ack · Approval $approval';
+  }
+
+  @override
+  String kpiWaitingForMe(int count) {
+    return '$count menunggu saya';
+  }
+
+  @override
+  String kpiOldest(int days) {
+    return 'tertua $days hari';
+  }
+
+  @override
+  String get kpiDisbursedMonth => 'Pencairan bulan ini';
+
+  @override
+  String kpiDisbursedNet(String amount) {
+    return '$amount dicairkan bersih';
+  }
+
+  @override
+  String get kpiDisbursedTrend => 'Tren pencairan bersih per bulan';
+
+  @override
+  String get kpiBudgetRealized => 'Realisasi vs anggaran';
+
+  @override
+  String kpiOfBudget(String realized, String budget) {
+    return '$realized dari RAB $budget';
+  }
+
+  @override
+  String kpiBudgetAlerts(int over, int warn) {
+    return '$over lewat RAB · $warn waspada';
+  }
+
+  @override
+  String get kpiCashFlowTitle => 'Arus kas bulanan';
+
+  @override
+  String get kpiCashFlowSubtitle =>
+      'Masuk vs keluar, tanpa transaksi yang di-void. Ketuk bulan untuk melihat angkanya.';
+
+  @override
+  String get kpiCashFlowSubtitleFinance => 'Buku kas, termasuk koreksi void. Ketuk bulan untuk melihat angkanya.';
+
+  @override
+  String get kpiIn => 'Masuk';
+
+  @override
+  String get kpiOut => 'Keluar';
+
+  @override
+  String get kpiTransferQueue => 'Antrian transfer';
+
+  @override
+  String kpiOverdue(int count) {
+    return '$count lewat tanggal dibutuhkan';
+  }
+
+  @override
+  String get kpiOnTime => 'Tepat waktu';
+
+  @override
+  String get kpiToVerify => 'Menunggu verifikasi';
+
+  @override
+  String kpiToVerifySplit(int lpj, int reimburse) {
+    return '$lpj LPJ · $reimburse nota reimburse';
+  }
+
+  @override
+  String get kpiLpjToSettle => 'Selisih LPJ';
+
+  @override
+  String kpiAdvancesOverdue(int count) {
+    return '$count uang muka terlambat LPJ';
+  }
+
+  @override
+  String get kpiTeamMonth => 'Pengajuan tim bulan ini';
+
+  @override
+  String kpiTeamWaiting(int count) {
+    return '$count menunggu persetujuan';
+  }
+
+  @override
+  String get kpiTeamTrend => 'Tren jumlah pengajuan tim';
+
+  @override
+  String get kpiTeamLpj => 'Uang muka tim belum LPJ';
+
+  @override
+  String kpiLpjOverdue(int count) {
+    return '$count terlambat';
+  }
+
+  @override
+  String get kpiLpjNoneOverdue => 'Tidak ada yang terlambat';
+
+  @override
+  String get kpiTeamBudget => 'Realisasi anggaran project saya';
+
+  @override
+  String get routeErrorTitle => 'Halaman tidak bisa dibuka';
+
+  @override
+  String get routeErrorBody => 'Terjadi kesalahan saat membuka halaman ini. Kembali ke beranda lalu coba lagi.';
+
+  @override
+  String get routeErrorHome => 'Ke beranda';
 }

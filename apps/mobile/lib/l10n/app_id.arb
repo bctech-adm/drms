@@ -13,10 +13,21 @@
   "needsInternet": "Butuh koneksi internet",
   "offlineBanner": "Offline — data disimpan di HP dan dikirim otomatis saat online.",
   "pendingQueue": "{count} data menunggu dikirim",
-  "@pendingQueue": {"placeholders": {"count": {"type": "int"}}},
+  "@pendingQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "failedQueue": "{count} data gagal dikirim — buka Antrean",
-  "@failedQueue": {"placeholders": {"count": {"type": "int"}}},
-
+  "@failedQueue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "loginTitle": "Masuk ke ProyekKas",
   "loginSubtitle": "Gunakan akun DRMS Anda. Halaman masuk dibuka di browser HP.",
   "loginButton": "Masuk",
@@ -24,7 +35,7 @@
   "loginFailed": "Login gagal. Coba lagi.",
   "loginNeedsInternet": "Login pertama kali butuh koneksi internet.",
   "sessionEnded": "Sesi berakhir atau perangkat dicabut. Silakan masuk kembali.",
-  "deviceRevoked": "Perangkat ini sudah dicabut dari akun Anda oleh Admin/Owner. Silakan masuk kembali atau hubungi Admin.",
+  "deviceRevoked": "Perangkat ini sudah dicabut dari akun Anda oleh Admin/Direktur. Silakan masuk kembali atau hubungi Admin.",
   "stagingBadge": "STAGING",
   "loginSubtitlePassword": "Gunakan akun DRMS Anda.",
   "loginUsernameLabel": "Email atau username",
@@ -34,24 +45,42 @@
   "loginShowPassword": "Tampilkan kata sandi",
   "loginHidePassword": "Sembunyikan kata sandi",
   "loginForgotPassword": "Lupa kata sandi? Hubungi Admin.",
-
   "updateRequiredTitle": "Perbarui aplikasi",
   "updateRequiredBody": "Versi aplikasi ini ({current}) sudah tidak didukung. Versi minimal: {minimum}.",
-  "@updateRequiredBody": {"placeholders": {"current": {"type": "String"}, "minimum": {"type": "String"}}},
+  "@updateRequiredBody": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "minimum": {
+        "type": "String"
+      }
+    }
+  },
   "updateDownloadHint": "Unduh versi terbaru dari:",
   "copyLink": "Salin tautan",
   "updateContactAdmin": "Hubungi admin untuk mendapatkan APK terbaru.",
   "updateAvailable": "Versi baru tersedia ({version}).",
-  "@updateAvailable": {"placeholders": {"version": {"type": "String"}}},
-
+  "@updateAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "navHome": "Beranda",
   "navRequests": "Pengajuan",
   "navInbox": "Persetujuan",
   "navQueue": "Antrean",
   "navProfile": "Profil",
-
   "greeting": "Halo, {name}",
-  "@greeting": {"placeholders": {"name": {"type": "String"}}},
+  "@greeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "actionNewAdvance": "Ajukan Uang Muka",
   "actionNewReimburse": "Ajukan Reimburse",
   "actionMyRequests": "Pengajuan Saya",
@@ -59,10 +88,15 @@
   "actionAttendance": "Absensi",
   "actionAttendanceOff": "Absensi (belum diaktifkan Admin)",
   "actionAllRequests": "Semua Pengajuan",
-  "financeHint": "Antrian transfer, verifikasi nota, dan kas dikerjakan di web admin.",
+  "financeHint": "Transfer, verifikasi nota/LPJ, dan buku kas dikerjakan di web admin.",
   "inboxCount": "{count} menunggu",
-  "@inboxCount": {"placeholders": {"count": {"type": "int"}}},
-
+  "@inboxCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "requestsTitle": "Pengajuan",
   "tabDrafts": "Draft di HP",
   "tabSent": "Terkirim",
@@ -76,7 +110,6 @@
   "syncStateConflict": "Konflik — diubah di web",
   "syncStateRejected": "Ditolak server",
   "syncStateSubmitted": "Sudah diajukan",
-
   "detailTitle": "Detail Pengajuan",
   "turnLabel": "Giliran",
   "timelineTitle": "Posisi tanda tangan",
@@ -95,11 +128,19 @@
   "budgetImpact": "Dampak anggaran",
   "budgetNone": "Tanpa anggaran",
   "budgetChange": "{before} → {after}",
-  "@budgetChange": {"placeholders": {"before": {"type": "String"}, "after": {"type": "String"}}},
+  "@budgetChange": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "receiptThumbFailed": "Gambar tidak dapat dimuat",
   "totalPreview": "Total (pratinjau)",
   "previewNote": "Nilai final dihitung server.",
-
   "editorNewTitle": "Pengajuan baru",
   "editorEditTitle": "Ubah draft",
   "fieldType": "Jenis",
@@ -123,9 +164,14 @@
   "draftSavedQueued": "Draft disimpan dan akan dikirim saat online.",
   "deleteDraftConfirm": "Hapus draft ini dari HP?",
   "mastersMissing": "Data master belum tersedia. Buka aplikasi saat online sekali untuk mengunduhnya.",
-
   "lineTitle": "Baris {no}",
-  "@lineTitle": {"placeholders": {"no": {"type": "int"}}},
+  "@lineTitle": {
+    "placeholders": {
+      "no": {
+        "type": "int"
+      }
+    }
+  },
   "fieldDescription": "Uraian",
   "fieldQty": "Jumlah",
   "fieldUom": "Satuan",
@@ -136,7 +182,13 @@
   "fieldLineNotes": "Keterangan baris",
   "unitPriceHint": "Informasi saja — total tidak dihitung otomatis.",
   "receiptDiff": "Selisih total baris vs nota: {amount}",
-  "@receiptDiff": {"placeholders": {"amount": {"type": "String"}}},
+  "@receiptDiff": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "addReceiptCamera": "Foto nota (kamera)",
   "addReceiptGallery": "Dari galeri",
   "receiptNo": "Nomor nota",
@@ -153,14 +205,28 @@
   "takePhoto": "Ambil foto",
   "invalidAmount": "Nominal tidak valid",
   "required": "Wajib diisi",
-
   "inboxTitle": "Menunggu Persetujuan",
   "inboxEmpty": "Tidak ada pengajuan yang menunggu Anda.",
   "stepAcknowledge": "Diketahui",
   "stepApprove": "Approval level {level}",
-  "@stepApprove": {"placeholders": {"level": {"type": "int"}}},
+  "@stepApprove": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
   "flagsCount": "{warning} peringatan · {info} info",
-  "@flagsCount": {"placeholders": {"warning": {"type": "int"}, "info": {"type": "int"}}},
+  "@flagsCount": {
+    "placeholders": {
+      "warning": {
+        "type": "int"
+      },
+      "info": {
+        "type": "int"
+      }
+    }
+  },
   "actionAcknowledge": "Diketahui",
   "actionApprove": "Setujui",
   "actionReject": "Tolak",
@@ -177,7 +243,6 @@
   "signatureTooLarge": "Tanda tangan terlalu besar. Ulangi dengan goresan lebih sederhana.",
   "confirm": "Konfirmasi",
   "decisionDone": "Keputusan tersimpan.",
-
   "transferTitle": "Transfer dari Finance",
   "transferNone": "Belum ada transfer.",
   "transferTotal": "Total ditransfer",
@@ -185,7 +250,13 @@
   "transferPosted": "Tercatat",
   "transferVoid": "Dibatalkan",
   "transferVoidReason": "Alasan batal: {reason}",
-  "@transferVoidReason": {"placeholders": {"reason": {"type": "String"}}},
+  "@transferVoidReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "lpjTitle": "LPJ (Laporan Pertanggungjawaban)",
   "lpjStatus": "Status LPJ",
   "lpjReceiptsTotal": "Total nota",
@@ -214,7 +285,6 @@
   "actionComplete": "Tandai selesai",
   "actionCompleteConfirm": "Dana sudah diterima dan pengajuan ini selesai?",
   "actionSaved": "Tersimpan.",
-
   "integrityWarning": "HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.",
   "attendanceTitle": "Absensi",
   "attendanceDisabled": "Absensi dari aplikasi belum diaktifkan Admin (Setting perusahaan).",
@@ -224,9 +294,21 @@
   "attendanceCheckOut": "Absen pulang",
   "attendanceLocating": "Membaca lokasi GPS…",
   "attendanceOutside": "Anda di luar radius project ({distance} m dari titik). Absen hanya bisa di lokasi project.",
-  "@attendanceOutside": {"placeholders": {"distance": {"type": "int"}}},
+  "@attendanceOutside": {
+    "placeholders": {
+      "distance": {
+        "type": "int"
+      }
+    }
+  },
   "attendanceInside": "Di dalam radius project ({distance} m dari titik).",
-  "@attendanceInside": {"placeholders": {"distance": {"type": "int"}}},
+  "@attendanceInside": {
+    "placeholders": {
+      "distance": {
+        "type": "int"
+      }
+    }
+  },
   "attendanceNoGeofence": "Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.",
   "attendanceMocked": "Lokasi palsu (mock location) terdeteksi. Matikan aplikasi lokasi palsu. Absen ditolak.",
   "attendanceSelfieTitle": "Selfie absensi",
@@ -239,7 +321,6 @@
   "notificationsTitle": "Notifikasi",
   "notificationsEmpty": "Belum ada notifikasi.",
   "notificationsReadAll": "Tandai semua dibaca",
-
   "queueTitle": "Antrean kirim",
   "queueEmpty": "Tidak ada data yang menunggu dikirim.",
   "syncNow": "Kirim sekarang",
@@ -253,8 +334,13 @@
   "queueStatusFailed": "Gagal dikirim",
   "queueStatusSuperseded": "Diganti",
   "queueUsage": "Penyimpanan offline: {used} dari 100 MB",
-  "@queueUsage": {"placeholders": {"used": {"type": "String"}}},
-
+  "@queueUsage": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      }
+    }
+  },
   "profileTitle": "Profil",
   "profileRoles": "Peran",
   "profileEmployee": "Karyawan",
@@ -264,8 +350,182 @@
   "logout": "Keluar",
   "logoutConfirm": "Keluar dari aplikasi?",
   "logoutPendingWarning": "Masih ada {count} data belum terkirim ke server. Data ini TIDAK dihapus: tetap tersimpan terenkripsi di HP dan baru dikirim setelah Anda masuk lagi dengan akun yang sama. Jika ada sinyal, kirim dulu lewat menu Antrean.",
-  "@logoutPendingWarning": {"placeholders": {"count": {"type": "int"}}},
+  "@logoutPendingWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "logoutAnyway": "Tetap keluar",
   "logoutInProgress": "Sedang keluar…",
-  "offlineRecheck": "Ketuk untuk cek koneksi."
+  "offlineRecheck": "Ketuk untuk cek koneksi.",
+  "stepAcknowledgeDirektur": "Persetujuan Direktur (Diketahui)",
+  "budgetOverWarn": "Melewati batas peringatan anggaran",
+  "decisionForbidden": "Anda tidak dapat memutuskan pengajuan ini. Hanya Direktur (Diketahui) dan Finance (Approval) yang memutuskan, dan hanya pada gilirannya. Data dimuat ulang.",
+  "decisionTitleAcknowledgeDirektur": "Setujui sebagai Direktur (Diketahui)",
+  "decisionHintDirektur": "Persetujuan Direktur tercatat sebagai \"Diketahui\". Setelah itu pengajuan diteruskan ke Finance untuk Approval.",
+  "actionAcknowledgeDirektur": "Setujui (Diketahui)",
+  "historyTitle": "Riwayat",
+  "historyEmpty": "Belum ada riwayat.",
+  "historyField": "Field",
+  "historyChange": "Lama → Baru",
+  "historyReason": "Alasan",
+  "historySource": "Sumber",
+  "serverReceiptLocked": "Nota sudah di server — tidak dapat diubah dari HP.",
+  "lifecycleActionsTitle": "Aksi pengajuan",
+  "actionEditOnPhone": "Ubah & ajukan di HP",
+  "actionResubmit": "Ajukan ulang (buat draft baru)",
+  "actionWithdraw": "Tarik kembali ke Draft",
+  "actionCancelRequest": "Batalkan pengajuan",
+  "editOnWebHint": "Draft ini diubah lewat web (peran Anda tidak membuat pengajuan di HP).",
+  "withdrawReason": "Alasan tarik kembali",
+  "withdrawHint": "Pengajuan kembali ke Draft; ubah lalu ajukan lagi.",
+  "cancelReason": "Alasan pembatalan",
+  "cancelHint": "Pengajuan dibatalkan dan tidak diproses lagi.",
+  "withdrawDone": "Pengajuan ditarik kembali ke Draft; silakan ubah lalu kirim lagi.",
+  "cancelDone": "Pengajuan dibatalkan.",
+  "resubmitConfirm": "Buat draft baru dari pengajuan yang ditolak ini?",
+  "resubmitDone": "Draft baru dibuat dari pengajuan yang ditolak. Periksa, ubah bila perlu, lalu ajukan.",
+  "tabTeam": "Tim",
+  "teamReadOnlyHint": "Pantauan tim — hanya lihat. Persetujuan dilakukan Direktur dan Finance.",
+  "teamNoScope": "Anda belum menjadi PM project atau penanggung jawab pusat biaya.",
+  "kpiSummaryTitle": "Ringkasan",
+  "kpiTeamTitle": "Pantauan tim",
+  "homeActionsTitle": "Aksi",
+  "kpiUnavailable": "Ringkasan belum bisa dimuat",
+  "kpiCashTotal": "Saldo kas total",
+  "kpiMonthInOut": "Bulan ini +{cashIn} / −{cashOut}",
+  "@kpiMonthInOut": {
+    "placeholders": {
+      "cashIn": {
+        "type": "String"
+      },
+      "cashOut": {
+        "type": "String"
+      }
+    }
+  },
+  "kpiBalanceTrend": "Tren saldo akhir bulan",
+  "kpiWaiting": "Pengajuan menunggu",
+  "kpiWaitingSplit": "Diketahui {ack} · Approval {approval}",
+  "@kpiWaitingSplit": {
+    "placeholders": {
+      "ack": {
+        "type": "int"
+      },
+      "approval": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiWaitingForMe": "{count} menunggu saya",
+  "@kpiWaitingForMe": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiOldest": "tertua {days} hari",
+  "@kpiOldest": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiDisbursedMonth": "Pencairan bulan ini",
+  "kpiDisbursedNet": "{amount} dicairkan bersih",
+  "@kpiDisbursedNet": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kpiDisbursedTrend": "Tren pencairan bersih per bulan",
+  "kpiBudgetRealized": "Realisasi vs anggaran",
+  "kpiOfBudget": "{realized} dari RAB {budget}",
+  "@kpiOfBudget": {
+    "placeholders": {
+      "realized": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "kpiBudgetAlerts": "{over} lewat RAB · {warn} waspada",
+  "@kpiBudgetAlerts": {
+    "placeholders": {
+      "over": {
+        "type": "int"
+      },
+      "warn": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiCashFlowTitle": "Arus kas bulanan",
+  "kpiCashFlowSubtitle": "Masuk vs keluar, tanpa transaksi yang di-void. Ketuk bulan untuk melihat angkanya.",
+  "kpiCashFlowSubtitleFinance": "Buku kas, termasuk koreksi void. Ketuk bulan untuk melihat angkanya.",
+  "kpiIn": "Masuk",
+  "kpiOut": "Keluar",
+  "kpiTransferQueue": "Antrian transfer",
+  "kpiOverdue": "{count} lewat tanggal dibutuhkan",
+  "@kpiOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiOnTime": "Tepat waktu",
+  "kpiToVerify": "Menunggu verifikasi",
+  "kpiToVerifySplit": "{lpj} LPJ · {reimburse} nota reimburse",
+  "@kpiToVerifySplit": {
+    "placeholders": {
+      "lpj": {
+        "type": "int"
+      },
+      "reimburse": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiLpjToSettle": "Selisih LPJ",
+  "kpiAdvancesOverdue": "{count} uang muka terlambat LPJ",
+  "@kpiAdvancesOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiTeamMonth": "Pengajuan tim bulan ini",
+  "kpiTeamWaiting": "{count} menunggu persetujuan",
+  "@kpiTeamWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiTeamTrend": "Tren jumlah pengajuan tim",
+  "kpiTeamLpj": "Uang muka tim belum LPJ",
+  "kpiLpjOverdue": "{count} terlambat",
+  "@kpiLpjOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kpiLpjNoneOverdue": "Tidak ada yang terlambat",
+  "kpiTeamBudget": "Realisasi anggaran project saya",
+  "routeErrorTitle": "Halaman tidak bisa dibuka",
+  "routeErrorBody": "Terjadi kesalahan saat membuka halaman ini. Kembali ke beranda lalu coba lagi.",
+  "routeErrorHome": "Ke beranda"
 }

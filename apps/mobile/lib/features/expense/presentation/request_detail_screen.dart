@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/connectivity/connectivity_controller.dart';
@@ -33,7 +34,17 @@ class RequestDetailScreen extends ConsumerWidget {
     final value = ref.watch(requestDetailProvider(id));
     final zone = ref.watch(currentProfileProvider)?.timezone;
     return Scaffold(
-      appBar: AppBar(title: Text(t.detailTitle)),
+      appBar: AppBar(
+        title: Text(t.detailTitle),
+        actions: [
+          IconButton(
+            key: const Key('open-history'),
+            tooltip: t.historyTitle,
+            icon: const Icon(Icons.history),
+            onPressed: () => context.push('/requests/$id/history'),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(requestDetailProvider(id).future),
         child: AsyncBody(
@@ -110,6 +121,7 @@ class _DetailBody extends StatelessWidget {
         if (d.rejectReason != null) row(t.rejectReasonLabel, d.rejectReason!),
         if (TransferSection.visibleFor(d)) TransferSection(detail: d),
         if (d.settlement != null) LpjSection(settlement: d.settlement!),
+        RequestLifecycleActions(detail: d),
         RequesterActionsSection(detail: d),
         const Divider(height: 32),
         Text(t.timelineTitle, style: theme.textTheme.titleMedium),
@@ -219,12 +231,13 @@ class _DecisionBar extends ConsumerWidget {
 
     Future<void> open(Decision decision) async {
       final done = await showDecisionSheet(context, detail: detail, decision: decision);
-      if (done == true && context.mounted) {
-        showSnack(context, t.decisionDone);
-        ref.invalidate(requestDetailProvider(detail.id));
-        ref.invalidate(inboxProvider);
-      }
+      if (done == true && context.mounted) showSnack(context, t.decisionDone);
+      // Also after a refusal (403/409): the buttons must reflect the server's current allowedActions.
+      ref.invalidate(requestDetailProvider(detail.id));
+      ref.invalidate(inboxProvider);
     }
+
+    final direktur = detail.approvalRule?.decisionFlow ?? false;
 
     return SafeArea(
       child: Padding(
@@ -247,7 +260,9 @@ class _DecisionBar extends ConsumerWidget {
                   key: Key(canApprove ? 'action-approve' : 'action-acknowledge'),
                   onPressed: () => open(canApprove ? Decision.approve : Decision.acknowledge),
                   icon: const Icon(Icons.check),
-                  label: Text(canApprove ? t.actionApprove : t.actionAcknowledge),
+                  label: Text(
+                    canApprove ? t.actionApprove : (direktur ? t.actionAcknowledgeDirektur : t.actionAcknowledge),
+                  ),
                 ),
               ),
           ],

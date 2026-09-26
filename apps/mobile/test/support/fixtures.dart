@@ -199,3 +199,178 @@ Map<String, dynamic> meJson({List<String> roles = const ['pk-staff']}) => {
   },
   'serverTime': '2026-09-21T04:05:11Z',
 };
+
+/// ADR 0013 rule snapshot (E1): Direktur "Diketahui" (an approval) → Finance level 1.
+Map<String, dynamic> e1RuleJson({List<Map<String, dynamic>> skipped = const [], bool withApproval = true}) => {
+  'id': 1,
+  'name': 'Default — Direktur → Finance',
+  'acknowledge': skipped.any((s) => s['position'] == 'diketahui') ? 'none' : 'required',
+  'acknowledgerUserId': null,
+  'acknowledgeDelegatedTo': null,
+  'acknowledgeDelegationReason': null,
+  'acknowledgeBy': 'role',
+  'acknowledgeRole': 'pk-owner',
+  'decisionRoles': ['pk-owner', 'pk-finance'],
+  'skipped': skipped,
+  'steps': [
+    if (withApproval) {'level': 1, 'approverRole': 'pk-finance', 'approverUserId': null},
+  ],
+  'signDiajukan': 'required',
+  'signDibuat': 'required',
+};
+
+/// Detail under the E1 flow.
+Map<String, dynamic> e1DetailJson({
+  String status = 'pending_ack',
+  List<String> allowed = const ['acknowledge', 'reject'],
+  List<Map<String, dynamic>>? approvals,
+  Map<String, dynamic>? rule,
+}) => {
+  ...detailJson(status: status, allowed: allowed, approvals: approvals),
+  'statusLabel': status == 'pending_ack' ? 'Menunggu Diketahui (Direktur)' : 'Menunggu Approval',
+  'approvalRule': rule ?? e1RuleJson(),
+};
+
+Map<String, dynamic> direkturDashboardJson() => {
+  'asOf': '2026-09-26',
+  'month': '2026-09',
+  'cash': {'total': 152500000, 'accounts': <Object>[], 'monthIn': 40000000, 'monthOut': 12500000},
+  'budget': {'running': 4, 'over': 1, 'warn': 1, 'ok': 2, 'none': 0},
+  'approvals': {
+    'count': 3,
+    'sum': 7250000,
+    'waitingForMe': 2,
+    'oldestDays': 4,
+    'pendingAck': {'count': 2, 'sum': 5000000},
+    'pendingApproval': {'count': 1, 'sum': 2250000},
+  },
+  'cashFlow': {
+    'basis': 'K-02b',
+    'months': 3,
+    'rows': [
+      {'period': '2026-07', 'masuk': 30000000, 'keluar': 20000000},
+      {'period': '2026-08', 'masuk': 25000000, 'keluar': 27000000},
+      {'period': '2026-09', 'masuk': 40000000, 'keluar': 12500000},
+    ],
+  },
+  'transferQueue': {'count': 2, 'sum': 3000000, 'overdue': 0, 'reimburseToVerify': 1, 'reimburseToVerifyWarnings': 0},
+  'viz': {
+    'balanceTrend': [
+      {'period': '2026-07', 'balance': 140000000},
+      {'period': '2026-08', 'balance': 138000000},
+      {'period': '2026-09', 'balance': 152500000},
+    ],
+    'disbursed': [
+      {'period': '2026-08', 'net': 9000000},
+      {'period': '2026-09', 'net': 11500000},
+    ],
+    'budgetTotals': {'projects': 3, 'budget': 500000000, 'committed': 300000000, 'realized': 212500000},
+  },
+};
+
+Map<String, dynamic> financeDashboardJson() => {
+  'asOf': '2026-09-26',
+  'month': '2026-09',
+  'transferQueue': {'count': 4, 'sum': 8200000, 'overdue': 1, 'reimburseToVerify': 2, 'reimburseToVerifyWarnings': 1},
+  'reimburseToVerify': {'count': 2, 'warnings': 1},
+  'lpjToVerify': 3,
+  'lpjToSettle': {'count': 1, 'refund': 150000, 'shortfall': 0},
+  'accounts': <Object>[],
+  'cashTotal': 98000000,
+  'advancesWithoutLpj': [
+    {'id': 1, 'overdue': true},
+    {'id': 2, 'overdue': false},
+  ],
+  'lpjDueDays': 14,
+  'cashFlow': {
+    'basis': 'K-02a',
+    'months': 2,
+    'rows': [
+      {'period': '2026-08', 'masuk': 10000000, 'keluar': 8000000, 'koreksi': 0},
+      {'period': '2026-09', 'masuk': 12000000, 'keluar': 9500000, 'koreksi': 0},
+    ],
+  },
+  'lastClosedPeriod': '2026-07',
+  'nextClosable': '2026-08',
+  'viz': {
+    'balanceTrend': [
+      {'period': '2026-08', 'balance': 95000000},
+      {'period': '2026-09', 'balance': 98000000},
+    ],
+  },
+};
+
+Map<String, dynamic> pmDashboardJson({bool hasScope = true}) => {
+  'asOf': '2026-09-26',
+  'month': '2026-09',
+  'hasScope': hasScope,
+  'waitingForMe': 0,
+  'teamMonth': {'count': 6, 'sum': 18750000, 'waiting': 2},
+  'lpj': {'withoutLpj': 3, 'overdue': 1, 'lpjDueDays': 14},
+  'viz': {
+    'requestTrend': [
+      {'period': '2026-08', 'count': 4, 'sum': 10000000},
+      {'period': '2026-09', 'count': 6, 'sum': 18750000},
+    ],
+    'budgetTotals': {'projects': 1, 'budget': 200000000, 'committed': 90000000, 'realized': 50000000},
+  },
+};
+
+Map<String, dynamic> historyJson() => {
+  'items': [
+    {
+      'serverTime': '2026-09-20T02:00:00Z',
+      'action': 'status_change',
+      'field': null,
+      'lineNo': null,
+      'oldValue': null,
+      'newValue': null,
+      'statusFrom': 'draft',
+      'statusTo': 'pending_ack',
+      'reason': null,
+      'userId': 3,
+      'userName': 'Citra',
+      'source': 'apk',
+      'appVersion': '0.1.0',
+      'deviceId': '5b0c2f7e-2d1a-4e0b-8f5e-7a9d3c1b2e44',
+      'docType': 'expense_request',
+      'docNo': '228/PB-DRMS/20/IX/2026',
+    },
+    {
+      'serverTime': '2026-09-20T03:00:00Z',
+      'action': 'update',
+      'field': 'amount',
+      'lineNo': 2,
+      'oldValue': 677000,
+      'newValue': 676876,
+      'statusFrom': null,
+      'statusTo': null,
+      'reason': 'Salah ketik',
+      'userId': 3,
+      'userName': 'Citra',
+      'source': 'web',
+      'appVersion': null,
+      'deviceId': null,
+      'docType': 'receipt',
+      'docNo': null,
+    },
+    {
+      'serverTime': '2026-09-21T01:00:00Z',
+      'action': 'acknowledge',
+      'field': null,
+      'lineNo': null,
+      'oldValue': null,
+      'newValue': null,
+      'statusFrom': 'pending_ack',
+      'statusTo': 'pending_approval',
+      'reason': null,
+      'userId': 9,
+      'userName': 'Eko',
+      'source': 'apk',
+      'appVersion': '0.1.0',
+      'deviceId': null,
+      'docType': 'expense_request',
+      'docNo': '228/PB-DRMS/20/IX/2026',
+    },
+  ],
+};

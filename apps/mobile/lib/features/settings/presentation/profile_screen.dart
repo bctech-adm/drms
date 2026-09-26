@@ -77,11 +77,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           if (p != null) ...[
             ListTile(leading: const Icon(Icons.person), title: Text(p.displayName), subtitle: Text(p.email)),
-            ListTile(
-              leading: const Icon(Icons.badge),
-              title: Text(t.profileRoles),
-              subtitle: Text(p.roles.map((r) => r.code).join(', ')),
-            ),
+            ListTile(leading: const Icon(Icons.badge), title: Text(t.profileRoles), subtitle: Text(p.roleLabels)),
             if (p.employee != null)
               ListTile(
                 leading: const Icon(Icons.work),

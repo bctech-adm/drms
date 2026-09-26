@@ -21,6 +21,7 @@ import '../features/expense/data/expense_api.dart';
 import '../features/masters/data/masters_repository.dart';
 import '../features/notifications/data/push_service.dart';
 import '../features/sync/application/sync_engine.dart';
+import '../features/sync/background/background_sync.dart';
 import '../features/sync/data/outbox_repository.dart';
 import '../features/sync/data/sync_api.dart';
 import '../core/connectivity/connectivity_controller.dart';
@@ -57,8 +58,15 @@ class UpgradeRequired extends Notifier<String?> {
 }
 
 final tokenManagerProvider = Provider<TokenManager>(
-  (ref) => TokenManager(env: ref.watch(appEnvProvider), store: ref.watch(secureStoreProvider)),
+  (ref) => TokenManager(
+    env: ref.watch(appEnvProvider),
+    store: ref.watch(secureStoreProvider),
+    beforeRefresh: ref.watch(backgroundSchedulerProvider) is NoopBackgroundScheduler ? null : waitForBackgroundSync,
+  ),
 );
+
+/// WorkManager scheduling (E3-b); no-op off Android (tests).
+final backgroundSchedulerProvider = Provider<BackgroundScheduler>((ref) => defaultBackgroundScheduler());
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final env = ref.watch(appEnvProvider);

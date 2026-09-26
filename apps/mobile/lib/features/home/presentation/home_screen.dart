@@ -10,11 +10,12 @@ import '../../app_config/domain/app_config.dart';
 import '../../approvals/application/inbox_providers.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/user_profile.dart';
+import '../../dashboard/presentation/kpi_home.dart';
 import '../../expense/domain/request_status.dart';
 import '../../notifications/application/notifications_providers.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 
-/// Role home (Staff / PM / Owner / Finance) with big action buttons.
+/// Role home: KPI summary (Direktur / Finance, US-27; PM team monitor, US-17) above big action buttons.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -55,7 +56,7 @@ class HomeScreen extends ConsumerWidget {
       ],
       BigActionButton(
         icon: Icons.list_alt,
-        label: kind == HomeKind.owner || kind == HomeKind.finance ? t.actionAllRequests : t.actionMyRequests,
+        label: kind == HomeKind.direktur || kind == HomeKind.finance ? t.actionAllRequests : t.actionMyRequests,
         onPressed: () => context.go('/requests'),
       ),
       if (profile.has(Role.staff) || profile.has(Role.pm))
@@ -65,11 +66,13 @@ class HomeScreen extends ConsumerWidget {
           label: attendanceOn ? t.actionAttendance : t.actionAttendanceOff,
           onPressed: attendanceOn ? () => context.push('/attendance') : null,
         ),
-      if (kind == HomeKind.finance)
-        Card(
-          child: Padding(padding: const EdgeInsets.all(16), child: Text(t.financeHint)),
-        ),
     ];
+    final kpis = switch (kind) {
+      HomeKind.direktur => const DirekturKpis(),
+      HomeKind.finance => const FinanceKpis(),
+      _ when profile.hasTeamMonitor => const PmTeamKpis(),
+      _ => null,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -88,6 +91,9 @@ class HomeScreen extends ConsumerWidget {
           await ref.read(authControllerProvider.notifier).refreshProfile();
           ref.invalidate(inboxProvider);
           ref.invalidate(notificationsProvider);
+          ref.invalidate(direkturDashboardProvider);
+          ref.invalidate(financeDashboardProvider);
+          ref.invalidate(pmDashboardProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -102,6 +108,17 @@ class HomeScreen extends ConsumerWidget {
             if (gate == VersionGate.updateAvailable && latest != null)
               Padding(padding: const EdgeInsets.only(top: 8), child: Text(t.updateAvailable(latest))),
             const SizedBox(height: 16),
+            if (kpis != null) ...[
+              Text(
+                kind == HomeKind.pm || kind == HomeKind.staff ? t.kpiTeamTitle : t.kpiSummaryTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              kpis,
+              const SizedBox(height: 8),
+              Text(t.homeActionsTitle, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+            ],
             for (final a in actions) Padding(padding: const EdgeInsets.only(bottom: 12), child: a),
           ],
         ),

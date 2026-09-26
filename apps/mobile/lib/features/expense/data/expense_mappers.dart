@@ -34,11 +34,16 @@ UserProfile userProfileFromJson(Json j) {
   final settings = _map(j['settings']) ?? const {};
   final targets = _map(settings['imageTargets']);
   final emp = _map(j['employee']);
+  final roles = {for (final r in _list(j['roles'])) ?Role.fromCode('$r')};
+  final caps = _map(j['capabilities']);
   return UserProfile(
     id: _int(j['id']),
     email: '${j['email'] ?? ''}',
     name: _strN(j['name']),
-    roles: {for (final r in _list(j['roles'])) ?Role.fromCode('$r')},
+    roles: roles,
+    capabilities: caps == null
+        ? Capabilities.fromRoles(roles)
+        : Capabilities(approvalInbox: caps['approvalInbox'] == true, teamMonitor: caps['teamMonitor'] == true),
     employee: emp == null
         ? null
         : Employee(id: _int(emp['id']), code: '${emp['code'] ?? ''}', name: '${emp['name'] ?? ''}'),
@@ -122,6 +127,7 @@ ExpenseDetail detailFromJson(Json j) {
             notes: _strN(m['notes']),
             category: refFromJson(m['category']),
             vehiclePlate: _strN(_map(m['vehicle'])?['plateDisplay'] ?? _map(m['vehicle'])?['plateNo']),
+            vehicleId: _intN(_map(m['vehicle'])?['id']),
           ),
     ],
     receipts: [
@@ -160,6 +166,19 @@ ExpenseDetail detailFromJson(Json j) {
             name: '${rule['name'] ?? ''}',
             acknowledge: '${rule['acknowledge'] ?? 'none'}',
             acknowledgeDelegatedTo: _strN(rule['acknowledgeDelegatedTo']),
+            acknowledgeBy: _strN(rule['acknowledgeBy']),
+            acknowledgeRole: _strN(rule['acknowledgeRole']),
+            decisionRoles: [for (final r in _list(rule['decisionRoles'])) '$r'],
+            skipped: [
+              for (final k in _list(rule['skipped']))
+                if (_map(k) case final m?)
+                  SkippedPosition(
+                    position: m['position'] == 'diketahui' ? SignPosition.diketahui : SignPosition.approval,
+                    level: _int(m['level']),
+                    role: _strN(m['role']),
+                    reason: _strN(m['reason']),
+                  ),
+            ],
             steps: [
               for (final s in _list(rule['steps']))
                 if (_map(s) case final m?)
@@ -207,8 +226,33 @@ ExpenseDetail detailFromJson(Json j) {
     cancelReason: _strN(j['cancelReason']),
     submittedAt: _strN(j['submittedAt']),
     updatedAt: _strN(j['updatedAt']),
+    rev: _intN(j['rev']),
+    resubmitOfId: _intN(j['resubmitOfId']),
+    createdById: _intN(j['createdById']),
+    periodFrom: _strN(j['periodFrom']),
+    periodTo: _strN(j['periodTo']),
+    bankAccountId: _intN(j['bankAccountId']),
   );
 }
+
+HistoryEntry historyFromJson(Json j) => HistoryEntry(
+  serverTime: '${j['serverTime'] ?? ''}',
+  action: '${j['action'] ?? ''}',
+  field: _strN(j['field']),
+  lineNo: _intN(j['lineNo']),
+  oldValue: j['oldValue'],
+  newValue: j['newValue'],
+  statusFrom: _strN(j['statusFrom']),
+  statusTo: _strN(j['statusTo']),
+  reason: _strN(j['reason']),
+  userId: _intN(j['userId']),
+  userName: _strN(j['userName']),
+  source: _strN(j['source']),
+  appVersion: _strN(j['appVersion']),
+  deviceId: _strN(j['deviceId']),
+  docType: '${j['docType'] ?? 'expense_request'}',
+  docNo: _strN(j['docNo']),
+);
 
 SettlementInfo? settlementFromJson(Object? v) {
   final m = _map(v);
@@ -251,6 +295,8 @@ InboxItem inboxItemFromJson(Json j) {
     neededDate: _strN(j['neededDate']),
     step: '${j['step'] ?? 'approve'}',
     level: _intN(j['level']),
+    stepLabel: _strN(j['stepLabel']),
+    decisionFlow: j['decisionFlow'] == true,
     budget: budgetFromJson(budget),
     budgetOverWarn: budget?['overWarn'] == true,
     warningFlags: _int(flags?['warning']),
@@ -290,6 +336,9 @@ Json lineToInput(DraftLine l) => {
 /// identified by `draft_client_uuid` (backend default = the item that created it).
 Json draftToSyncPayload(DraftRequest d, {bool includeDraftId = false}) => {
   if (includeDraftId) 'draft_client_uuid': d.clientUuid,
+  // A draft imported from the server (withdrawn / "Ajukan ulang" clone, E3-d) may have been created on
+  // the web without this phone's id: the server id then identifies it (SyncDraftUpsertPayload.request_id).
+  if (d.serverId != null) 'request_id': d.serverId,
   'kind': d.type.code,
   'title': d.title.trim(),
   'project_id': d.projectId,
@@ -302,7 +351,8 @@ Json draftToSyncPayload(DraftRequest d, {bool includeDraftId = false}) => {
   'lines': [
     for (final l in d.lines)
       {
-        'client_uuid': l.clientUuid,
+        // Lines from the server keep their server id (not a UUID when created on the web).
+        if (isUuid(l.clientUuid)) 'client_uuid': l.clientUuid else 'id': l.clientUuid,
         'description': l.description.trim(),
         'qty': l.qty,
         'uom_id': l.uomId,
@@ -314,19 +364,74 @@ Json draftToSyncPayload(DraftRequest d, {bool includeDraftId = false}) => {
         if (d.type == RequestType.reimburse)
           'receipts': [
             for (final r in l.receipts)
-              {
-                'client_uuid': r.clientUuid,
-                'receipt_no': (r.receiptNo == null || r.receiptNo!.trim().isEmpty) ? null : r.receiptNo!.trim(),
-                'vendor_name': r.vendorName.trim(),
-                'receipt_date': r.receiptDate,
-                'receipt_time': r.receiptTime,
-                'amount': r.amount,
-                mediaPlaceholderKey: r.mediaUuid,
-              },
+              if (!r.isServerReceipt)
+                {
+                  'client_uuid': r.clientUuid,
+                  'receipt_no': (r.receiptNo == null || r.receiptNo!.trim().isEmpty) ? null : r.receiptNo!.trim(),
+                  'vendor_name': r.vendorName.trim(),
+                  'receipt_date': r.receiptDate,
+                  'receipt_time': r.receiptTime,
+                  'amount': r.amount,
+                  mediaPlaceholderKey: r.mediaUuid,
+                },
           ],
       },
   ],
 };
+
+final _uuidRe = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+
+bool isUuid(String s) => _uuidRe.hasMatch(s);
+
+/// Server Draft (withdrawn request or the new draft of "Ajukan ulang", US-04/US-06) → local draft for the
+/// offline editor. Lines keep their server id; receipts stay on the server and are shown read-only
+/// ([serverMediaPrefix]). [clientUuid]: the request's own `clientUuid` when it has one (made on a phone).
+DraftRequest draftFromServer(
+  ExpenseDetail d, {
+  required String clientUuid,
+  required String Function(int) receiptUuid,
+}) => DraftRequest(
+  clientUuid: clientUuid,
+  type: d.type,
+  title: d.title,
+  projectId: d.project?.id,
+  costCenterId: d.costCenter?.id,
+  neededDate: d.neededDate,
+  notes: d.notes,
+  requesterIds: [for (final r in d.requesters) r.id],
+  bankAccountId: d.bankAccountId,
+  serverId: d.id,
+  serverRev: d.rev,
+  syncState: DraftSyncState.synced,
+  lines: [
+    for (final l in d.lines)
+      DraftLine(
+        clientUuid: l.id,
+        no: l.no,
+        description: l.description ?? '',
+        qty: l.qty,
+        uomId: l.uom?.id,
+        unitPrice: l.unitPrice,
+        total: l.total,
+        categoryId: l.category?.id,
+        vehicleId: l.vehicleId,
+        notes: l.notes,
+        receipts: [
+          for (final r in d.receipts)
+            if (r.lineId == l.id && r.status != 'removed')
+              DraftReceipt(
+                clientUuid: receiptUuid(r.id),
+                receiptNo: r.receiptNo,
+                vendorName: r.vendorName,
+                receiptDate: r.receiptDate,
+                amount: r.amount,
+                mediaUuid: '$serverMediaPrefix${r.imageId ?? r.id}',
+                serverReceiptId: r.id,
+              ),
+        ],
+      ),
+  ],
+);
 
 /// Local-only key inside a queued payload; never sent (replaced by `media_id`).
 const mediaPlaceholderKey = 'pk_media_uuid';

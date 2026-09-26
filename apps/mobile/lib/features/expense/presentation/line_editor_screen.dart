@@ -195,23 +195,31 @@ class _LineEditorScreenState extends ConsumerState<LineEditorScreen> {
                   leading: const Icon(Icons.receipt),
                   title: Text(r.vendorName),
                   subtitle: Text(
-                    '${r.receiptNo ?? '-'} · ${formatDateOnly(r.receiptDate)}${r.receiptTime != null ? ' ${r.receiptTime}' : ''}',
+                    '${r.receiptNo ?? '-'} · ${formatDateOnly(r.receiptDate)}${r.receiptTime != null ? ' ${r.receiptTime}' : ''}'
+                    '${r.isServerReceipt ? '\n${t.serverReceiptLocked}' : ''}',
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(formatRupiah(r.amount)),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => setState(
-                          () => _line = _line.copyWith(
-                            receipts: [
-                              for (final x in _line.receipts)
-                                if (x.clientUuid != r.clientUuid) x,
-                            ],
+                      // Receipts of an imported server draft stay on the server (read-only here).
+                      if (r.isServerReceipt)
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(Icons.cloud_done, semanticLabel: t.serverReceiptLocked),
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => setState(
+                            () => _line = _line.copyWith(
+                              receipts: [
+                                for (final x in _line.receipts)
+                                  if (x.clientUuid != r.clientUuid) x,
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),

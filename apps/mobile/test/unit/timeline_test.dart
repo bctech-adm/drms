@@ -8,10 +8,10 @@ void main() {
   test('pending approval: signatures done, approval level 1 is the current turn', () {
     final d = detailFromJson(detailJson());
     final steps = buildTimeline(d);
-    expect(steps.map((s) => s.title), ['Diajukan Oleh', 'Dibuat Oleh', 'Diketahui Oleh', 'Approval']);
+    expect(steps.map((s) => s.title), ['Diajukan Oleh', 'Dibuat Oleh', 'Diketahui Oleh', 'Approval (Direktur)']);
     expect(steps.map((s) => s.state), [TurnState.done, TurnState.done, TurnState.done, TurnState.current]);
     expect(steps.first.actor, 'Budi');
-    expect(currentTurn(d), 'Approval (Owner)');
+    expect(currentTurn(d), 'Approval (Direktur)');
   });
 
   test('pending acknowledge: Diketahui is current, approval pending', () {
@@ -26,7 +26,7 @@ void main() {
     final steps = buildTimeline(d);
     expect(steps[2].state, TurnState.current);
     expect(steps[3].state, TurnState.pending);
-    expect(currentTurn(d), startsWith('Diketahui'));
+    expect(currentTurn(d), 'Direktur — persetujuan (Diketahui)');
   });
 
   test('rejected at approval shows the reason', () {
@@ -39,7 +39,7 @@ void main() {
             'cycle': 1,
             'position': 'approval',
             'level': 1,
-            'actorName': 'Owner',
+            'actorName': 'Direktur',
             'decision': 'rejected',
             'reason': 'Nota kurang',
           },
