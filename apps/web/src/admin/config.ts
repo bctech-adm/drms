@@ -52,3 +52,17 @@ export const E6_ADMIN_VIEWS = {
   absensiRekap: { Component: '@/admin/views/Absensi#AbsensiRekap', path: '/absensi/rekap' as const, exact: true, meta: { title: 'Rekap absensi' } },
   absensiJadwal: { Component: '@/admin/views/Absensi#AbsensiJadwal', path: '/absensi/jadwal' as const, exact: true, meta: { title: 'Jadwal & hari libur' } },
 }
+
+/**
+ * Sprint S2 web A — E4 progress (K-09 overview, project stages + editor, progress reports) and
+ * E5 Addendum RAB. All exact (a prefix match would swallow the deeper paths).
+ */
+export const S2A_ADMIN_VIEWS = {
+  progressOverview: { Component: '@/admin/views/Progress#ProgressOverview', path: '/progress' as const, exact: true, meta: { title: 'Progress project' } },
+  progressProject: { Component: '@/admin/views/Progress#ProjectProgressView', path: '/progress/project/:id' as const, exact: true, meta: { title: 'Progress project' } },
+  progressReports: { Component: '@/admin/views/Progress#ProgressReportList', path: '/progress/laporan' as const, exact: true, meta: { title: 'Laporan progress' } },
+  progressReport: { Component: '@/admin/views/Progress#ProgressReportDetail', path: '/progress/laporan/:id' as const, exact: true, meta: { title: 'Laporan progress' } },
+  addendumList: { Component: '@/admin/views/Addendum#AddendumList', path: '/addendum' as const, exact: true, meta: { title: 'Addendum RAB' } },
+  addendumNew: { Component: '@/admin/views/Addendum#AddendumNew', path: '/addendum/baru' as const, exact: true, meta: { title: 'Ajukan addendum RAB' } },
+  addendumDetail: { Component: '@/admin/views/Addendum#AddendumDetail', path: '/addendum/detail/:id' as const, exact: true, meta: { title: 'Addendum RAB' } },
+}

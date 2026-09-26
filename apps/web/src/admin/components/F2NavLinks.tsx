@@ -96,6 +96,20 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
           </Link>
         </>
       ) : null}
+      {/* S2 web A: E4 progress (Direktur/Finance all, PM team) + E5 Addendum RAB (PM submits, Direktur/Finance decide) */}
+      {office || roles.includes('pk-pm') ? (
+        <>
+          <Link href="/admin/progress" style={link} data-pk-nav-link="progress">
+            Progress project
+          </Link>
+          <Link href="/admin/progress/laporan" style={link} data-pk-nav-link="laporan-progress">
+            Laporan progress
+          </Link>
+          <Link href="/admin/addendum" style={link} data-pk-nav-link="addendum">
+            Addendum RAB
+          </Link>
+        </>
+      ) : null}
       {/* F3: reports (Finance/Owner all, PM team) and the global audit log (Owner/Admin/Finance, Q-F3-4) */}
       {office || roles.includes('pk-pm') ? (
         <Link href="/admin/laporan" style={link} data-pk-nav-link="laporan">

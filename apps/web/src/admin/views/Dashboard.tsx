@@ -10,10 +10,14 @@ import type { ProjectBudget } from '@/domain/reports/kpi'
 import { lastDay, MONTHS_SHORT, periodLabel } from '@/domain/reports/rules'
 import { delta, share, statusTone, type PipelineStage } from '@/domain/reports/viz'
 import { withReqTransaction } from '@/lib/system-tx'
+import { listReports } from '@/domain/progress/dto'
+import { projectProgressVsBudget, type ProjectProgress } from '@/domain/reports/progress'
+import { officeScope, teamScope } from '@/domain/reports/scope'
 
 import { TeamTodayWidget } from './Absensi'
 import { ChartHover } from './ChartHover'
-import { BudgetBadge, F3Root, Placeholder } from './f3-ui'
+import { dateId, ProgressCell, ProgressVsBudgetCard } from './progress-ui'
+import { BudgetBadge, F3Root } from './f3-ui'
 import {
   Bento,
   BulletLegend,
@@ -347,7 +351,7 @@ function bulletRows(projects: ProjectBudget[], limit: number) {
     }))
 }
 
-function ProjectTable({ projects, pm }: { projects: ProjectBudget[]; pm?: boolean }) {
+function ProjectTable({ projects, pm, progress }: { projects: ProjectBudget[]; pm?: boolean; progress?: Map<number, ProjectProgress> }) {
   return (
     <table className="pk-t" data-pk-table="projects">
       <thead>
@@ -394,7 +398,9 @@ function ProjectTable({ projects, pm }: { projects: ProjectBudget[]; pm?: boolea
             </td>
             {pm ? null : <td className="n">{rp(p.disbursedNet)}</td>}
             {pm ? null : <td className="n">{rp(p.realized)}</td>}
-            <td>(F5)</td>
+            <td>
+              <ProgressCell p={progress?.get(p.id)} />
+            </td>
           </tr>
         ))}
       </tbody>
@@ -402,7 +408,7 @@ function ProjectTable({ projects, pm }: { projects: ProjectBudget[]; pm?: boolea
   )
 }
 
-function BudgetCard({ id, projects, warnPct, span, i, pm }: { id: string; projects: ProjectBudget[]; warnPct: number; span: 7 | 8 | 12; i: number; pm?: boolean }) {
+function BudgetCard({ id, projects, warnPct, span, i, pm, progress }: { id: string; projects: ProjectBudget[]; warnPct: number; span: 7 | 8 | 12; i: number; pm?: boolean; progress?: Map<number, ProjectProgress> }) {
   const limit = 8
   return (
     <Card
@@ -412,14 +418,14 @@ function BudgetCard({ id, projects, warnPct, span, i, pm }: { id: string; projec
       span={span}
       i={i}
       action={{ href: '/admin/laporan/anggaran-project', label: 'Laporan anggaran' }}
-      foot={projects.length > limit ? `Menampilkan ${limit} dari ${projects.length} project — semua ada di tabel angka.` : 'Warna status dari Komitmen (K-08); progress fisik tersedia di F5.'}
+      foot={projects.length > limit ? `Menampilkan ${limit} dari ${projects.length} project — semua ada di tabel angka.` : 'Warna status dari Komitmen (K-08); progress fisik (K-09) di tabel angka dan kartu progress.'}
     >
       <div id="anggaran" />
       {projects.length > 0 ? <BulletLegend warnPct={warnPct} /> : null}
       <BulletRows id={id} rows={bulletRows(projects, limit)} warnPct={warnPct} empty={pm ? 'Anda belum ditetapkan sebagai PM project mana pun. Hubungi Direktur/Admin.' : 'Belum ada project.'} />
       {projects.length > 0 ? (
         <TableView>
-          <ProjectTable projects={projects} pm={pm} />
+          <ProjectTable projects={projects} pm={pm} progress={progress} />
         </TableView>
       ) : null}
     </Card>
@@ -503,10 +509,45 @@ function Swatch({ cls }: { cls: string }) {
   return <i className={cls} style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, margin: '0 4px 0 0' }} aria-hidden />
 }
 
+const progressMap = (k: { projects: ProjectProgress[] }) => new Map(k.projects.map((p) => [p.id, p]))
+
+/** E4 (US-31): latest progress reports of the PM's team (replaces the F5 placeholder). */
+function LatestProgressReports({ rows }: { rows: Awaited<ReturnType<typeof listReports>>['items'] }) {
+  if (rows.length === 0) return <EmptyState text="Belum ada laporan progress project tim." action={{ href: '/admin/progress', label: 'Progress project' }} />
+  return (
+    <div data-pk-list="latest-progress">
+      <DataTable
+        id="latest-progress"
+        caption="Laporan progress terbaru"
+        rows={rows}
+        rowKey={(r) => r.id}
+        empty={null}
+        cols={[
+          { key: 'd', label: 'Tanggal', sort: 'descending', cell: (r) => <span className="nw">{dateId(r.reportDate)}</span> },
+          {
+            key: 'n',
+            label: 'Laporan',
+            cell: (r) => (
+              <>
+                <a href={`/admin/progress/laporan/${r.id}`}>{r.docNo ?? `#${r.id}`}</a>
+                <span className="sub">
+                  {r.project.code} · {r.stage.name}
+                </span>
+              </>
+            ),
+          },
+          { key: 'p', label: 'Tahapan', num: true, cell: (r) => `${pctText(r.pctBefore)} → ${pctText(r.pctAfter)}` },
+        ]}
+      />
+    </div>
+  )
+}
+
 // ---------------------------------------------------------------- Owner (wireframe §1)
 
 async function Owner({ req, months }: { req: PayloadRequest; months: 6 | 12 }) {
   const d = await withReqTransaction(req, () => ownerDashboard(req, { months }))
+  const k09 = await withReqTransaction(req, async () => projectProgressVsBudget(req, await officeScope(req)))
   const v = d.viz
   const bal = v.balanceTrend
   const balPrev = prevOf(bal)
@@ -584,7 +625,7 @@ async function Owner({ req, months }: { req: PayloadRequest; months: 6 | 12 }) {
         <CashFlowCard id="owner-cashflow" rows={d.cashFlow.rows} title="Arus kas bulanan" sub="Masuk vs keluar, tanpa transaksi yang di-void (K-02b)" span={8} i={4} foot="Grafik operasional: void dan jurnal baliknya disembunyikan. Laporan resmi = Rekap Kas." />
         <PipelineCard id="owner-pipeline" pipeline={v.pipeline} title="Status pengajuan" sub="Posisi semua pengajuan saat ini" span={4} i={5} />
 
-        <BudgetCard id="owner-budget" projects={d.projects} warnPct={v.warnPct} span={7} i={6} />
+        <BudgetCard id="owner-budget" projects={d.projects} warnPct={v.warnPct} span={7} i={6} progress={progressMap(k09)} />
         <CategoryCard id="owner-categories" c={v.categories} span={5} i={7} sub={`Dicairkan ${short(v.categories.from.slice(0, 7))} – sekarang`} />
 
         <TrendCard id="owner-trend" rows={v.requestTrend} title="Tren pengajuan" sub="Jumlah pengajuan per bulan (tanggal pengajuan)" span={6} i={8} />
@@ -619,6 +660,7 @@ async function Owner({ req, months }: { req: PayloadRequest; months: 6 | 12 }) {
           </p>
         </Card>
 
+        <ProgressVsBudgetCard id="owner-progress" data={k09} i={11} />
         <InboxCard id="owner-inbox" items={v.inbox} count={a.waitingForMe} span={6} i={11} />
         <RecentCashCard id="owner-recent-cash" rows={v.recentCash} span={6} i={12} />
 
@@ -675,6 +717,7 @@ async function Owner({ req, months }: { req: PayloadRequest; months: 6 | 12 }) {
 
 async function Finance({ req }: { req: PayloadRequest }) {
   const d = await withReqTransaction(req, () => financeDashboard(req))
+  const k09 = await withReqTransaction(req, async () => projectProgressVsBudget(req, await officeScope(req)))
   const v = d.viz
   const flows = d.cashFlow.rows
   const cur = lastOf(flows)
@@ -845,6 +888,7 @@ async function Finance({ req }: { req: PayloadRequest }) {
           </TableView>
         </Card>
 
+        <ProgressVsBudgetCard id="finance-progress" data={k09} i={12} />
         <RecentCashCard id="finance-recent-cash" rows={v.recentCash} span={8} i={12} />
         <CategoryCard id="finance-categories" c={v.categories} span={4} i={13} sub="Dicairkan 6 bulan terakhir" />
 
@@ -882,6 +926,8 @@ async function Finance({ req }: { req: PayloadRequest }) {
 
 async function Pm({ req }: { req: PayloadRequest }) {
   const d = await withReqTransaction(req, () => pmDashboard(req))
+  const k09 = await withReqTransaction(req, async () => projectProgressVsBudget(req, await teamScope(req)))
+  const latestReports = await withReqTransaction(req, async () => (await listReports(req, { projectId: undefined, limit: 5 })).items)
   const v = d.viz
   const monthStart = `${d.month}-01`
   const trendPrev = prevOf(v.requestTrend)
@@ -932,7 +978,8 @@ async function Pm({ req }: { req: PayloadRequest }) {
           </KpiTile>
         </KpiRow>
 
-        <BudgetCard id="pm-budget" projects={d.projects} warnPct={v.warnPct} span={7} i={4} pm />
+        <ProgressVsBudgetCard id="pm-progress" data={k09} i={4} pm />
+        <BudgetCard id="pm-budget" projects={d.projects} warnPct={v.warnPct} span={7} i={4} pm progress={progressMap(k09)} />
         <PipelineCard id="pm-pipeline" pipeline={v.pipeline} title="Status pengajuan tim" sub="Posisi pengajuan tim saat ini" span={5} i={5} />
 
         <TrendCard id="pm-trend" rows={v.requestTrend} title="Tren pengajuan tim" sub="Jumlah pengajuan per bulan, 6 bulan" span={7} i={6} />
@@ -976,10 +1023,10 @@ async function Pm({ req }: { req: PayloadRequest }) {
               .map((c) => ({ key: String(c.id), label: `${c.code} ${c.name}`, value: Math.max(0, c.total), href: `/admin/laporan/rekap-pengajuan?${where({ pusat: String(c.id), dari: monthStart, sampai: lastDay(d.month) })}`, attrs: { 'data-pk-cost-center': String(c.id) } }))}
           />
         </Card>
-        <Card id="f5" title="Lapangan" sub="Modul F5" span={6} i={11}>
+        <Card id="f5" title="Lapangan" sub="Kehadiran tim hari ini &middot; laporan progress terbaru" span={6} i={11}>
           <div style={{ display: 'grid', gap: 8 }}>
             <TeamTodayWidget req={req} />
-            <Placeholder id="progress-f5" text="Laporan progress terakhir: tersedia setelah modul laporan progress (F5, US-31)." />
+            <LatestProgressReports rows={latestReports} />
           </div>
         </Card>
       </Bento>

@@ -5,6 +5,7 @@ import type { Role } from '@/access/roles'
 import { REQUEST_STATUSES, REQUEST_TYPE_LABELS, REQUEST_TYPES, statusLabel, type RequestStatus, type RequestType } from '@/domain/expense/types'
 
 import { absensiReport } from './attendance-report'
+import { projectProgressVsBudget } from './progress'
 import { auditLogCount, auditLogPage, AUDIT_PAGE, AUDIT_SOURCES, parseAuditFilter, type AuditFilter } from './audit-log'
 import {
   cashBalances,
@@ -470,7 +471,7 @@ const pengeluaranKategori: ReportDef = {
 const anggaranProject: ReportDef = {
   code: 'anggaran-project',
   title: 'Anggaran Project',
-  kpi: 'K-07, K-08, K-05, K-06, K-09 (F5)',
+  kpi: 'K-07, K-08, K-05, K-06, K-09',
   description: 'RAB vs Komitmen vs Dicairkan vs Realisasi per project; per kategori bila project punya RAB kategori.',
   roles: ['pk-finance', 'pk-owner', 'pk-pm'],
   formats: ['csv', 'xlsx', 'pdf'],
@@ -480,6 +481,9 @@ const anggaranProject: ReportDef = {
     const ctx = await reportContext(req)
     const projectId = idOf(sp, 'project')
     const list = await projectBudgets(req, scope, { projectId, includeArchived: sp.get('arsip') === 'ya' })
+    // E4 (US-12): K-09 progress fisik per project, same scope/filters (replaces the F5 placeholder).
+    const k09 = await projectProgressVsBudget(req, scope, { projectId, includeArchived: sp.get('arsip') === 'ya' })
+    const progress = new Map(k09.projects.map((p) => [p.id, p]))
     const extra: Table[] = []
     if (projectId && list.length === 1) {
       const cats = await projectBudgetByCategory(req, scope, projectId)
@@ -513,7 +517,8 @@ const anggaranProject: ReportDef = {
           { key: 'pctDicairkan', label: '% dicairkan', type: 'pct' },
           { key: 'realisasi', label: 'Realisasi (Rp)', type: 'money' },
           { key: 'pctRealisasi', label: '% realisasi', type: 'pct' },
-          { key: 'progress', label: 'Progress fisik', type: 'text' },
+          { key: 'progress', label: 'Progress fisik', type: 'pct' },
+          { key: 'progressStatus', label: 'Progress vs anggaran (K-09)', type: 'text' },
         ],
         rows: list.map((p) => ({
           cells: {
@@ -527,7 +532,8 @@ const anggaranProject: ReportDef = {
             pctDicairkan: p.pctDisbursed,
             realisasi: p.realized,
             pctRealisasi: p.pctRealized,
-            progress: 'F5',
+            progress: progress.get(p.id)?.stagesComplete ? progress.get(p.id)!.progressPct : null,
+            progressStatus: progress.get(p.id)?.toneLabel ?? '',
           },
           href: `/admin/laporan/anggaran-project?${qs({ project: p.id })}`,
         })),
@@ -538,7 +544,7 @@ const anggaranProject: ReportDef = {
       notes: [
         `Status anggaran: Aman ≤ ${ctx.budgetWarnPct}% · Waspada > ${ctx.budgetWarnPct}% s/d ≤ ${ctx.budgetOverPct}% · Lewat RAB > ${ctx.budgetOverPct}% · Tanpa RAB (Komitmen, sama dengan layar persetujuan).`,
         'Komitmen = pengajuan yang sudah disetujui dan sesudahnya. Dicairkan bersih = transfer − pengembalian LPJ. Realisasi = biaya terverifikasi Finance.',
-        'Progress fisik tersedia setelah modul laporan progress (F5).',
+        `Progress fisik = Σ(bobot × % tahapan) dari laporan progress. K-09 selisih = % komitmen − % progress fisik: Sesuai ≤ ${k09.warnGapPct}% · Perlu perhatian ≤ ${k09.badGapPct}% · Anggaran mendahului progress > ${k09.badGapPct}% (tanpa RAB / tahapan belum 100% = tidak dinilai).`,
       ],
       next: null,
       count: list.length,
