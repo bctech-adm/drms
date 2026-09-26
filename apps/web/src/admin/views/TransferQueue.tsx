@@ -1,9 +1,12 @@
 import type { AdminViewServerProps } from 'payload'
 import React from 'react'
 
+import { voidableTransfers } from '@/domain/cash/book'
 import { transferQueue } from '@/domain/expense/queues'
 import { withReqTransaction } from '@/lib/system-tx'
 
+import { ReasonAction } from '../components/kas/ReasonAction'
+import { KAS_STYLE } from '../components/kas/style'
 import { MoneyForm } from '../components/MoneyForm'
 import { ReimburseReceiptReview, loadReimburseReview } from '../components/ReimburseReceiptReview'
 import { Empty, Forbidden, Shell, allowed, badge, docLink, num, rp, table, td, th } from './shared'
@@ -16,7 +19,7 @@ import { Empty, Forbidden, Shell, allowed, badge, docLink, num, rp, table, td, t
 export async function TransferQueue(props: AdminViewServerProps) {
   const req = props.initPageResult.req
   if (!allowed(req, ['pk-finance', 'pk-owner'])) return <Forbidden props={props} title="Antrian Transfer" roles={['pk-finance', 'pk-owner']} />
-  const { items, review } = await withReqTransaction(req, async () => ({ items: await transferQueue(req), review: await loadReimburseReview(req) }))
+  const { items, review, done } = await withReqTransaction(req, async () => ({ items: await transferQueue(req), review: await loadReimburseReview(req), done: await voidableTransfers(req) }))
   const canTransfer = allowed(req, ['pk-finance'])
   const accounts = canTransfer
     ? (
@@ -72,6 +75,61 @@ export async function TransferQueue(props: AdminViewServerProps) {
                   </tr>
                 ) : null}
               </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <style>{KAS_STYLE}</style>
+      {/* E2 (US-24, T8): recorded transfers that can still be voided (request "Sudah Ditransfer"). */}
+      <h2 id="transfer-tercatat" style={{ marginTop: 32 }}>
+        Transfer tercatat — dapat dibatalkan ({done.length})
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--pk-muted-fg)', margin: '0 0 8px' }}>
+        Void transfer membuat jurnal balik untuk KK-nya (KK asli tetap tampil sebagai Void) dan mengembalikan pengajuan ke antrian: Uang Muka → Disetujui, Reimburse → Nota
+        Terverifikasi.
+      </p>
+      {done.length === 0 ? (
+        <Empty text="Tidak ada transfer yang bisa dibatalkan." />
+      ) : (
+        <table style={table} data-pk-table="voidable-transfers">
+          <thead>
+            <tr>
+              <th style={th}>Tanggal</th>
+              <th style={th}>Transfer</th>
+              <th style={th}>Pengajuan</th>
+              <th style={{ ...th, textAlign: 'right' }}>Nominal</th>
+              {canTransfer ? <th style={th}>Aksi</th> : null}
+            </tr>
+          </thead>
+          <tbody>
+            {done.map((t) => (
+              <tr key={t.transferId} data-pk-transfer={t.transferNo}>
+                <td style={td}>{t.transferDate}</td>
+                <td style={td}>{t.transferNo}</td>
+                <td style={td}>
+                  {docLink(t.requestId, t.requestNo ?? `#${t.requestId}`)}
+                  <div>{t.requestTitle}</div>
+                  <div style={{ fontSize: 12 }}>{t.requestType === 'advance' ? 'Uang Muka' : 'Reimburse'}</div>
+                </td>
+                <td style={num}>{rp(t.amount)}</td>
+                {canTransfer ? (
+                  <td style={td}>
+                    <ReasonAction
+                      url={`/api/v1/expense-requests/${t.requestId}/transfers/${t.transferId}/void`}
+                      label="Void transfer"
+                      title={`Void transfer ${t.transferNo}?`}
+                      description={
+                        <>
+                          KK transfer ini dibalik dengan jurnal balik (saldo akun kembali), transfer ditandai Void, dan pengajuan {t.requestNo ?? ''} kembali ke{' '}
+                          <strong>{t.requestType === 'advance' ? 'Disetujui (Antri Transfer)' : 'Nota Terverifikasi (Antri Transfer)'}</strong> untuk ditransfer ulang.
+                        </>
+                      }
+                      confirmLabel="Void transfer"
+                      testId={`void-transfer-${t.transferId}`}
+                    />
+                  </td>
+                ) : null}
+              </tr>
             ))}
           </tbody>
         </table>

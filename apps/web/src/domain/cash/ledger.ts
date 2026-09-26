@@ -128,24 +128,18 @@ export async function createManualEntry(req: PayloadRequest, input: ManualInput)
   if (!input.description.trim()) fail(400, 'Keterangan wajib diisi.')
   const entryDate = input.entryDate ?? (await today(req))
   if (entryDate > (await today(req))) fail(400, 'Tanggal tidak boleh di masa depan.')
+  // E2 fix: the proof is set on INSERT. Attaching it with a follow-up update (previous code) hit
+  // the audit reason rule for edits ("Alasan wajib diisi saat mengedit transaksi kas.") → every
+  // manual entry with a proof failed with 400. The owner link is claimed right after the insert,
+  // in the same transaction (uploader/ownership errors roll the posting back).
   const doc = await postEntry(req, {
     ...input,
     entryDate,
     description: input.description.trim(),
-    proofId: null,
+    proofId: input.proofId ?? null,
     sourceType: 'manual',
   })
-  if (input.proofId) {
-    await claimMedia(req, 'media-attachments', input.proofId, doc.id, { ownerType: 'cash_entry' })
-    return (await req.payload.update({
-      collection: 'cash-entries',
-      id: doc.id,
-      data: { proof: input.proofId } as never,
-      depth: 0,
-      overrideAccess: true, // SYSTEM-WRITE: attach proof to the new manual entry
-      req,
-    })) as unknown as CashEntryDoc
-  }
+  if (input.proofId) await claimMedia(req, 'media-attachments', input.proofId, doc.id, { ownerType: 'cash_entry' })
   return doc
 }
 
@@ -264,7 +258,7 @@ export async function balances(req: PayloadRequest, asOf?: string) {
   })
 }
 
-/** Close a month (Finance/Owner). Only past months; audited `period_close`. */
+/** Close a month (Finance/Direktur = pk-owner). Only past months; audited `period_close`. */
 export async function closePeriod(req: PayloadRequest, period: string, note?: string) {
   if (!isPeriod(period)) fail(400, 'Periode harus YYYY-MM.')
   if (period >= (await today(req)).slice(0, 7)) fail(409, 'Hanya bulan yang sudah lewat yang dapat ditutup.')
@@ -288,9 +282,9 @@ export async function closePeriod(req: PayloadRequest, period: string, note?: st
   return doc
 }
 
-/** Re-open (Owner only, reason required; ADR 0005 §6): only the LATEST closed period. */
+/** Re-open (Owner only = "Direktur" label, G1-1; reason required; ADR 0005 §6): only the LATEST closed period. */
 export async function reopenPeriod(req: PayloadRequest, period: string, reason: string) {
-  if (!hasRole(req, 'pk-owner')) fail(403, 'Hanya Owner yang dapat membuka kembali periode.')
+  if (!hasRole(req, 'pk-owner')) fail(403, 'Hanya Direktur yang dapat membuka kembali periode.')
   if (!isPeriod(period)) fail(400, 'Periode harus YYYY-MM.')
   const tx = await getRequestTx(req)
   await tx.execute(sql`LOCK TABLE period_closings IN SHARE ROW EXCLUSIVE MODE`)

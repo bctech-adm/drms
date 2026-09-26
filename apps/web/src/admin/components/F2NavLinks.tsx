@@ -83,6 +83,13 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
           <Link href="/admin/verifikasi-lpj" style={link}>
             Verifikasi LPJ {lpj > 0 ? <span style={pill}>{lpj}</span> : null}
           </Link>
+          {/* E2: cash book + period close (Finance writes, Direktur = pk-owner reads / re-opens) */}
+          <Link href="/admin/kas" style={link} data-pk-nav-link="kas">
+            Kas
+          </Link>
+          <Link href="/admin/tutup-buku" style={link} data-pk-nav-link="tutup-buku">
+            Tutup buku
+          </Link>
         </>
       ) : null}
       {/* F3: reports (Finance/Owner all, PM team) and the global audit log (Owner/Admin/Finance, Q-F3-4) */}

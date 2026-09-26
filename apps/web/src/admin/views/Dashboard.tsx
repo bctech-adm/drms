@@ -484,7 +484,7 @@ function RecentCashCard({ id, rows, span, i }: { id: string; rows: CashRow[]; sp
     },
   ]
   return (
-    <Card id={id} title="Transaksi kas terbaru" sub="Buku kas, termasuk void & jurnal balik" span={span} i={i} action={{ href: '/admin/collections/cash-entries', label: 'Buku kas' }}>
+    <Card id={id} title="Transaksi kas terbaru" sub="Buku kas, termasuk void & jurnal balik" span={span} i={i} action={{ href: '/admin/kas', label: 'Buku kas' }}>
       <DataTable
         id={id}
         cols={cols}
@@ -492,7 +492,7 @@ function RecentCashCard({ id, rows, span, i }: { id: string; rows: CashRow[]; sp
         rowKey={(r) => r.id}
         rowAttrs={(r) => ({ className: r.status === 'void' ? 'void' : undefined })}
         caption="Transaksi kas terbaru"
-        empty={<EmptyState text="Belum ada transaksi kas." action={{ href: '/admin/collections/cash-entries/create', label: 'Catat kas masuk/keluar' }} />}
+        empty={<EmptyState text="Belum ada transaksi kas." action={{ href: '/admin/kas/baru', label: 'Catat kas masuk/keluar' }} />}
       />
     </Card>
   )
@@ -847,7 +847,7 @@ async function Finance({ req }: { req: PayloadRequest }) {
         <RecentCashCard id="finance-recent-cash" rows={v.recentCash} span={8} i={12} />
         <CategoryCard id="finance-categories" c={v.categories} span={4} i={13} sub="Dicairkan 6 bulan terakhir" />
 
-        <Card id="period-close" title="Tutup buku" span={6} i={14} action={{ href: '/admin/collections/period-closings', label: 'Daftar tutup buku' }}>
+        <Card id="period-close" title="Tutup buku" span={6} i={14} action={{ href: '/admin/tutup-buku', label: 'Tutup buku' }}>
           <p className="pk-kpi-x" data-pk-kpi="last-closed" style={{ fontSize: 14 }}>
             {d.lastClosedPeriod ? (
               <>
@@ -857,11 +857,11 @@ async function Finance({ req }: { req: PayloadRequest }) {
               'Belum pernah tutup buku.'
             )}
           </p>
-          <p className="pk-kpi-x">Bulan yang bisa ditutup: {d.nextClosable} (bulan lampau saja; aksi lewat POST /api/v1/period-closings).</p>
+          <p className="pk-kpi-x">Bulan yang bisa ditutup: {d.nextClosable} (bulan lampau saja).</p>
         </Card>
         <Card id="quick" title="Aksi cepat" span={6} i={15}>
           <div className="pk-actions" style={{ margin: 0 }}>
-            <Link className="pk-btn primary" href="/admin/collections/cash-entries/create">
+            <Link className="pk-btn primary" href="/admin/kas/baru">
               + Kas masuk / keluar
             </Link>
             <Link className="pk-btn" href="/admin/laporan">

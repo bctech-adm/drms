@@ -15,6 +15,10 @@ import { Dashboard as Dashboard_1892ca63063ac8b0682f63e4a9002f9d } from '@/admin
 import { ReportsIndex as ReportsIndex_0364f359823c4f9d190564be3bae51f6 } from '@/admin/views/Reports'
 import { ReportView as ReportView_0364f359823c4f9d190564be3bae51f6 } from '@/admin/views/Reports'
 import { AuditLogView as AuditLogView_0364f359823c4f9d190564be3bae51f6 } from '@/admin/views/Reports'
+import { KasBook as KasBook_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
+import { KasNew as KasNew_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
+import { KasEdit as KasEdit_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
+import { TutupBuku as TutupBuku_38163a8a76a60c5684b51059a76858a2 } from '@/admin/views/Kas'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -36,5 +40,9 @@ export const importMap = {
   "@/admin/views/Reports#ReportsIndex": ReportsIndex_0364f359823c4f9d190564be3bae51f6,
   "@/admin/views/Reports#ReportView": ReportView_0364f359823c4f9d190564be3bae51f6,
   "@/admin/views/Reports#AuditLogView": AuditLogView_0364f359823c4f9d190564be3bae51f6,
+  "@/admin/views/Kas#KasBook": KasBook_38163a8a76a60c5684b51059a76858a2,
+  "@/admin/views/Kas#KasNew": KasNew_38163a8a76a60c5684b51059a76858a2,
+  "@/admin/views/Kas#KasEdit": KasEdit_38163a8a76a60c5684b51059a76858a2,
+  "@/admin/views/Kas#TutupBuku": TutupBuku_38163a8a76a60c5684b51059a76858a2,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -10,6 +10,8 @@ import { nextActor, timeline } from '@/domain/expense/timeline'
 import { formatRupiah } from '@/lib/money'
 import { withSystemTransaction } from '@/lib/system-tx'
 
+import { ReasonAction } from './kas/ReasonAction'
+import { KAS_STYLE } from './kas/style'
 import { RequesterActions, type RequesterActionsProps } from './RequesterActions'
 
 type Detail = Awaited<ReturnType<typeof detail>>
@@ -141,6 +143,25 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
             <a href={`/admin/antrian-transfer#reimburse-${d.id}`} data-pk-link="receipt-review">
               Verifikasi nota Reimburse (Antrian Transfer) →
             </a>
+          </div>
+        ) : null}
+        {d.allowedActions.includes('transfer_void') ? (
+          // E2 (US-24, T8): Finance voids a recorded transfer from the request detail (reason dialog).
+          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }} data-pk-transfer-void>
+            <style>{KAS_STYLE}</style>
+            {d.transfers
+              .filter((t) => t.status === 'posted' && (t.kind === 'advance' || t.kind === 'reimburse'))
+              .map((t) => (
+                <ReasonAction
+                  key={t.id}
+                  url={`/api/v1/expense-requests/${d.id}/transfers/${t.id}/void`}
+                  label={`Void transfer ${t.docNo}`}
+                  title={`Void transfer ${t.docNo}?`}
+                  description={`KK transfer ${rp(t.amount)} dibalik dengan jurnal balik, transfer ditandai Void, dan pengajuan kembali ke ${d.type === 'advance' ? 'Disetujui (Antri Transfer)' : 'Nota Terverifikasi (Antri Transfer)'}.`}
+                  confirmLabel="Void transfer"
+                  testId={`void-transfer-${t.id}`}
+                />
+              ))}
           </div>
         ) : null}
         {d.rejectReason ? <div style={{ marginTop: 6, color: 'var(--theme-error-500)' }}>Alasan ditolak: {d.rejectReason}</div> : null}

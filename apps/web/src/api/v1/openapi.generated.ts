@@ -8521,7 +8521,7 @@ export const openapiDocument = {
     },
     "/cash-entries": {
       "get": {
-        "summary": "Finance/Owner/Admin: cash ledger (KM/KK, reversals)",
+        "summary": "Finance/Direktur (pk-owner)/Admin: cash ledger (KM/KK, reversals)",
         "security": [
           {
             "bearer": []
@@ -8547,6 +8547,24 @@ export const openapiDocument = {
             },
             "required": false,
             "name": "cashAccountId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "projectId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "required": false,
+            "name": "costCenterId",
             "in": "query"
           },
           {
@@ -8750,6 +8768,28 @@ export const openapiDocument = {
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
           }
         ],
         "requestBody": {
@@ -8974,7 +9014,7 @@ export const openapiDocument = {
     },
     "/cash-accounts/balances": {
       "get": {
-        "summary": "Finance/Owner: balance per cash account (opening + in − out)",
+        "summary": "Finance/Direktur (pk-owner): balance per cash account (opening + in − out)",
         "security": [
           {
             "bearer": []
@@ -9072,7 +9112,7 @@ export const openapiDocument = {
         }
       },
       "post": {
-        "summary": "Finance/Owner: close a past month (DB rejects postings dated ≤ lock date)",
+        "summary": "Finance/Direktur (pk-owner): close a past month (DB rejects postings dated ≤ lock date)",
         "security": [
           {
             "bearer": []
@@ -9190,7 +9230,7 @@ export const openapiDocument = {
     },
     "/period-closings/{period}/reopen": {
       "post": {
-        "summary": "Owner: re-open the latest closed period (reason)",
+        "summary": "Direktur (role pk-owner): re-open the latest closed period (reason)",
         "security": [
           {
             "bearer": []

@@ -29,3 +29,14 @@ export const F3_ADMIN_VIEWS = {
   report: { Component: '@/admin/views/Reports#ReportView', path: '/laporan/:kode' as const, meta: { title: 'Laporan' } },
   auditLog: { Component: '@/admin/views/Reports#AuditLogView', path: '/audit-log' as const, exact: true, meta: { title: 'Audit Log' } },
 }
+
+/**
+ * E2 (fase1-golive §E2): Finance cash views. `/kas` exact (else it prefix-matches `/kas/baru`);
+ * `/kas/:id/ubah` = edit before period close. Role checks inside the views + the /api/v1 endpoints.
+ */
+export const E2_ADMIN_VIEWS = {
+  kasBook: { Component: '@/admin/views/Kas#KasBook', path: '/kas' as const, exact: true, meta: { title: 'Kas' } },
+  kasNew: { Component: '@/admin/views/Kas#KasNew', path: '/kas/baru' as const, exact: true, meta: { title: 'Catat kas' } },
+  kasEdit: { Component: '@/admin/views/Kas#KasEdit', path: '/kas/:id/ubah' as const, exact: true, meta: { title: 'Edit transaksi kas' } },
+  periodClose: { Component: '@/admin/views/Kas#TutupBuku', path: '/tutup-buku' as const, exact: true, meta: { title: 'Tutup buku' } },
+}
