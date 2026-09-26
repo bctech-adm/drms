@@ -69,9 +69,12 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
   return (
     <div style={box}>
       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Alur kerja</div>
-      <Link href="/admin/persetujuan" style={link}>
-        Persetujuan
-      </Link>
+      {office ? (
+        // ADR 0013: decisions are Direktur/Finance only — the PM monitors (team list, dashboard, reports).
+        <Link href="/admin/persetujuan" style={link}>
+          Persetujuan
+        </Link>
+      ) : null}
       {office ? (
         <>
           <Link href="/admin/antrian-transfer" style={link}>

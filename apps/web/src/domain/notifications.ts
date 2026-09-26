@@ -34,7 +34,9 @@ export type NotifyEvent =
   | 'expense.completed'
 
 const DEFAULTS: Record<NotifyEvent, { title: string; body: string }> = {
-  'expense.pending_ack': { title: 'Menunggu Diketahui: {docNo}', body: '{type} "{title}" {amount} menunggu tanda "Diketahui" dari Anda.' },
+  // ADR 0013 §10: "Diketahui" is the Direktur's approval; recipients = active Direktur (pk-owner)
+  // holders minus requester/creator. pending_approval → active Finance holders (never the PM).
+  'expense.pending_ack': { title: 'Persetujuan Direktur: {docNo}', body: '{docNo} menunggu persetujuan Anda sebagai Direktur: {type} "{title}" {amount}.' },
   'expense.pending_approval': { title: 'Menunggu Approval: {docNo}', body: '{type} "{title}" {amount} menunggu persetujuan Anda.' },
   'expense.approved': { title: 'Disetujui: {docNo}', body: 'Pengajuan "{title}" {amount} disetujui.' },
   'expense.rejected': { title: 'Ditolak: {docNo}', body: 'Pengajuan "{title}" ditolak. Lihat alasan di detail pengajuan.' },

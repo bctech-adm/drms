@@ -59,7 +59,7 @@ async function request(projectId: number, ack: FlowUser, lines: Line[], target: 
   if (target === 'rejected') await must(call('POST', `${E}/${d.id}/reject`, ack, { reason: 'tidak sesuai' }))
   else {
     await must(call('POST', `${E}/${d.id}/acknowledge`, ack, {}))
-    if (target === 'approved') await must(call('POST', `${E}/${d.id}/approve`, w.users.owner, {}))
+    if (target === 'approved') await must(call('POST', `${E}/${d.id}/approve`, w.users.finance, {}))
   }
   if (lines.some((l) => l.categoryId === null)) await uncategorise(d.id)
 }
@@ -93,13 +93,13 @@ beforeAll(async () => {
   await sysCreate('budget-lines', { project: w.otherProject, category: w.cat.mat, amount: 9_000_000 })
   const { mat, ksm, bbm } = w.cat
   // committed (approved) on the project: MAT 3 jt, KSM 1,5 jt, BBM 250 rb (outside RAB), no category 500 rb + 250 rb
-  await request(w.project, w.users.pm, [{ description: 'Semen', total: 3_000_000, categoryId: mat }, { description: 'Lain-lain tanpa kategori', total: 500_000, categoryId: null }, { description: 'BBM', qty: 25, uomId: w.uom.l, total: 250_000, categoryId: bbm, vehicleId: w.vehicle }], 'approved')
-  await request(w.project, w.users.pm, [{ description: 'Konsumsi', total: 1_500_000, categoryId: ksm }, { description: 'Tanpa kategori 2', total: 250_000, categoryId: null }], 'approved')
+  await request(w.project, w.users.owner, [{ description: 'Semen', total: 3_000_000, categoryId: mat }, { description: 'Lain-lain tanpa kategori', total: 500_000, categoryId: null }, { description: 'BBM', qty: 25, uomId: w.uom.l, total: 250_000, categoryId: bbm, vehicleId: w.vehicle }], 'approved')
+  await request(w.project, w.users.owner, [{ description: 'Konsumsi', total: 1_500_000, categoryId: ksm }, { description: 'Tanpa kategori 2', total: 250_000, categoryId: null }], 'approved')
   // NOT committed: pending approval + rejected (incl. uncategorised lines)
-  await request(w.project, w.users.pm, [{ description: 'Menunggu', total: 999_000, categoryId: mat }, { description: 'Menunggu tanpa kategori', total: 111_000, categoryId: null }], 'pending_approval')
-  await request(w.project, w.users.pm, [{ description: 'Ditolak tanpa kategori', total: 777_000, categoryId: null }], 'rejected')
+  await request(w.project, w.users.owner, [{ description: 'Menunggu', total: 999_000, categoryId: mat }, { description: 'Menunggu tanpa kategori', total: 111_000, categoryId: null }], 'pending_approval')
+  await request(w.project, w.users.owner, [{ description: 'Ditolak tanpa kategori', total: 777_000, categoryId: null }], 'rejected')
   // other project: must never leak into the project's detail
-  await request(w.otherProject, w.users.otherPm, [{ description: 'Proyek lain', total: 7_000_000, categoryId: mat }, { description: 'Proyek lain tanpa kategori', total: 40_000, categoryId: null }], 'approved')
+  await request(w.otherProject, w.users.owner, [{ description: 'Proyek lain', total: 7_000_000, categoryId: mat }, { description: 'Proyek lain tanpa kategori', total: 40_000, categoryId: null }], 'approved')
   const c = await sqlAs('app', 'SELECT id, code, name FROM expense_categories WHERE id = ANY($1)', [[mat, ksm, bbm, w.cat.inap]])
   cat = c.rows
 }, 600_000)

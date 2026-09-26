@@ -35,7 +35,7 @@ export type RequestStatus = (typeof REQUEST_STATUSES)[number]
 
 export const STATUS_LABELS: Record<RequestStatus, string> = {
   draft: 'Draft',
-  pending_ack: 'Menunggu Diketahui',
+  pending_ack: 'Menunggu Diketahui (Direktur)',
   pending_approval: 'Menunggu Approval',
   approved: 'Disetujui',
   receipt_revision: 'Revisi Nota',

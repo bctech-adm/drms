@@ -3,6 +3,7 @@ import type { PayloadRequest, Where } from 'payload'
 import { relId } from '@/access/roles'
 
 import { actorContext, ids, projectCommitted, settings, type RequestDoc } from './common'
+import { isDecisionSnapshot } from './decision'
 import { budgetImpact } from './rules'
 import { allowedActions } from './state'
 import { REQUEST_TYPE_LABELS, statusLabel } from './types'
@@ -78,10 +79,14 @@ export async function approvalInbox(req: PayloadRequest) {
     if (!step) continue
     const p = d.project && typeof d.project === 'object' ? d.project : null
     const b = p ? budgetImpact(p.budget, await projectCommitted(req, p.id, d.id), d.grandTotal ?? 0) : { before: null, after: null }
+    const decisionFlow = isDecisionSnapshot(d.approvalSnapshot)
     out.push({
       ...base(d),
       step,
       level: d.currentLevel ?? null,
+      // ADR 0013: human label of the step (web + APK) and whether this is the Direktur → Finance flow.
+      stepLabel: step === 'acknowledge' ? (decisionFlow ? 'Persetujuan Direktur (Diketahui)' : 'Diketahui Oleh') : `Approval level ${d.currentLevel ?? 1}`,
+      decisionFlow,
       budget: { basis: p?.budget ? ('project' as const) : ('none' as const), pctBefore: b.before, pctAfter: b.after, overWarn: b.after !== null && b.after > warnPct },
       flags: await flagCounts(req, d.id),
     })

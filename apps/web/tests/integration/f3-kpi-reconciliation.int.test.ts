@@ -127,7 +127,7 @@ async function drive(target: string, type: 'advance' | 'reimburse', s: Scope, op
   }
   await must(call('POST', `${E}/${id}/acknowledge`, s.ack, {}))
   if (target === 'pending_approval') return bump('pending_approval')
-  await must(call('POST', `${E}/${id}/approve`, w.users.owner, {}))
+  await must(call('POST', `${E}/${id}/approve`, w.users.finance, {}))
   if (target === 'approved') return bump('approved')
   if (type === 'reimburse') {
     const det = await must(call('GET', `${E}/${id}`, w.users.finance))
@@ -226,7 +226,7 @@ beforeAll(async () => {
   const closedDate = `${closedMonth}-15`
   const closedEntries: number[] = []
   for (let i = 0; i < 6; i++) closedEntries.push((await manual(i % 2 ? 'in' : 'out', closedDate, amount(), i % 3 === 0 ? { costCenterId: w.costCenter } : {})).id)
-  for (let i = 0; i < 4; i++) await drive('transferred', 'advance', { projectId: w.project, ack: w.users.pm }, { transferDate: addDays(closedDate, i) })
+  for (let i = 0; i < 4; i++) await drive('transferred', 'advance', { projectId: w.project, ack: w.users.owner }, { transferDate: addDays(closedDate, i) })
   for (let i = 0; i < 4; i++) await manual(i % 2 ? 'in' : 'out', `${addMonths(month, -2)}-10`, amount(), { vehicleId: w.vehicle, projectId: w.project })
   closedK02a = await asUser(w.users.finance, (req) => cashFlowMonthly(req, { from: closedMonth, to: closedMonth }, 'book'))
   await must(call('POST', '/api/v1/period-closings', w.users.finance, { period: closedMonth, note: 'F3 tutup buku uji' }), 201)
@@ -240,7 +240,7 @@ beforeAll(async () => {
   // --- the form 228 case (seed case 1): Reimburse 1.447.500 on the world cost center ----------
   const f = await draft(
     'reimburse',
-    { costCenterId: w.costCenter, ack: w.users.pm },
+    { costCenterId: w.costCenter, ack: w.users.owner },
     [
       { description: 'BBM Hilux Banjarmasin-Palangka', qty: 60, uomId: w.uom.l, total: 600_000, categoryId: w.cat.bbm, vehicleId: w.vehicle },
       { description: 'Penginapan', qty: 2, uomId: w.uom.kmr, unitPrice: 339_000, total: 677_000, categoryId: w.cat.inap },
@@ -251,8 +251,8 @@ beforeAll(async () => {
   form228Id = f.id
   for (const [i, l] of (f.lines as Array<{ id: string; total: number }>).entries()) await receipt(w.users.staffA, f.id, l.id, l.total, addDays(today, -1 - i))
   await must(call('POST', `${E}/${f.id}/submit`, w.users.staffA, {}))
-  await must(call('POST', `${E}/${f.id}/acknowledge`, w.users.pm, {}))
-  await must(call('POST', `${E}/${f.id}/approve`, w.users.owner, {}))
+  await must(call('POST', `${E}/${f.id}/acknowledge`, w.users.owner, {}))
+  await must(call('POST', `${E}/${f.id}/approve`, w.users.finance, {}))
   const det = await must(call('GET', `${E}/${f.id}`, w.users.finance))
   for (const r of det.receipts) await must(call('POST', `${E}/${f.id}/receipts/${r.id}/verify`, w.users.finance, {}))
   const again = await must(call('GET', `${E}/${f.id}`, w.users.finance))
@@ -262,10 +262,10 @@ beforeAll(async () => {
 
   // --- the generated body: N requests over all statuses and three scopes --------------------
   const scopes: Array<[Scope, number]> = [
-    [{ projectId: w.project, ack: w.users.pm }, 40],
-    [{ costCenterId: w.costCenter, ack: w.users.pm }, 25],
-    [{ projectId: w.otherProject, ack: w.users.otherPm }, 25],
-    [{ costCenterId: cc2, ack: w.users.otherPm }, 10],
+    [{ projectId: w.project, ack: w.users.owner }, 40],
+    [{ costCenterId: w.costCenter, ack: w.users.owner }, 25],
+    [{ projectId: w.otherProject, ack: w.users.owner }, 25],
+    [{ costCenterId: cc2, ack: w.users.owner }, 10],
   ]
   for (let i = 0; i < N; i++) {
     const s = weighted(

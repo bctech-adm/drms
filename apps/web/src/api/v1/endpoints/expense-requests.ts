@@ -417,7 +417,7 @@ export const pdfEndpoint = v1({
     const q = PdfQuery.safeParse(Object.fromEntries(req.searchParams.entries()))
     if (!q.success) throw new HttpError(400, 'Bad Request', { detail: 'variant harus standard atau internal.' })
     const internal = q.data.variant === 'internal'
-    if (internal && !hasRole(req, 'pk-finance', 'pk-owner', 'pk-admin')) throw new HttpError(403, 'Forbidden', { detail: 'Salinan internal hanya untuk Finance/Owner/Admin.' })
+    if (internal && !hasRole(req, 'pk-finance', 'pk-owner', 'pk-admin')) throw new HttpError(403, 'Forbidden', { detail: 'Salinan internal hanya untuk Finance/Direktur/Admin.' })
     const { buildPdfData } = await import('@/pdf/data')
     const data = await withReqTransaction(req, async () => {
       const doc = await loadVisible(req, id)

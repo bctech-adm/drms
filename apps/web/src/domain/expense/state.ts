@@ -41,7 +41,7 @@ type Row = { from: RequestStatus[]; action: Action; to: RequestStatus[]; types?:
  * `to` lists every target the action may produce (e.g. submit → pending_ack when the approval
  * rule requires "Diketahui Oleh", else pending_approval; approve → pending_approval while levels
  * remain, approved on the last level; receipts_resubmit → approved when the grand total is
- * unchanged, pending_approval (re-approval) when it changed).
+ * unchanged, pending_ack / pending_approval (re-approval) when it changed).
  */
 export const TRANSITIONS: readonly Row[] = [
   { from: ['draft'], action: 'submit', to: ['pending_ack', 'pending_approval'] },
@@ -56,7 +56,9 @@ export const TRANSITIONS: readonly Row[] = [
   { types: ['advance'], from: ['transferred'], action: 'transfer_void', to: ['approved'] },
   // Reimburse
   { types: ['reimburse'], from: ['approved', 'receipts_verified'], action: 'receipt_reject', to: ['receipt_revision'] },
-  { types: ['reimburse'], from: ['receipt_revision'], action: 'receipts_resubmit', to: ['approved', 'pending_approval'] },
+  // E1 (ADR 0013): changed total → re-approval starts again at "Menunggu Diketahui" (Direktur) when the
+  // new snapshot requires it, else at "Menunggu Approval".
+  { types: ['reimburse'], from: ['receipt_revision'], action: 'receipts_resubmit', to: ['approved', 'pending_ack', 'pending_approval'] },
   { types: ['reimburse'], from: ['approved'], action: 'verify_receipts', to: ['receipts_verified'] },
   { types: ['reimburse'], from: ['approved', 'receipts_verified', 'receipt_revision'], action: 'cancel', to: ['cancelled'] },
   { types: ['reimburse'], from: ['receipts_verified'], action: 'transfer', to: ['transferred'] },
@@ -116,6 +118,11 @@ export type ActorContext = {
   matchesCurrentStep: boolean
   /** Caller already holds a decision position (diketahui/approval) in this cycle — G1. */
   alreadyDecided: boolean
+  /**
+   * ADR 0013: the request's snapshot restricts decisions to Direktur/Finance and the caller holds
+   * neither (PM monitors only). Absent/false on legacy snapshots.
+   */
+  lacksDecisionRole?: boolean
 }
 
 /** Actions that do not move the status (their own status preconditions are checked in allowedActions). */
@@ -148,12 +155,10 @@ export function allowedActions(ctx: ActorContext): Action[] {
       ? own && !ctx.hasDecision
       : office(ctx),
   )
-  add('acknowledge', ctx.isAcknowledger && !selfInvolved && !ctx.alreadyDecided)
-  add('approve', ctx.matchesCurrentStep && !selfInvolved && !ctx.alreadyDecided)
-  add(
-    'reject',
-    !selfInvolved && !ctx.alreadyDecided && (ctx.status === 'pending_ack' ? ctx.isAcknowledger : ctx.matchesCurrentStep),
-  )
+  const decider = !selfInvolved && !ctx.alreadyDecided && !ctx.lacksDecisionRole
+  add('acknowledge', ctx.isAcknowledger && decider)
+  add('approve', ctx.matchesCurrentStep && decider)
+  add('reject', decider && (ctx.status === 'pending_ack' ? ctx.isAcknowledger : ctx.matchesCurrentStep))
   // F2e: Finance never verifies receipts / reviews flags of a request it requested or created
   // (G1 spirit, like the LPJ actions below) — FINANCE_SELF_GUARDED, denied attempts are audited.
   const finance = has(ctx, 'pk-finance') && !selfInvolved

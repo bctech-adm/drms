@@ -4,6 +4,7 @@ import React from 'react'
 import { relId } from '@/access/roles'
 import { displayName, loadVisible } from '@/domain/expense/common'
 import { detail } from '@/domain/expense/dto'
+import { isDecisionSnapshot, SKIPPED_LABEL } from '@/domain/expense/decision'
 import type { ApprovalSnapshot } from '@/domain/expense/rules'
 import { nextActor, timeline } from '@/domain/expense/timeline'
 import { formatRupiah } from '@/lib/money'
@@ -144,12 +145,23 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
         ) : null}
         {d.rejectReason ? <div style={{ marginTop: 6, color: 'var(--theme-error-500)' }}>Alasan ditolak: {d.rejectReason}</div> : null}
         {d.cancelReason ? <div style={{ marginTop: 6 }}>Alasan batal: {d.cancelReason}</div> : null}
+        {(snap?.skipped ?? []).length > 0 ? (
+          // ADR 0013 G1-2: decision positions left out because their only holders are requester/creator.
+          <div data-pk-skipped style={{ marginTop: 6 }}>
+            {(snap?.skipped ?? []).map((x) => (
+              <div key={`${x.position}-${x.level}`}>
+                {x.position === 'diketahui' ? 'Diketahui Oleh (Direktur)' : `Approval L${x.level}`}: {SKIPPED_LABEL} — {x.reason}
+              </div>
+            ))}
+          </div>
+        ) : null}
         {d.approvals.length > 0 ? (
           <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 12 }}>
             {d.approvals.map((a) => (
               <li key={a.id}>
                 siklus {a.cycle} · {POSITION_LABELS[a.position] ?? a.position}
-                {a.position === 'approval' ? ` L${a.level}` : ''}: {a.actorName ?? '—'} — {DECISION_LABELS[a.decision] ?? a.decision}
+                {a.position === 'approval' ? ` L${a.level}` : ''}: {a.actorName ?? '—'} —{' '}
+                {a.decision === 'acknowledged' && a.cycle === d.approvalCycle && isDecisionSnapshot(snap) ? 'disetujui Direktur (Diketahui)' : (DECISION_LABELS[a.decision] ?? a.decision)}
                 {a.onBehalf ? ' (diwakili)' : ''}
                 {a.position === 'diketahui' && a.cycle === d.approvalCycle && snap?.acknowledgeDelegatedTo ? ' (dilimpahkan)' : ''}
                 {a.reason ? ` — ${a.reason}` : ''}

@@ -93,6 +93,24 @@ export const openapiDocument = {
               "$ref": "#/components/schemas/Role"
             }
           },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "approvalInbox": {
+                "type": "boolean",
+                "description": "ADR 0013: holds pk-owner (label \"Direktur\") or pk-finance → show the approval inbox."
+              },
+              "teamMonitor": {
+                "type": "boolean",
+                "description": "Holds pk-pm → team list/dashboard (monitoring only, no decisions)."
+              }
+            },
+            "required": [
+              "approvalInbox",
+              "teamMonitor"
+            ],
+            "description": "UI hints for the APK (E1); the server guards stay authoritative."
+          },
           "employee": {
             "type": [
               "object",
@@ -195,6 +213,7 @@ export const openapiDocument = {
           "email",
           "name",
           "roles",
+          "capabilities",
           "employee",
           "authMethod",
           "device",
@@ -995,6 +1014,71 @@ export const openapiDocument = {
                   "null"
                 ]
               },
+              "acknowledgeBy": {
+                "type": "string",
+                "enum": [
+                  "scope_manager",
+                  "role",
+                  "user"
+                ],
+                "description": "scope_manager only on pre-E1 snapshots (PM \"Diketahui\")."
+              },
+              "acknowledgeRole": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "ADR 0013: pk-owner (label \"Direktur\") when \"Diketahui\" is the Direktur approval."
+              },
+              "decisionRoles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "ADR 0013: roles that may acknowledge/approve/reject ([pk-owner, pk-finance]); empty = pre-E1 snapshot (old guards)."
+              },
+              "skipped": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "string",
+                      "enum": [
+                        "diketahui",
+                        "approval"
+                      ]
+                    },
+                    "level": {
+                      "type": "integer"
+                    },
+                    "role": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "userId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "exclusiveMinimum": 0
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "position",
+                    "level",
+                    "role",
+                    "userId",
+                    "reason"
+                  ]
+                },
+                "description": "ADR 0013 G1-2: positions skipped at submit because their only holders are requester/creator — show \"(tidak berlaku — pemohon)\"."
+              },
               "steps": {
                 "type": "array",
                 "items": {
@@ -1048,6 +1132,10 @@ export const openapiDocument = {
               "acknowledgerUserId",
               "acknowledgeDelegatedTo",
               "acknowledgeDelegationReason",
+              "acknowledgeBy",
+              "acknowledgeRole",
+              "decisionRoles",
+              "skipped",
               "steps",
               "signDiajukan",
               "signDibuat"
@@ -3177,6 +3265,14 @@ export const openapiDocument = {
                     "null"
                   ]
                 },
+                "stepLabel": {
+                  "type": "string",
+                  "description": "ADR 0013: \"Persetujuan Direktur (Diketahui)\" | \"Approval level n\" (legacy PM step: \"Diketahui Oleh\")."
+                },
+                "decisionFlow": {
+                  "type": "boolean",
+                  "description": "ADR 0013 Direktur → Finance request (acknowledge = the Direktur approval, button \"Setujui\"); false = pre-E1 snapshot."
+                },
                 "budget": {
                   "type": "object",
                   "properties": {
@@ -3242,6 +3338,8 @@ export const openapiDocument = {
                 "requestDate",
                 "step",
                 "level",
+                "stepLabel",
+                "decisionFlow",
                 "budget",
                 "flags"
               ]
@@ -6123,7 +6221,7 @@ export const openapiDocument = {
     },
     "/expense-requests/{id}/acknowledge": {
       "post": {
-        "summary": "\"Diketahui Oleh\" (US-42)",
+        "summary": "\"Diketahui Oleh\" = Direktur approval (US-42, ADR 0013); PM/Staff/Admin → 403 (audited)",
         "security": [
           {
             "bearer": []
@@ -6270,7 +6368,7 @@ export const openapiDocument = {
     },
     "/expense-requests/{id}/approve": {
       "post": {
-        "summary": "Approve the current level (G1/G2; budget % before → after)",
+        "summary": "Approve the current level — Finance by default (G1/G2, ADR 0013; budget % before → after); PM/Staff/Admin → 403 (audited)",
         "security": [
           {
             "bearer": []
@@ -6417,7 +6515,7 @@ export const openapiDocument = {
     },
     "/expense-requests/{id}/reject": {
       "post": {
-        "summary": "Reject (reason)",
+        "summary": "Reject (reason) at \"Diketahui\" (Direktur) or an approval level (Finance); PM/Staff/Admin → 403 (audited)",
         "security": [
           {
             "bearer": []

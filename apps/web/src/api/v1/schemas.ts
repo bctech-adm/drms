@@ -43,6 +43,12 @@ export const Me = z
     email: z.string(),
     name: z.string().nullable(),
     roles: z.array(RoleEnum),
+    capabilities: z
+      .object({
+        approvalInbox: z.boolean().meta({ description: 'ADR 0013: holds pk-owner (label "Direktur") or pk-finance → show the approval inbox.' }),
+        teamMonitor: z.boolean().meta({ description: 'Holds pk-pm → team list/dashboard (monitoring only, no decisions).' }),
+      })
+      .meta({ description: 'UI hints for the APK (E1); the server guards stay authoritative.' }),
     employee: z.object({ id: z.number().int(), code: z.string(), name: z.string() }).nullable(),
     authMethod: z.enum(['oidcSession', 'mobileBearer']),
     device: z.object({ id: z.number().int(), deviceId: z.string() }).nullable(),

@@ -40,7 +40,7 @@ async function drive(staff: FlowUser, requesterEmp: number, bank: number, projec
   }
   await must(api('POST', `${E}/${d.id}/acknowledge`, ack, {}))
   if (target === 'pending_approval') return d.id as number
-  await must(api('POST', `${E}/${d.id}/approve`, w.users.owner, {}))
+  await must(api('POST', `${E}/${d.id}/approve`, w.users.finance, {}))
   if (target === 'approved') return d.id as number
   resetRateLimits()
   const proof = await upload('/api/v1/media/transfer-proofs', w.users.finance, await png(undefined, 120, 90))
@@ -54,12 +54,12 @@ beforeAll(async () => {
   month = today.slice(0, 7)
   // staff A (world project, PM = w.users.pm); staff A also in the other project (PM = otherPm)
   await sysCreate('team-assignments', { employee: w.emp.a, project: w.otherProject, roleInProject: 'staff' })
-  ids.ack = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.pm, 'pending_ack')
-  ids.appr = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.pm, 'pending_approval')
-  ids.approved = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.pm, 'approved')
-  ids.transferred = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.pm, 'transferred')
-  ids.rejected = await drive(w.users.staffB, w.emp.b, w.accB, w.project, w.users.pm, 'rejected')
-  ids.other = await drive(w.users.staffA, w.emp.a, w.accA, w.otherProject, w.users.otherPm, 'transferred')
+  ids.ack = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.owner, 'pending_ack')
+  ids.appr = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.owner, 'pending_approval')
+  ids.approved = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.owner, 'approved')
+  ids.transferred = await drive(w.users.staffA, w.emp.a, w.accA, w.project, w.users.owner, 'transferred')
+  ids.rejected = await drive(w.users.staffB, w.emp.b, w.accB, w.project, w.users.owner, 'rejected')
+  ids.other = await drive(w.users.staffA, w.emp.a, w.accA, w.otherProject, w.users.owner, 'transferred')
 }, 600_000)
 
 afterAll(async () => {
@@ -160,8 +160,11 @@ describe('dashboards `viz` + API', () => {
     const p = await asUser(w.users.pm, (req) => pmDashboard(req))
     const teamN = (await sqlAs('app', "SELECT count(*)::int AS n FROM expense_requests WHERE status <> 'draft' AND (project_id = $1 OR cost_center_id = $2)", [w.project, w.costCenter])).rows[0].n
     expect(p.viz.pipeline.total).toBe(teamN)
-    expect(p.viz.inbox.map((x) => x.id)).toContain(ids.ack)
+    // ADR 0013 (E1): the PM monitors only → nothing waits for the PM's decision (was: team "Diketahui")
+    expect(p.viz.inbox.map((x) => x.id)).not.toContain(ids.ack)
     expect(p.viz.inbox.map((x) => x.id)).not.toContain(ids.other)
+    const dir = await must(api('GET', '/api/v1/approvals/inbox', w.users.owner2))
+    expect(dir.items.map((x: { id: number }) => x.id)).toContain(ids.ack) // waiting for the Direktur
     expect(p.viz.categories.includesManual).toBe(false)
     const s = await asUser(w.users.staffB, (req) => staffDashboard(req))
     expect(s.viz.pipeline.total).toBe(1)

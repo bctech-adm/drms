@@ -531,7 +531,7 @@ const anggaranProject: ReportDef = {
           href: `/admin/laporan/anggaran-project?${qs({ project: p.id })}`,
         })),
         totals: { project: 'TOTAL', rab: list.reduce((s, p) => s + (p.budget ?? 0), 0), komitmen: sum('committed'), dicairkan: sum('disbursedNet'), realisasi: sum('realized') },
-        empty: scope.kind === 'team' ? 'Anda belum ditetapkan sebagai PM project mana pun. Hubungi Owner/Admin.' : 'Belum ada project.',
+        empty: scope.kind === 'team' ? 'Anda belum ditetapkan sebagai PM project mana pun. Hubungi Direktur/Admin.' : 'Belum ada project.',
       },
       extra,
       notes: [

@@ -8,8 +8,8 @@ import { ActionButton } from '../components/ActionButton'
 import { Empty, Shell, badge, docLink, num, rp, table, td, th } from './shared'
 
 /**
- * "Persetujuan" (M04, US-26/US-42/US-59): requests waiting for the logged-in user's "Diketahui" or
- * approval — only those the rule snapshot assigns to them (G2) and never their own (G1). Budget
+ * "Persetujuan" (M04, US-26/US-42/US-59): requests waiting for the logged-in user's "Diketahui"
+ * (ADR 0013: the Direktur's approval, "Persetujuan Direktur (Diketahui)") or Finance approval — only those the rule snapshot assigns to them (G2) and never their own (G1). Budget
  * impact % before → after (red above company-settings.budgetWarnPct, default 85 %; cost centers
  * "tanpa anggaran", Q-24) and open validation flags. Actions call /api/v1 (profile signature, US-43).
  */
@@ -63,10 +63,16 @@ export async function ApprovalInbox(props: AdminViewServerProps) {
                   {r.flags.info > 0 ? <span style={badge('muted')}>{r.flags.info} info</span> : null}
                   {r.flags.warning + r.flags.info === 0 ? '—' : null}
                 </td>
-                <td style={td}>{r.step === 'acknowledge' ? 'Diketahui Oleh' : `Approval level ${r.level ?? 1}`}</td>
+                <td style={td}>{r.stepLabel}</td>
                 <td style={td}>
                   {r.step === 'acknowledge' ? (
-                    <ActionButton url={`/api/v1/expense-requests/${r.id}/acknowledge`} label="Diketahui" variant="primary" confirm={`Tandai ${r.docNo} sudah diketahui?`} />
+                    // ADR 0013: "Diketahui" is the Direktur's approval → "Setujui" (legacy PM step: "Diketahui").
+                    <ActionButton
+                      url={`/api/v1/expense-requests/${r.id}/acknowledge`}
+                      label={r.decisionFlow ? 'Setujui' : 'Diketahui'}
+                      variant="primary"
+                      confirm={r.decisionFlow ? `Setujui ${r.docNo} sebesar ${rp(r.grandTotal)} sebagai Direktur (Diketahui)?` : `Tandai ${r.docNo} sudah diketahui?`}
+                    />
                   ) : (
                     <ActionButton url={`/api/v1/expense-requests/${r.id}/approve`} label="Setujui" variant="primary" confirm={`Setujui ${r.docNo} sebesar ${rp(r.grandTotal)}?`} />
                   )}

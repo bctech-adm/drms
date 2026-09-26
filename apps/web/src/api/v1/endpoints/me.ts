@@ -36,6 +36,12 @@ export const meEndpoint = v1({
       email: u.email,
       name: u.name ?? null,
       roles: userRoles(req),
+      // ADR 0013 (E1): what the APK should show. Decisions (approval inbox) = Direktur (pk-owner) or
+      // Finance only; the PM monitors the team list. The server guard stays authoritative.
+      capabilities: {
+        approvalInbox: userRoles(req).some((r) => r === 'pk-owner' || r === 'pk-finance'),
+        teamMonitor: userRoles(req).includes('pk-pm'),
+      },
       employee: employee ? { id: employee.id, code: employee.code, name: employee.name } : null,
       authMethod: u._strategy ?? 'oidcSession',
       device: u._pkDevice ?? null,
