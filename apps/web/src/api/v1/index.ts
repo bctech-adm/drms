@@ -8,7 +8,7 @@ import { healthEndpoint, healthHeadEndpoint, readyEndpoint, readyHeadEndpoint } 
 import { CASH_ENDPOINTS } from './endpoints/cash'
 import { EXPENSE_ENDPOINTS } from './endpoints/expense-requests'
 import { mastersEndpoint } from './endpoints/masters'
-import { mediaFileEndpoint, uploadMediaEndpoint } from './endpoints/media'
+import { mediaFileEndpoint, mediaSignedUrlEndpoint, uploadMediaEndpoint } from './endpoints/media'
 import { NOTIFICATION_ENDPOINTS } from './endpoints/notifications'
 import { meEndpoint } from './endpoints/me'
 import { openapiEndpoint } from './endpoints/openapi'
@@ -35,6 +35,7 @@ export const v1Endpoints: Endpoint[] = [
   uploadMediaEndpoint,
   // F2b: scoped file download (APK), in-app notifications
   mediaFileEndpoint,
+  mediaSignedUrlEndpoint,
   ...NOTIFICATION_ENDPOINTS,
   // F4: APK backend (ADR 0010): app version gate (public) + offline queue replay
   appConfigEndpoint,

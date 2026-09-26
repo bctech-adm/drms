@@ -16,6 +16,7 @@ export const FILE_SECRETS = [
   'OIDC_WEB_CLIENT_SECRET',
   'KC_ADMIN_CLIENT_SECRET',
   'SMTP_PASSWORD',
+  'MEDIA_URL_KEYS',
 ] as const
 
 const postgresUrl = z.string().regex(/^postgres(ql)?:\/\/\S+$/, 'must be a postgres:// URL')
@@ -150,6 +151,15 @@ export const envSchema = z
      * the effective value from GET /api/v1/app/config `features.pushEnabled`.
      */
     PUSH_FCM_ENABLED: bool,
+    /**
+     * E9 (ADR 0004 §4): HMAC keys for signed, time-limited media URLs, comma separated, each ≥ 32
+     * chars. The FIRST key signs, every key verifies (rotation = prepend the new key, drop the old
+     * one after the 5-min TTL). Unset → a key derived from PAYLOAD_SECRET (HKDF, own label).
+     */
+    MEDIA_URL_KEYS: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.split(',').every((k) => k.trim().length >= 32), 'comma separated keys, each min 32 chars'),
     ...smtpFields,
   })
   .superRefine((env, ctx) => {

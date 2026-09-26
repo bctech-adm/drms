@@ -79,6 +79,12 @@ export type V1Options<B extends z.ZodType | undefined> = {
    * send the header on these endpoints (400 without it); web callers may omit it.
    */
   idempotent?: boolean
+  /**
+   * E9 (ADR 0004 §4): a request carrying `sig` in its query is a SIGNED URL — no session/bearer
+   * needed; the wrapper skips the user checks (rate limit keyed on the claimed `uid`) and the
+   * handler MUST verify the signature and re-check access for that user (see lib/signed-url.ts).
+   */
+  signedAccess?: boolean
   /** multipart/form-data upload (file in field `file`, JSON fields in `_payload`); no zod body. */
   multipart?: boolean
   /** Upper bound of the JSON body in bytes (413 above it). */
@@ -101,7 +107,13 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
     method: opts.method,
     handler: async (req) => {
       try {
-        if (opts.auth !== 'public') {
+        const signed = opts.signedAccess === true && req.searchParams?.has('sig') === true
+        if (signed && opts.rateLimit) {
+          const [n, windowMs] = opts.rateLimit
+          const claimed = (req.searchParams.get('uid') ?? '').slice(0, 12)
+          if (!takeToken(`v1:${opts.method}:${opts.path}:signed:${claimed}`, n, windowMs)) return problem(429, 'Too Many Requests')
+        }
+        if (opts.auth !== 'public' && !signed) {
           if (!req.user) {
             // Valid token, revoked/lost device (mobileBearer): a code the APK maps to a forced logout
             // without trying a token refresh. Nothing else about the caller is disclosed.
