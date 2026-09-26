@@ -83,13 +83,32 @@ export function offsetText(minutes: number): string {
   return `${sign}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`
 }
 
-/** Geofence input check (cost centers, Q-40): all three empty, or all three valid. */
+/**
+ * Geofence input check (cost centers, Q-40): latitude + longitude together (or both empty); the radius
+ * is optional — empty = company-settings.defaultGeofenceRadiusM (S3e, US-01) — and needs a point.
+ */
 export function geofenceError(v: { lat: number | null; lng: number | null; radiusM: number | null }): string | null {
-  const set = [v.lat, v.lng, v.radiusM].filter((x) => x !== null).length
-  if (set === 0) return null
-  if (set !== 3) return 'Isi latitude, longitude dan radius sekaligus (atau kosongkan ketiganya).'
+  if (v.lat === null && v.lng === null && v.radiusM === null) return null
+  if ((v.lat === null) !== (v.lng === null)) return 'Isi latitude dan longitude sekaligus (atau kosongkan keduanya).'
+  if (v.lat === null) return 'Radius hanya berlaku bila titik lokasi (latitude, longitude) diisi.'
   if (!(v.lat! >= -90 && v.lat! <= 90)) return 'Latitude harus −90 s/d 90.'
   if (!(v.lng! >= -180 && v.lng! <= 180)) return 'Longitude harus −180 s/d 180.'
-  if (!(Number.isInteger(v.radiusM) && v.radiusM! >= 10 && v.radiusM! <= 5000)) return 'Radius harus bilangan bulat 10–5000 m.'
+  if (v.radiusM !== null && !(Number.isInteger(v.radiusM) && v.radiusM >= 10 && v.radiusM <= 5000)) return 'Radius harus bilangan bulat 10–5000 m.'
   return null
+}
+
+/** Radius that counts for attendance: the location's own radius, else the company default (S3e, US-01). */
+export function effectiveRadiusM(own: number | null | undefined, companyDefault: number | null | undefined): number {
+  if (typeof own === 'number' && own > 0) return own
+  return typeof companyDefault === 'number' && companyDefault > 0 ? companyDefault : 100
+}
+
+/**
+ * S3e (US-01, S-19): the APK enables the attendance button from `lat`/`lng`/`radiusM`. A location with
+ * a point but no own radius gets the company default radius here (the same radius the server checks,
+ * domain/attendance/record.ts). The stored value stays empty. Used by GET /api/v1/masters.
+ */
+export function withEffectiveRadius(item: Record<string, unknown>, defaultRadiusM: number | null | undefined): Record<string, unknown> {
+  if (typeof item.lat !== 'number' || typeof item.lng !== 'number' || typeof item.radiusM === 'number') return item
+  return { ...item, radiusM: effectiveRadiusM(null, defaultRadiusM) }
 }

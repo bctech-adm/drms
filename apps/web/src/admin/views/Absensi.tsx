@@ -1056,7 +1056,7 @@ export async function AbsensiJadwal(props: AdminViewServerProps) {
   }
   const opts: Option[] = d.schedules.filter((s) => s.active).map((s) => ({ id: s.id, label: `${s.name} (${s.start}–${s.end})` }))
   const def = d.schedules.find((s) => s.id === d.defaultId)
-  const withGeo = d.costCenters.filter((c) => c.lat !== null && c.lng !== null && c.radiusM !== null).length
+  const withGeo = d.costCenters.filter((c) => c.lat !== null && c.lng !== null).length
   const upcoming = d.holidays.filter((h) => h.date >= d.today)
   const y = Number(d.year)
   return (
@@ -1204,7 +1204,7 @@ export async function AbsensiJadwal(props: AdminViewServerProps) {
                     <span>
                       {c.code} {c.name}
                     </span>
-                    <span className="sub">{c.lat !== null && c.radiusM !== null ? `radius ${c.radiusM} m` : 'tanpa titik — absen ditolak'}{c.active ? '' : ' · nonaktif'}</span>
+                    <span className="sub">{c.lat !== null && c.lng !== null ? (c.radiusM !== null ? `radius ${c.radiusM} m` : `radius default ${d.defaultRadius} m`) : 'tanpa titik — absen ditolak'}{c.active ? '' : ' · nonaktif'}</span>
                   </>
                 ),
               },

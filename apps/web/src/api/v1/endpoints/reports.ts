@@ -42,7 +42,7 @@ export async function resolveReport(req: PayloadRequest, code: string | undefine
   const def = code ? reportByCode(code) : undefined
   if (!def) throw new HttpError(404, 'Not Found')
   if (!hasRole(req, ...def.roles)) throw new HttpError(403, 'Forbidden', { detail: 'Laporan ini tidak tersedia untuk peran Anda.' })
-  const scope: ReportScope = def.code === 'audit-log' ? { kind: 'all' } : await officeScope(req)
+  const scope: ReportScope = def.code === 'audit-log' ? { kind: 'all' } : def.scope ? await def.scope(req) : await officeScope(req)
   if (scope.kind === 'none') throw new HttpError(403, 'Forbidden')
   return { def, scope }
 }

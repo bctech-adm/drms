@@ -291,6 +291,59 @@ export async function assertEveryLineHasReceipt(req: PayloadRequest, doc: Reques
   }
 }
 
+/**
+ * US-06 (S3e, S-26): "Ajukan ulang" copies the ACTIVE receipts (pending/valid, not rejected/removed) of
+ * the rejected request to the new draft — same photo (the media row stays owned by the old request;
+ * its readers are the same people), line mapped by position (the clone keeps the line order), status
+ * back to "belum diverifikasi". Rejected/removed receipts are not copied. Flags are recomputed for the
+ * draft; the old request is rejected, so it never counts as a duplicate (INACTIVE_FOR_DUPLICATES).
+ * Returns the number of copied receipts.
+ */
+export async function copyReceiptsForResubmit(req: PayloadRequest, fromId: number, to: RequestDoc): Promise<number> {
+  const src = await loadRaw(req, fromId)
+  const oldLines = (src.lines ?? []).map((l) => l.id)
+  const newLines = (to.lines ?? []).map((l) => l.id)
+  const receipts = await receiptsOf(req, fromId, true)
+  let copied = 0
+  for (const r of receipts) {
+    const idx = oldLines.indexOf(r.lineId)
+    const lineId = idx >= 0 ? newLines[idx] : undefined
+    if (!lineId) continue
+    const full = r as ReceiptDoc & Record<string, unknown>
+    await req.payload.create({
+      collection: 'receipts',
+      data: {
+        request: to.id,
+        lineId,
+        lineNo: idx + 1,
+        receiptNo: r.receiptNo ?? null,
+        receiptNoNorm: normalizeReceiptNo(r.receiptNo),
+        vendor: relId(full.vendor) ?? null,
+        vendorName: r.vendorName,
+        vendorNorm: normalizeVendor(r.vendorName),
+        receiptDate: r.receiptDate,
+        receiptTime: (full.receiptTime as string | null | undefined) ?? null,
+        amount: r.amount,
+        taxAmount: (full.taxAmount as number | null | undefined) ?? null,
+        image: relId(r.image),
+        imageSha256: r.imageSha256 ?? null,
+        status: 'pending',
+        entrySource: (full.entrySource as string | undefined) ?? 'manual',
+        createdBy: userId(req),
+      } as never,
+      depth: 0,
+      overrideAccess: true, // SYSTEM-WRITE: copy after the resubmit guard (DB: draft accepts receipts)
+      req,
+    })
+    copied++
+  }
+  if (copied > 0) {
+    await recomputeFlags(req, to.id)
+    await writeAudit(req, [{ action: 'create', docType: 'expense_request', docId: String(to.id), field: 'receipts', newValue: { copiedFrom: fromId, count: copied }, reason: 'ajukan ulang: nota disalin (US-06)' }])
+  }
+  return copied
+}
+
 /** US-39: all receipts valid + all open warnings reviewed → "Nota Terverifikasi (Antri Transfer)". */
 export async function verifyAllReceipts(req: PayloadRequest, requestId: number) {
   const doc = await loadVisible(req, requestId, { lock: true })

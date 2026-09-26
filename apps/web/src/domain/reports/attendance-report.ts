@@ -7,7 +7,7 @@ import { currentSchedules, loadFacts, loadHolidays, teamMembers, type AttScope }
 import { reportContext, rows } from './kpi'
 import type { FilterField, Option, ReportDef, Table } from './registry'
 import { firstDay, lastDay, PERIOD_RE, periodLabel } from './rules'
-import { costCenterScopeSql, idList, projectScopeSql, type ReportScope } from './scope'
+import { attendanceOfficeScope, costCenterScopeSql, idList, projectScopeSql, type ReportScope } from './scope'
 
 /**
  * E6 / M13 "Laporan absensi" (requirements v1.1 §5 M13, plan fase1-golive E6): per employee and
@@ -92,7 +92,9 @@ export const absensiReport: ReportDef = {
   title: 'Laporan Absensi',
   kpi: 'M13',
   description: 'Rekap absensi per karyawan per bulan: hari kerja, hadir, tidak hadir, terlambat, pulang cepat, jam kerja, hadir di hari libur, diabsenkan PM, koreksi.',
-  roles: ['pk-finance', 'pk-owner', 'pk-pm'],
+  // S3e (S-23): Admin reads + exports attendance (requirements §4 matrix), scope all.
+  roles: ['pk-finance', 'pk-owner', 'pk-pm', 'pk-admin'],
+  scope: attendanceOfficeScope,
   formats: ['csv', 'xlsx'],
   paged: false,
   pageSize: 5000,

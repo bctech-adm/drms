@@ -32,6 +32,15 @@ export async function officeScope(req: PayloadRequest): Promise<ReportScope> {
   return { kind: 'none' }
 }
 
+/**
+ * Attendance report scope (S3e, requirements §4 "Admin R/U absensi", S-23): Finance / Owner / Admin
+ * → all, PM → team. Admin sees attendance only — never the finance reports (officeScope → none).
+ */
+export async function attendanceOfficeScope(req: PayloadRequest): Promise<ReportScope> {
+  if (hasRole(req, 'pk-admin')) return { kind: 'all' }
+  return officeScope(req)
+}
+
 /** Team scope of the caller (PM dashboard), even when the user also holds an office role. */
 export async function teamScope(req: PayloadRequest): Promise<ReportScope> {
   const s = await resolveScope(req)

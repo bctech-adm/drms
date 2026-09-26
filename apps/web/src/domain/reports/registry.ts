@@ -60,6 +60,8 @@ export type ReportDef = {
   /** Filter form fields with the current values + option lists (in scope). */
   filters(req: PayloadRequest, scope: ReportScope, sp: URLSearchParams): Promise<FilterField[]>
   fileStem(ctx: Ctx, sp: URLSearchParams): string
+  /** Data scope of the caller; default officeScope (Finance/Owner all, PM team). */
+  scope?(req: PayloadRequest): Promise<ReportScope>
 }
 
 // ---------------------------------------------------------------- shared parsing

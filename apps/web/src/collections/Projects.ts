@@ -55,7 +55,7 @@ export const Projects: CollectionConfig = withAudit(
         fields: [
           { name: 'lat', type: 'number', label: 'Latitude', min: -90, max: 90 },
           { name: 'lng', type: 'number', label: 'Longitude', min: -180, max: 180 },
-          { name: 'radiusM', type: 'number', label: 'Radius geofence (m)', min: 10, max: 5000 },
+          { name: 'radiusM', type: 'number', label: 'Radius geofence (m)', min: 10, max: 5000, admin: { description: 'Kosong = radius default perusahaan (Setting perusahaan).' } },
         ],
       },
       { name: 'pm', type: 'relationship', relationTo: 'users', label: 'Project Manager', index: true, access: { update: ownerOnly } },

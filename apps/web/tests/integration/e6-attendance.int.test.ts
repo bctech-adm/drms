@@ -152,6 +152,25 @@ describe('cost-center geofence (Q-40) with syncAttendanceEnabled = true', () => 
   })
 })
 
+describe('company default radius (S3e, US-01, S-19)', () => {
+  it('a point without its own radius uses company-settings.defaultGeofenceRadiusM (server check + masters)', async () => {
+    const p = await getTestPayload()
+    const s = (await p.findGlobal({ slug: 'company-settings', depth: 0, overrideAccess: true /* SYSTEM-READ: fixture */ })) as { defaultGeofenceRadiusM?: number }
+    const def = s.defaultGeofenceRadiusM ?? 100
+    const cc = await sysCreate('cost-centers', { code: 'e6-CCDR', name: 'e6 Ops radius default', manager: w.users.pm.id, lat: OPS.lat, lng: OPS.lng })
+    await sysCreate('team-assignments', { employee: w.emp.a, costCenter: cc, roleInProject: 'staff' })
+    const m = await api('GET', '/api/v1/masters?types=cost-centers', w.users.admin)
+    expect(m.body.types['cost-centers'].items.find((x: { id: number }) => x.id === cc)).toMatchObject({ lat: OPS.lat, lng: OPS.lng, radiusM: def })
+    const far = OPS.lat + (def + 80) / 111_000 // ≈ def + 80 m north
+    const [out] = await sync(staffA, [item('attendance.check_in', { cost_center_id: cc, lat: far, lng: OPS.lng, accuracy_m: 10, is_mocked: false, selfie_media_id: await selfie(staffA) })])
+    expect(out!.errors[0]!.code).toBe('OUTSIDE_GEOFENCE')
+    expect(out!.errors[0]!.message).toContain(`radius ${def} m`)
+    const near = OPS.lat + (def - 30) / 111_000
+    const [ok] = await sync(staffA, [item('attendance.check_in', { cost_center_id: cc, lat: near, lng: OPS.lng, accuracy_m: 10, is_mocked: false, selfie_media_id: await selfie(staffA) })])
+    expect(ok, JSON.stringify(ok)).toMatchObject({ status: 'applied' })
+  })
+})
+
 describe('diabsenkan oleh PM (US-14)', () => {
   const ob = (over: Record<string, unknown>) => ({ employee_id: w.emp.noAccount, kind: 'check_in', project_id: w.project, lat: SITE.lat, lng: SITE.lng, accuracy_m: 8, is_mocked: false, camera_lens: 'back', reason: 'Tidak punya HP (Q-29)', ...over })
 
@@ -352,14 +371,21 @@ describe('rekap bulanan (US-09) + laporan absensi (M13) reconciled with SQL', ()
     expect(String(csv.body)).toContain('abs Staff B')
   })
 
-  it('recap / report scope: PM team only, other PM 404, staff 403 on others, admin no report', async () => {
+  it('recap / report scope: PM team only, other PM 404, staff 403 on others; Admin reads + exports all (S3e, S-23)', async () => {
     expect((await api('GET', `/api/v1/attendance/recap?employee_id=${w.emp.b}&month=${MONTH}`, w.users.pm)).status).toBe(200)
     expect((await api('GET', `/api/v1/attendance/recap?employee_id=${w.emp.b}&month=${MONTH}`, w.users.otherPm)).status).toBe(404)
     expect((await api('GET', `/api/v1/attendance/recap?employee_id=${w.emp.b}&month=${MONTH}`, w.users.staffA)).status).toBe(403)
     const pmRep = await api('GET', `/api/v1/reports/absensi?bulan=${MONTH}`, w.users.otherPm)
     expect(pmRep.status).toBe(200)
     expect(JSON.stringify(pmRep.body.main.rows)).not.toContain('abs Staff B')
-    expect((await api('GET', `/api/v1/reports/absensi?bulan=${MONTH}`, w.users.admin)).status).toBe(403)
+    const adm = await api('GET', `/api/v1/reports/absensi?bulan=${MONTH}`, w.users.admin)
+    expect(adm.status, JSON.stringify(adm.body)).toBe(200)
+    expect(JSON.stringify(adm.body.main.rows)).toContain('abs Staff B') // scope all (requirements §4 Admin R/U absensi)
+    const xlsx = await api('GET', `/api/v1/reports/absensi/xlsx?bulan=${MONTH}`, w.users.admin)
+    expect(xlsx.status).toBe(200)
+    expect(xlsx.headers.get('content-type')).toContain('spreadsheetml')
+    // Admin still has no finance report
+    expect((await api('GET', `/api/v1/reports/rekap-kas?dari=${MONTH}&sampai=${MONTH}`, w.users.admin)).status).toBe(403)
     expect((await api('GET', `/api/v1/reports/absensi?bulan=${MONTH}`, w.users.staffA)).status).toBe(403)
   })
 })

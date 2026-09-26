@@ -1,5 +1,7 @@
 import type { CollectionSlug, PayloadRequest, Where } from 'payload'
 
+import { withEffectiveRadius } from '@/domain/attendance/calendar'
+
 import { MASTER_TYPES, MastersQuery, type MasterType } from '../schemas'
 import { HttpError, json, problem, v1 } from '../http'
 
@@ -43,7 +45,12 @@ async function loadType(req: PayloadRequest, type: MasterType, since?: string) {
       overrideAccess: false, // access control of the collection applies (scope own/team/assigned/all)
       req,
     })
-    return { items: res.docs.map((d) => pick(d as unknown as Record<string, unknown>, fields)), hasMore: res.hasNextPage }
+    let items = res.docs.map((d) => pick(d as unknown as Record<string, unknown>, fields))
+    if (type === 'projects' || type === 'cost-centers') {
+      const s = (await req.payload.findGlobal({ slug: 'company-settings', depth: 0, overrideAccess: true /* SYSTEM-READ: default geofence radius */, req })) as { defaultGeofenceRadiusM?: number | null }
+      items = items.map((i) => withEffectiveRadius(i, s.defaultGeofenceRadiusM))
+    }
+    return { items, hasMore: res.hasNextPage }
   } catch (err) {
     // Access `false` (nothing in scope, e.g. staff without assignments) → Forbidden → empty list.
     if ((err as { status?: number }).status === 403) return { items: [], hasMore: false }
