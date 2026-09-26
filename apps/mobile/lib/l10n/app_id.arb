@@ -288,28 +288,34 @@
   "integrityWarning": "HP ini terdeteksi di-root atau berupa emulator. Aktivitas dari HP ini ditandai untuk ditinjau Admin.",
   "attendanceTitle": "Absensi",
   "attendanceDisabled": "Absensi dari aplikasi belum diaktifkan Admin (Setting perusahaan).",
-  "attendanceNoProjects": "Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.",
+  "attendanceNoProjects": "Anda belum ditugaskan di project atau pusat biaya mana pun. Hubungi PM/Admin.",
   "attendanceProject": "Project",
   "attendanceCheckIn": "Absen masuk",
   "attendanceCheckOut": "Absen pulang",
   "attendanceLocating": "Membaca lokasi GPS…",
-  "attendanceOutside": "Anda di luar radius project ({distance} m dari titik). Absen hanya bisa di lokasi project.",
+  "attendanceOutside": "Anda di luar radius lokasi ({distance} m dari titik, radius {radius} m). Absen hanya bisa di lokasi.",
   "@attendanceOutside": {
     "placeholders": {
       "distance": {
         "type": "int"
-      }
-    }
-  },
-  "attendanceInside": "Di dalam radius project ({distance} m dari titik).",
-  "@attendanceInside": {
-    "placeholders": {
-      "distance": {
+      },
+      "radius": {
         "type": "int"
       }
     }
   },
-  "attendanceNoGeofence": "Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.",
+  "attendanceInside": "Di dalam radius lokasi ({distance} m dari titik, radius {radius} m).",
+  "@attendanceInside": {
+    "placeholders": {
+      "distance": {
+        "type": "int"
+      },
+      "radius": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceNoGeofence": "Titik lokasi/radius belum diatur Admin. Absen belum bisa dilakukan di lokasi ini.",
   "attendanceMocked": "Lokasi palsu (mock location) terdeteksi. Matikan aplikasi lokasi palsu. Absen ditolak.",
   "attendanceSelfieTitle": "Selfie absensi",
   "attendanceSavedOnline": "Absen tersimpan dan sedang dikirim.",
@@ -527,5 +533,452 @@
   "kpiTeamBudget": "Realisasi anggaran project saya",
   "routeErrorTitle": "Halaman tidak bisa dibuka",
   "routeErrorBody": "Terjadi kesalahan saat membuka halaman ini. Kembali ke beranda lalu coba lagi.",
-  "routeErrorHome": "Ke beranda"
+  "routeErrorHome": "Ke beranda",
+  "actionProgress": "Laporan progress",
+  "actionProgressRead": "Progress project",
+  "progressPendingCount": "{count} laporan belum terkirim",
+  "@progressPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actionAttendanceSub": "Absen masuk/pulang, rekap bulanan",
+  "actionAttendanceOffSub": "Rekap bulanan (absen dari aplikasi belum diaktifkan Admin)",
+  "actionAttendanceTeamSub": "Kehadiran tim hari ini",
+  "seeAll": "Lihat semua",
+  "attendanceTabCheck": "Absen",
+  "attendanceTabRecap": "Rekap",
+  "attendanceTabTeam": "Tim",
+  "attendanceLocation": "Lokasi (project / pusat biaya)",
+  "attendanceRadius": "radius {meters} m",
+  "@attendanceRadius": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "attendanceCheckDistance": "Cek jarak ke lokasi",
+  "siteProject": "Project",
+  "siteCostCenter": "Pusat biaya",
+  "distanceInside": "Di dalam area absen",
+  "distanceOutside": "Di luar area absen",
+  "distanceDetail": "Radius {radius} m + toleransi GPS {allowance} m (akurasi GPS ±{accuracy} m, maks. 50 m dihitung).",
+  "@distanceDetail": {
+    "placeholders": {
+      "radius": {
+        "type": "int"
+      },
+      "allowance": {
+        "type": "int"
+      },
+      "accuracy": {
+        "type": "int"
+      }
+    }
+  },
+  "dowMon": "Sen",
+  "dowTue": "Sel",
+  "dowWed": "Rab",
+  "dowThu": "Kam",
+  "dowFri": "Jum",
+  "dowSat": "Sab",
+  "dowSun": "Min",
+  "recapPrevMonth": "Bulan sebelumnya",
+  "recapNextMonth": "Bulan berikutnya",
+  "recapSchedule": "Jadwal {name}: {start}–{end}, toleransi {tolerance} menit",
+  "@recapSchedule": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "tolerance": {
+        "type": "int"
+      }
+    }
+  },
+  "recapPresent": "Hadir",
+  "recapWorkingDays": "dari hari kerja s.d. hari ini",
+  "recapWorkHours": "Total jam kerja",
+  "recapLate": "Terlambat",
+  "recapEarlyLeave": "Pulang cepat",
+  "recapAbsent": "Tidak hadir",
+  "recapIncomplete": "Belum absen pulang",
+  "recapDays": "{count} hari",
+  "@recapDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapMinutes": "{count} menit",
+  "@recapMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapStatusDone": "Selesai",
+  "recapStatusPresent": "Hadir",
+  "recapStatusNotYet": "Belum absen",
+  "recapStatusAbsent": "Tidak hadir",
+  "recapStatusHoliday": "Libur",
+  "recapStatusNoSchedule": "Tanpa jadwal",
+  "recapLegendMark": "terlambat / oleh PM / dikoreksi",
+  "recapInOut": "Masuk {checkIn} · Pulang {checkOut}",
+  "@recapInOut": {
+    "placeholders": {
+      "checkIn": {
+        "type": "String"
+      },
+      "checkOut": {
+        "type": "String"
+      }
+    }
+  },
+  "recapWorked": "Jam kerja: {duration}",
+  "@recapWorked": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "recapLateBy": "Terlambat {minutes} menit",
+  "@recapLateBy": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recapEarlyBy": "Pulang cepat {minutes} menit",
+  "@recapEarlyBy": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recapOnBehalf": "Diabsenkan oleh PM: {names}",
+  "@recapOnBehalf": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "recapCorrected": "Jam absen dikoreksi (T10).",
+  "recapFlags": "Penanda: {flags}",
+  "@recapFlags": {
+    "placeholders": {
+      "flags": {
+        "type": "String"
+      }
+    }
+  },
+  "recapMemberTitle": "Rekap absensi karyawan",
+  "teamStatusNotYet": "Belum absen",
+  "teamStatusPresent": "Hadir",
+  "teamStatusDone": "Selesai",
+  "teamAll": "Semua {count}",
+  "@teamAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "teamEmpty": "Tidak ada anggota tim dengan status ini.",
+  "teamIn": "Masuk",
+  "teamOut": "Pulang",
+  "teamOnBehalfTag": "Oleh PM",
+  "teamCorrectedTag": "Dikoreksi",
+  "onBehalfAction": "Absenkan anggota tim",
+  "onBehalfTitle": "Diabsenkan PM",
+  "onBehalfIntro": "Untuk anggota tim yang tidak bisa absen sendiri. Lokasi diambil dari HP Anda, foto karyawan diambil dengan kamera HP Anda. Nama Anda dan alasannya tercatat.",
+  "onBehalfNoTeam": "Belum ada anggota tim yang ditugaskan hari ini (data tim dari server; tarik ulang di Beranda saat online).",
+  "onBehalfEmployee": "Karyawan",
+  "onBehalfReason": "Alasan (wajib)",
+  "onBehalfReasonHint": "Contoh: tidak punya HP / HP rusak",
+  "onBehalfCamera": "Kamera untuk foto karyawan",
+  "lensBack": "Belakang",
+  "lensFront": "Depan",
+  "onBehalfCheckIn": "Absenkan masuk",
+  "onBehalfCheckOut": "Absenkan pulang",
+  "onBehalfPhotoTitle": "Foto {name}",
+  "@onBehalfPhotoTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "onBehalfSavedOnline": "Absen {name} tersimpan dan sedang dikirim.",
+  "@onBehalfSavedOnline": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "onBehalfSavedOffline": "Absen {name} tersimpan di HP (offline). Dikirim otomatis saat ada sinyal.",
+  "@onBehalfSavedOffline": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "correctionTitleIn": "Koreksi jam masuk",
+  "correctionTitleOut": "Koreksi jam pulang",
+  "correctionOld": "Tercatat: {date} {time}",
+  "@correctionOld": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "correctionNew": "Jam baru: {time}",
+  "@correctionNew": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "correctionReason": "Alasan koreksi (wajib)",
+  "correctionReasonHelp": "Tanggal tetap sama; jam lama dan baru tercatat di audit.",
+  "correctionSaved": "Koreksi absensi tersimpan.",
+  "progressTitle": "Progress project",
+  "progressTabReports": "Laporan",
+  "progressTabProjects": "Project",
+  "progressNew": "Laporan baru",
+  "progressHomeTitle": "Progress fisik vs anggaran",
+  "progressLocalTitle": "Di HP ini (belum diterima server)",
+  "progressServerTitle": "Laporan terbaru",
+  "progressFilterProject": "Filter project",
+  "progressFilterAll": "Semua project",
+  "progressListOffline": "Daftar laporan butuh koneksi internet. Laporan baru tetap bisa dibuat offline.",
+  "progressListEmpty": "Belum ada laporan progress.",
+  "progressProjectsIntro": "Selisih = % anggaran terpakai − % progress fisik. Hijau aman, kuning perlu dicek, merah anggaran jauh mendahului pekerjaan.",
+  "progressProjectsEmpty": "Belum ada project.",
+  "progressPhysical": "Progress fisik",
+  "progressBudgetUsed": "Anggaran terpakai",
+  "progressGap": "Selisih {value}",
+  "@progressGap": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressStagesIncomplete": "Bobot tahapan baru {value} (harus 100%).",
+  "@progressStagesIncomplete": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressNoReportYet": "Belum ada laporan progress.",
+  "progressLastReport": "Laporan terakhir {date} · {count} laporan",
+  "@progressLastReport": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressToneOk": "Sesuai",
+  "progressToneWarn": "Perlu dicek",
+  "progressToneBad": "Anggaran mendahului",
+  "progressToneNone": "Belum bisa dihitung",
+  "progressRemovePhoto": "Hapus foto",
+  "progressStateQueued": "Menunggu kirim",
+  "progressStateLocal": "Belum terkirim",
+  "progressStateConflict": "Konflik",
+  "progressStateRejected": "Ditolak",
+  "progressStateSynced": "Terkirim",
+  "progressEditTag": "edit",
+  "progressPhotoCount": "{count} foto",
+  "@progressPhotoCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressConflictHint": "Ketuk untuk memilih versi yang dipakai.",
+  "progressOfflineTag": "offline",
+  "progressEditableTag": "bisa diedit",
+  "progressPhotoTitle": "Foto progress",
+  "progressEditTitle": "Edit laporan progress",
+  "progressNewTitle": "Laporan progress harian",
+  "progressNotFound": "Laporan tidak ditemukan di HP ini.",
+  "progressPickProject": "Pilih project.",
+  "progressPickStage": "Pilih tahapan.",
+  "progressPhotoFailed": "Foto gagal diproses. Ambil ulang foto.",
+  "progressSent": "Laporan terkirim.",
+  "progressQueuedOnline": "Laporan tersimpan dan sedang dikirim.",
+  "progressQueuedOffline": "Laporan tersimpan di HP (offline). Dikirim otomatis saat ada sinyal.",
+  "progressKeptLocal": "Tidak ada koneksi. Laporan disimpan di HP; kirim dari menu Progress saat online.",
+  "progressDiscardTitle": "Hapus laporan ini?",
+  "progressDiscardBody": "Laporan dan fotonya dihapus dari HP. Server belum menerimanya.",
+  "progressOnlineOnlyNote": "Server belum mengizinkan kirim offline: laporan dikirim langsung (butuh internet).",
+  "progressOnlineOnlyOffline": "Anda offline dan server belum mengizinkan kirim offline. Laporan disimpan di HP dan dikirim saat online.",
+  "progressEditWindow": "Bisa diedit sampai {time}.",
+  "@progressEditWindow": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "progressProject": "Project",
+  "progressNoProjects": "Tidak ada project untuk Anda.",
+  "progressStagesCached": "Offline: tahapan dan % dari data terakhir di HP; server memeriksa ulang saat kirim.",
+  "progressStage": "Tahapan",
+  "progressStageOption": "{name} (bobot {weight}, sekarang {pct})",
+  "@progressStageOption": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "weight": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "progressPctTitle": "Progress tahapan {stage}",
+  "@progressPctTitle": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "progressPctBefore": "Sebelum laporan: {value}",
+  "@progressPctBefore": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressPctAfterLabel": "Progress setelah pekerjaan",
+  "progressPctDelta": "Naik {value} dari sebelumnya.",
+  "@progressPctDelta": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressWork": "Pekerjaan",
+  "progressWorkHint": "Pekerjaan yang dilakukan hari ini",
+  "progressIssues": "Kendala (opsional)",
+  "progressPhotosTitle": "Foto ({count}/{max})",
+  "@progressPhotosTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "progressPhotosOnServer": "{count} foto sudah di server (foto tidak bisa dihapus, hanya ditambah).",
+  "@progressPhotosOnServer": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressAddPhoto": "Foto",
+  "progressReason": "Alasan edit (wajib)",
+  "progressReasonHelp": "Tercatat di riwayat audit laporan.",
+  "progressSaveQueue": "Simpan & kirim",
+  "progressSendOnline": "Kirim laporan",
+  "progressDetailTitle": "Laporan progress",
+  "progressWeight": "bobot {value}",
+  "@progressWeight": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "progressStageBeforeAfter": "Tahapan (sebelumnya {before})",
+  "@progressStageBeforeAfter": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      }
+    }
+  },
+  "progressProjectBeforeAfter": "Project (sebelumnya {before})",
+  "@progressProjectBeforeAfter": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      }
+    }
+  },
+  "progressNoPhotos": "Tanpa foto.",
+  "progressDate": "Tanggal",
+  "progressReporter": "Pelapor",
+  "progressReceivedAt": "Diterima server",
+  "progressTimeTrust": "dibuat offline (waktu: {trust})",
+  "@progressTimeTrust": {
+    "placeholders": {
+      "trust": {
+        "type": "String"
+      }
+    }
+  },
+  "progressFlags": "Penanda",
+  "progressEditableUntil": "Bisa diedit s.d.",
+  "progressEdit": "Edit laporan (≤ 24 jam)",
+  "progressConflictTitle": "Konflik laporan",
+  "progressConflictGone": "Konflik sudah diselesaikan.",
+  "progressPhotosLabel": "Foto",
+  "progressNewPhotos": "+{count} foto baru",
+  "@progressNewPhotos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "progressUseServer": "Pakai versi server",
+  "progressResendMine": "Kirim versi HP (dengan alasan)",
+  "progressNotEditableAnymore": "Batas edit 24 jam sudah lewat: hanya versi server yang berlaku.",
+  "progressDiffers": "berbeda",
+  "progressServerVersion": "Server",
+  "progressMyVersion": "HP ini",
+  "progressUsedServer": "Versi server dipakai; salinan di HP dihapus.",
+  "progressResent": "Versi HP dikirim sebagai edit."
 }

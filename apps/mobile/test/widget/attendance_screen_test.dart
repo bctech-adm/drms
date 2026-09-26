@@ -92,7 +92,7 @@ void main() {
     expect(service.calls.single.$1, AttendanceKind.checkIn);
     expect(service.calls.single.$2, 7);
     expect(service.calls.single.$4, isFalse, reason: 'online flag = connectivity at capture time');
-    expect(find.textContaining('Di dalam radius project (22 m dari titik)'), findsOneWidget);
+    expect(find.textContaining('Di dalam radius lokasi (22 m dari titik, radius 100 m)'), findsOneWidget);
     expect(find.textContaining('Absen tersimpan di HP (offline)'), findsOneWidget);
   });
 
@@ -112,7 +112,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(selfies, 0);
     expect(service.calls, isEmpty);
-    expect(find.textContaining('Anda di luar radius project (133 m dari titik)'), findsOneWidget);
+    expect(find.textContaining('Anda di luar radius lokasi (133 m dari titik, radius 100 m)'), findsOneWidget);
   });
 
   testWidgets('mock location and GPS off are refused on the phone', (tester) async {
@@ -137,13 +137,13 @@ void main() {
 
   testWidgets('project without a geofence: notice and disabled buttons', (tester) async {
     await pump(tester, sites: const [ProjectSite(id: 8, label: 'P-02 — Tanpa titik')]);
-    expect(find.textContaining('Titik lokasi project belum diatur Admin'), findsOneWidget);
+    expect(find.textContaining('Titik lokasi/radius belum diatur Admin'), findsOneWidget);
     expect(tester.widget<FilledButton>(find.byKey(const Key('attendance-checkIn'))).onPressed, isNull);
   });
 
   testWidgets('no assigned project', (tester) async {
     await pump(tester, sites: const []);
-    expect(find.text('Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.'), findsOneWidget);
+    expect(find.text('Anda belum ditugaskan di project atau pusat biaya mana pun. Hubungi PM/Admin.'), findsOneWidget);
   });
 
   testWidgets('history: queued offline item and a rejection with the server text', (tester) async {

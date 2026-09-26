@@ -97,7 +97,7 @@ class QueueScreen extends ConsumerWidget {
                       _ => Icons.error,
                     }),
                     title: Text(
-                      '${SyncItemType.isAttendance(r.type) ? (r.type == SyncItemType.attendanceCheckIn ? 'Absen masuk' : 'Absen pulang') : 'Draft pengajuan'}'
+                      '${SyncItemType.label(r.type)}'
                       ' · ${statusLabel(r.status)}',
                     ),
                     subtitle: Text(

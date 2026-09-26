@@ -19,7 +19,13 @@ abstract final class MasterTypes {
   static const bankAccounts = 'bank-accounts';
   static const banks = 'banks';
 
+  static const projectStages = 'project-stages';
+  static const teamAssignments = 'team-assignments';
+
   static const forExpense = [projects, costCenters, categories, uoms, vehicles, employees, bankAccounts, banks];
+
+  /// Everything the APK caches (expense pickers + E4 stages + E6 team assignments for on-behalf offline).
+  static const forApp = [...forExpense, projectStages, teamAssignments];
 }
 
 /// Label per type (codes + names; bank accounts masked to the last 4 digits for display).
@@ -38,6 +44,8 @@ MasterItem masterFromJson(String type, Map<String, dynamic> j, {Map<int, String>
       final bank = bankId == null ? '' : (bankNames[bankId] ?? '');
       return [bank, s('accountHolder'), masked].where((e) => e.isNotEmpty).join(' · ');
     }(),
+    MasterTypes.projectStages => s('name'),
+    MasterTypes.teamAssignments => '#$id',
     MasterTypes.employees => s('nickname').isNotEmpty ? '${s('name')} (${s('nickname')})' : s('name'),
     _ => s('code').isNotEmpty ? '${s('code')} — ${s('name')}' : s('name'),
   };

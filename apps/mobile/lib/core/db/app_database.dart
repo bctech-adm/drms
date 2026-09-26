@@ -87,6 +87,53 @@ class MediaBlobs extends Table {
   Set<Column<Object>> get primaryKey => {clientUuid};
 }
 
+/// E4 progress report written on the phone (US-10): a new report or an edit (≤ 24 h) of a server report,
+/// kept until the server applied it. Locked to the Keycloak `sub` like every queued row.
+class LocalProgressReports extends Table {
+  TextColumn get clientUuid => text()();
+  TextColumn get userSub => text()();
+  IntColumn get projectId => integer()();
+  TextColumn get projectLabel => text().withDefault(const Constant(''))();
+  IntColumn get stageId => integer()();
+  TextColumn get stageLabel => text().withDefault(const Constant(''))();
+
+  /// Stage % known when the report was written (client guard: pctAfter ≥ pctBefore).
+  RealColumn get pctBefore => real().nullable()();
+  RealColumn get pctAfter => real()();
+  TextColumn get work => text().withDefault(const Constant(''))();
+  TextColumn get issues => text().nullable()();
+
+  /// Local photo ids (media_blobs, kind `progress`) not yet on the server.
+  TextColumn get photoUuidsJson => text().withDefault(const Constant('[]'))();
+
+  /// Photos already on the server report (edit: total ≤ 5).
+  IntColumn get serverPhotoCount => integer().withDefault(const Constant(0))();
+
+  /// Edit reason (required once the server knows the report).
+  TextColumn get reason => text().nullable()();
+  IntColumn get serverId => integer().nullable()();
+  IntColumn get serverRev => integer().nullable()();
+  TextColumn get docNo => text().nullable()();
+  TextColumn get editableUntil => text().nullable()();
+
+  /// Server pct_after of the report at the time the edit started (pct_after is only sent when changed).
+  RealColumn get serverPctAfter => real().nullable()();
+
+  /// local | queued | synced | conflict | rejected
+  TextColumn get syncState => text().withDefault(const Constant('local'))();
+  TextColumn get lastError => text().nullable()();
+  TextColumn get lastErrorCode => text().nullable()();
+
+  /// `server_report` of a conflict / NOT_EDITABLE (server wins; the local version is kept beside it).
+  TextColumn get conflictCopyJson => text().nullable()();
+  BoolColumn get offline => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {clientUuid};
+}
+
 /// Offline outbox (`POST /api/v1/sync/batch` items). `opUuid` = item `client_uuid` = idempotency key.
 class Outbox extends Table {
   TextColumn get opUuid => text()();
@@ -122,15 +169,20 @@ class KvEntries extends Table {
   Set<Column<Object>> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [LocalDrafts, LocalLines, LocalReceipts, MediaBlobs, Outbox, KvEntries])
+@DriftDatabase(tables: [LocalDrafts, LocalLines, LocalReceipts, MediaBlobs, Outbox, KvEntries, LocalProgressReports])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      // v2 (E4): local progress reports. Additive; existing drafts/outbox rows stay untouched.
+      if (from < 2) await m.createTable(localProgressReports);
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },

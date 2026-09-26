@@ -623,7 +623,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get attendanceDisabled => 'Absensi dari aplikasi belum diaktifkan Admin (Setting perusahaan).';
 
   @override
-  String get attendanceNoProjects => 'Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.';
+  String get attendanceNoProjects => 'Anda belum ditugaskan di project atau pusat biaya mana pun. Hubungi PM/Admin.';
 
   @override
   String get attendanceProject => 'Project';
@@ -638,18 +638,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get attendanceLocating => 'Membaca lokasi GPS…';
 
   @override
-  String attendanceOutside(int distance) {
-    return 'Anda di luar radius project ($distance m dari titik). Absen hanya bisa di lokasi project.';
+  String attendanceOutside(int distance, int radius) {
+    return 'Anda di luar radius lokasi ($distance m dari titik, radius $radius m). Absen hanya bisa di lokasi.';
   }
 
   @override
-  String attendanceInside(int distance) {
-    return 'Di dalam radius project ($distance m dari titik).';
+  String attendanceInside(int distance, int radius) {
+    return 'Di dalam radius lokasi ($distance m dari titik, radius $radius m).';
   }
 
   @override
   String get attendanceNoGeofence =>
-      'Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.';
+      'Titik lokasi/radius belum diatur Admin. Absen belum bisa dilakukan di lokasi ini.';
 
   @override
   String get attendanceMocked =>
@@ -998,4 +998,606 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get routeErrorHome => 'Ke beranda';
+
+  @override
+  String get actionProgress => 'Laporan progress';
+
+  @override
+  String get actionProgressRead => 'Progress project';
+
+  @override
+  String progressPendingCount(int count) {
+    return '$count laporan belum terkirim';
+  }
+
+  @override
+  String get actionAttendanceSub => 'Absen masuk/pulang, rekap bulanan';
+
+  @override
+  String get actionAttendanceOffSub => 'Rekap bulanan (absen dari aplikasi belum diaktifkan Admin)';
+
+  @override
+  String get actionAttendanceTeamSub => 'Kehadiran tim hari ini';
+
+  @override
+  String get seeAll => 'Lihat semua';
+
+  @override
+  String get attendanceTabCheck => 'Absen';
+
+  @override
+  String get attendanceTabRecap => 'Rekap';
+
+  @override
+  String get attendanceTabTeam => 'Tim';
+
+  @override
+  String get attendanceLocation => 'Lokasi (project / pusat biaya)';
+
+  @override
+  String attendanceRadius(int meters) {
+    return 'radius $meters m';
+  }
+
+  @override
+  String get attendanceCheckDistance => 'Cek jarak ke lokasi';
+
+  @override
+  String get siteProject => 'Project';
+
+  @override
+  String get siteCostCenter => 'Pusat biaya';
+
+  @override
+  String get distanceInside => 'Di dalam area absen';
+
+  @override
+  String get distanceOutside => 'Di luar area absen';
+
+  @override
+  String distanceDetail(int radius, int allowance, int accuracy) {
+    return 'Radius $radius m + toleransi GPS $allowance m (akurasi GPS ±$accuracy m, maks. 50 m dihitung).';
+  }
+
+  @override
+  String get dowMon => 'Sen';
+
+  @override
+  String get dowTue => 'Sel';
+
+  @override
+  String get dowWed => 'Rab';
+
+  @override
+  String get dowThu => 'Kam';
+
+  @override
+  String get dowFri => 'Jum';
+
+  @override
+  String get dowSat => 'Sab';
+
+  @override
+  String get dowSun => 'Min';
+
+  @override
+  String get recapPrevMonth => 'Bulan sebelumnya';
+
+  @override
+  String get recapNextMonth => 'Bulan berikutnya';
+
+  @override
+  String recapSchedule(String name, String start, String end, int tolerance) {
+    return 'Jadwal $name: $start–$end, toleransi $tolerance menit';
+  }
+
+  @override
+  String get recapPresent => 'Hadir';
+
+  @override
+  String get recapWorkingDays => 'dari hari kerja s.d. hari ini';
+
+  @override
+  String get recapWorkHours => 'Total jam kerja';
+
+  @override
+  String get recapLate => 'Terlambat';
+
+  @override
+  String get recapEarlyLeave => 'Pulang cepat';
+
+  @override
+  String get recapAbsent => 'Tidak hadir';
+
+  @override
+  String get recapIncomplete => 'Belum absen pulang';
+
+  @override
+  String recapDays(int count) {
+    return '$count hari';
+  }
+
+  @override
+  String recapMinutes(int count) {
+    return '$count menit';
+  }
+
+  @override
+  String get recapStatusDone => 'Selesai';
+
+  @override
+  String get recapStatusPresent => 'Hadir';
+
+  @override
+  String get recapStatusNotYet => 'Belum absen';
+
+  @override
+  String get recapStatusAbsent => 'Tidak hadir';
+
+  @override
+  String get recapStatusHoliday => 'Libur';
+
+  @override
+  String get recapStatusNoSchedule => 'Tanpa jadwal';
+
+  @override
+  String get recapLegendMark => 'terlambat / oleh PM / dikoreksi';
+
+  @override
+  String recapInOut(String checkIn, String checkOut) {
+    return 'Masuk $checkIn · Pulang $checkOut';
+  }
+
+  @override
+  String recapWorked(String duration) {
+    return 'Jam kerja: $duration';
+  }
+
+  @override
+  String recapLateBy(int minutes) {
+    return 'Terlambat $minutes menit';
+  }
+
+  @override
+  String recapEarlyBy(int minutes) {
+    return 'Pulang cepat $minutes menit';
+  }
+
+  @override
+  String recapOnBehalf(String names) {
+    return 'Diabsenkan oleh PM: $names';
+  }
+
+  @override
+  String get recapCorrected => 'Jam absen dikoreksi (T10).';
+
+  @override
+  String recapFlags(String flags) {
+    return 'Penanda: $flags';
+  }
+
+  @override
+  String get recapMemberTitle => 'Rekap absensi karyawan';
+
+  @override
+  String get teamStatusNotYet => 'Belum absen';
+
+  @override
+  String get teamStatusPresent => 'Hadir';
+
+  @override
+  String get teamStatusDone => 'Selesai';
+
+  @override
+  String teamAll(int count) {
+    return 'Semua $count';
+  }
+
+  @override
+  String get teamEmpty => 'Tidak ada anggota tim dengan status ini.';
+
+  @override
+  String get teamIn => 'Masuk';
+
+  @override
+  String get teamOut => 'Pulang';
+
+  @override
+  String get teamOnBehalfTag => 'Oleh PM';
+
+  @override
+  String get teamCorrectedTag => 'Dikoreksi';
+
+  @override
+  String get onBehalfAction => 'Absenkan anggota tim';
+
+  @override
+  String get onBehalfTitle => 'Diabsenkan PM';
+
+  @override
+  String get onBehalfIntro =>
+      'Untuk anggota tim yang tidak bisa absen sendiri. Lokasi diambil dari HP Anda, foto karyawan diambil dengan kamera HP Anda. Nama Anda dan alasannya tercatat.';
+
+  @override
+  String get onBehalfNoTeam =>
+      'Belum ada anggota tim yang ditugaskan hari ini (data tim dari server; tarik ulang di Beranda saat online).';
+
+  @override
+  String get onBehalfEmployee => 'Karyawan';
+
+  @override
+  String get onBehalfReason => 'Alasan (wajib)';
+
+  @override
+  String get onBehalfReasonHint => 'Contoh: tidak punya HP / HP rusak';
+
+  @override
+  String get onBehalfCamera => 'Kamera untuk foto karyawan';
+
+  @override
+  String get lensBack => 'Belakang';
+
+  @override
+  String get lensFront => 'Depan';
+
+  @override
+  String get onBehalfCheckIn => 'Absenkan masuk';
+
+  @override
+  String get onBehalfCheckOut => 'Absenkan pulang';
+
+  @override
+  String onBehalfPhotoTitle(String name) {
+    return 'Foto $name';
+  }
+
+  @override
+  String onBehalfSavedOnline(String name) {
+    return 'Absen $name tersimpan dan sedang dikirim.';
+  }
+
+  @override
+  String onBehalfSavedOffline(String name) {
+    return 'Absen $name tersimpan di HP (offline). Dikirim otomatis saat ada sinyal.';
+  }
+
+  @override
+  String get correctionTitleIn => 'Koreksi jam masuk';
+
+  @override
+  String get correctionTitleOut => 'Koreksi jam pulang';
+
+  @override
+  String correctionOld(String date, String time) {
+    return 'Tercatat: $date $time';
+  }
+
+  @override
+  String correctionNew(String time) {
+    return 'Jam baru: $time';
+  }
+
+  @override
+  String get correctionReason => 'Alasan koreksi (wajib)';
+
+  @override
+  String get correctionReasonHelp => 'Tanggal tetap sama; jam lama dan baru tercatat di audit.';
+
+  @override
+  String get correctionSaved => 'Koreksi absensi tersimpan.';
+
+  @override
+  String get progressTitle => 'Progress project';
+
+  @override
+  String get progressTabReports => 'Laporan';
+
+  @override
+  String get progressTabProjects => 'Project';
+
+  @override
+  String get progressNew => 'Laporan baru';
+
+  @override
+  String get progressHomeTitle => 'Progress fisik vs anggaran';
+
+  @override
+  String get progressLocalTitle => 'Di HP ini (belum diterima server)';
+
+  @override
+  String get progressServerTitle => 'Laporan terbaru';
+
+  @override
+  String get progressFilterProject => 'Filter project';
+
+  @override
+  String get progressFilterAll => 'Semua project';
+
+  @override
+  String get progressListOffline => 'Daftar laporan butuh koneksi internet. Laporan baru tetap bisa dibuat offline.';
+
+  @override
+  String get progressListEmpty => 'Belum ada laporan progress.';
+
+  @override
+  String get progressProjectsIntro =>
+      'Selisih = % anggaran terpakai − % progress fisik. Hijau aman, kuning perlu dicek, merah anggaran jauh mendahului pekerjaan.';
+
+  @override
+  String get progressProjectsEmpty => 'Belum ada project.';
+
+  @override
+  String get progressPhysical => 'Progress fisik';
+
+  @override
+  String get progressBudgetUsed => 'Anggaran terpakai';
+
+  @override
+  String progressGap(String value) {
+    return 'Selisih $value';
+  }
+
+  @override
+  String progressStagesIncomplete(String value) {
+    return 'Bobot tahapan baru $value (harus 100%).';
+  }
+
+  @override
+  String get progressNoReportYet => 'Belum ada laporan progress.';
+
+  @override
+  String progressLastReport(String date, int count) {
+    return 'Laporan terakhir $date · $count laporan';
+  }
+
+  @override
+  String get progressToneOk => 'Sesuai';
+
+  @override
+  String get progressToneWarn => 'Perlu dicek';
+
+  @override
+  String get progressToneBad => 'Anggaran mendahului';
+
+  @override
+  String get progressToneNone => 'Belum bisa dihitung';
+
+  @override
+  String get progressRemovePhoto => 'Hapus foto';
+
+  @override
+  String get progressStateQueued => 'Menunggu kirim';
+
+  @override
+  String get progressStateLocal => 'Belum terkirim';
+
+  @override
+  String get progressStateConflict => 'Konflik';
+
+  @override
+  String get progressStateRejected => 'Ditolak';
+
+  @override
+  String get progressStateSynced => 'Terkirim';
+
+  @override
+  String get progressEditTag => 'edit';
+
+  @override
+  String progressPhotoCount(int count) {
+    return '$count foto';
+  }
+
+  @override
+  String get progressConflictHint => 'Ketuk untuk memilih versi yang dipakai.';
+
+  @override
+  String get progressOfflineTag => 'offline';
+
+  @override
+  String get progressEditableTag => 'bisa diedit';
+
+  @override
+  String get progressPhotoTitle => 'Foto progress';
+
+  @override
+  String get progressEditTitle => 'Edit laporan progress';
+
+  @override
+  String get progressNewTitle => 'Laporan progress harian';
+
+  @override
+  String get progressNotFound => 'Laporan tidak ditemukan di HP ini.';
+
+  @override
+  String get progressPickProject => 'Pilih project.';
+
+  @override
+  String get progressPickStage => 'Pilih tahapan.';
+
+  @override
+  String get progressPhotoFailed => 'Foto gagal diproses. Ambil ulang foto.';
+
+  @override
+  String get progressSent => 'Laporan terkirim.';
+
+  @override
+  String get progressQueuedOnline => 'Laporan tersimpan dan sedang dikirim.';
+
+  @override
+  String get progressQueuedOffline => 'Laporan tersimpan di HP (offline). Dikirim otomatis saat ada sinyal.';
+
+  @override
+  String get progressKeptLocal => 'Tidak ada koneksi. Laporan disimpan di HP; kirim dari menu Progress saat online.';
+
+  @override
+  String get progressDiscardTitle => 'Hapus laporan ini?';
+
+  @override
+  String get progressDiscardBody => 'Laporan dan fotonya dihapus dari HP. Server belum menerimanya.';
+
+  @override
+  String get progressOnlineOnlyNote =>
+      'Server belum mengizinkan kirim offline: laporan dikirim langsung (butuh internet).';
+
+  @override
+  String get progressOnlineOnlyOffline =>
+      'Anda offline dan server belum mengizinkan kirim offline. Laporan disimpan di HP dan dikirim saat online.';
+
+  @override
+  String progressEditWindow(String time) {
+    return 'Bisa diedit sampai $time.';
+  }
+
+  @override
+  String get progressProject => 'Project';
+
+  @override
+  String get progressNoProjects => 'Tidak ada project untuk Anda.';
+
+  @override
+  String get progressStagesCached =>
+      'Offline: tahapan dan % dari data terakhir di HP; server memeriksa ulang saat kirim.';
+
+  @override
+  String get progressStage => 'Tahapan';
+
+  @override
+  String progressStageOption(String name, String weight, String pct) {
+    return '$name (bobot $weight, sekarang $pct)';
+  }
+
+  @override
+  String progressPctTitle(String stage) {
+    return 'Progress tahapan $stage';
+  }
+
+  @override
+  String progressPctBefore(String value) {
+    return 'Sebelum laporan: $value';
+  }
+
+  @override
+  String get progressPctAfterLabel => 'Progress setelah pekerjaan';
+
+  @override
+  String progressPctDelta(String value) {
+    return 'Naik $value dari sebelumnya.';
+  }
+
+  @override
+  String get progressWork => 'Pekerjaan';
+
+  @override
+  String get progressWorkHint => 'Pekerjaan yang dilakukan hari ini';
+
+  @override
+  String get progressIssues => 'Kendala (opsional)';
+
+  @override
+  String progressPhotosTitle(int count, int max) {
+    return 'Foto ($count/$max)';
+  }
+
+  @override
+  String progressPhotosOnServer(int count) {
+    return '$count foto sudah di server (foto tidak bisa dihapus, hanya ditambah).';
+  }
+
+  @override
+  String get progressAddPhoto => 'Foto';
+
+  @override
+  String get progressReason => 'Alasan edit (wajib)';
+
+  @override
+  String get progressReasonHelp => 'Tercatat di riwayat audit laporan.';
+
+  @override
+  String get progressSaveQueue => 'Simpan & kirim';
+
+  @override
+  String get progressSendOnline => 'Kirim laporan';
+
+  @override
+  String get progressDetailTitle => 'Laporan progress';
+
+  @override
+  String progressWeight(String value) {
+    return 'bobot $value';
+  }
+
+  @override
+  String progressStageBeforeAfter(String before) {
+    return 'Tahapan (sebelumnya $before)';
+  }
+
+  @override
+  String progressProjectBeforeAfter(String before) {
+    return 'Project (sebelumnya $before)';
+  }
+
+  @override
+  String get progressNoPhotos => 'Tanpa foto.';
+
+  @override
+  String get progressDate => 'Tanggal';
+
+  @override
+  String get progressReporter => 'Pelapor';
+
+  @override
+  String get progressReceivedAt => 'Diterima server';
+
+  @override
+  String progressTimeTrust(String trust) {
+    return 'dibuat offline (waktu: $trust)';
+  }
+
+  @override
+  String get progressFlags => 'Penanda';
+
+  @override
+  String get progressEditableUntil => 'Bisa diedit s.d.';
+
+  @override
+  String get progressEdit => 'Edit laporan (≤ 24 jam)';
+
+  @override
+  String get progressConflictTitle => 'Konflik laporan';
+
+  @override
+  String get progressConflictGone => 'Konflik sudah diselesaikan.';
+
+  @override
+  String get progressPhotosLabel => 'Foto';
+
+  @override
+  String progressNewPhotos(int count) {
+    return '+$count foto baru';
+  }
+
+  @override
+  String get progressUseServer => 'Pakai versi server';
+
+  @override
+  String get progressResendMine => 'Kirim versi HP (dengan alasan)';
+
+  @override
+  String get progressNotEditableAnymore => 'Batas edit 24 jam sudah lewat: hanya versi server yang berlaku.';
+
+  @override
+  String get progressDiffers => 'berbeda';
+
+  @override
+  String get progressServerVersion => 'Server';
+
+  @override
+  String get progressMyVersion => 'HP ini';
+
+  @override
+  String get progressUsedServer => 'Versi server dipakai; salinan di HP dihapus.';
+
+  @override
+  String get progressResent => 'Versi HP dikirim sebagai edit.';
 }

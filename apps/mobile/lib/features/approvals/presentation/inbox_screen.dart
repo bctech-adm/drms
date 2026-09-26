@@ -20,6 +20,10 @@ String inboxStepLabel(AppLocalizations t, InboxItem it) {
 }
 
 /// Direktur/Finance inbox (ADR 0013) with budget impact (red above the warn %, US-26) and open flags (US-59).
+///
+/// TODO(E5-APK): approve/reject budget addenda (`budget-addenda`, docType `budget_addendum`, US-18/30) here once
+/// the E5 backend is on develop — as of develop 63c4fb6 the API contract has no addendum endpoints and
+/// `/approvals/inbox` returns expense requests only (checked 2026-09-26, branch feat/mobile-s2-progress-attendance).
 class InboxScreen extends ConsumerWidget {
   const InboxScreen({super.key});
 

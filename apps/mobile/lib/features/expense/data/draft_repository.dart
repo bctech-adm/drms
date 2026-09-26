@@ -165,7 +165,9 @@ class DraftRepository {
 
   Future<void> _dropOrphanMedia(String sub) async {
     await db.customStatement(
-      'DELETE FROM media_blobs WHERE user_sub = ? AND client_uuid NOT IN (SELECT media_uuid FROM local_receipts)',
+      // Only receipt photos: selfies and progress photos have their own owners (outbox / progress reports).
+      "DELETE FROM media_blobs WHERE user_sub = ? AND kind = 'receipt' "
+      'AND client_uuid NOT IN (SELECT media_uuid FROM local_receipts)',
       [sub],
     );
   }

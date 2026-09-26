@@ -14,6 +14,8 @@ import '../../dashboard/presentation/kpi_home.dart';
 import '../../expense/domain/request_status.dart';
 import '../../notifications/application/notifications_providers.dart';
 import '../../notifications/presentation/notifications_screen.dart';
+import '../../progress/application/progress_providers.dart';
+import '../../progress/presentation/widgets/project_progress_summary.dart';
 
 /// Role home: KPI summary (Direktur / Finance, US-27; PM team monitor, US-17) above big action buttons.
 class HomeScreen extends ConsumerWidget {
@@ -28,6 +30,7 @@ class HomeScreen extends ConsumerWidget {
     final latest = ref.watch(appConfigProvider).value?.latestAppVersion;
     final kind = profile.homeKind;
     final attendanceOn = ref.watch(appConfigProvider).value?.syncAttendance ?? false;
+    final openProgress = profile.canReadProgress ? (ref.watch(openProgressDraftsProvider).value?.length ?? 0) : 0;
     final inboxCount = profile.hasApprovalInbox ? ref.watch(inboxProvider).value?.items.length : null;
 
     final actions = <Widget>[
@@ -59,12 +62,26 @@ class HomeScreen extends ConsumerWidget {
         label: kind == HomeKind.direktur || kind == HomeKind.finance ? t.actionAllRequests : t.actionMyRequests,
         onPressed: () => context.go('/requests'),
       ),
-      if (profile.has(Role.staff) || profile.has(Role.pm))
+      if (profile.canReadProgress)
+        BigActionButton(
+          key: const Key('home-progress'),
+          icon: Icons.construction,
+          label: profile.canCreateProgress ? t.actionProgress : t.actionProgressRead,
+          subtitle: openProgress > 0 ? t.progressPendingCount(openProgress) : null,
+          badge: openProgress > 0 ? '$openProgress' : null,
+          onPressed: () => context.push('/progress'),
+        ),
+      // E6: the recap (own month) and "Tim hari ini" are online reads and stay available when the company
+      // setting "Absensi dari APK" is off; only check-in / on-behalf follow the flag.
+      if (profile.hasOwnAttendance || profile.canSeeTeamAttendance)
         BigActionButton(
           key: const Key('home-attendance'),
           icon: Icons.fingerprint,
-          label: attendanceOn ? t.actionAttendance : t.actionAttendanceOff,
-          onPressed: attendanceOn ? () => context.push('/attendance') : null,
+          label: t.actionAttendance,
+          subtitle: profile.hasOwnAttendance
+              ? (attendanceOn ? t.actionAttendanceSub : t.actionAttendanceOffSub)
+              : t.actionAttendanceTeamSub,
+          onPressed: () => context.push(profile.hasOwnAttendance ? '/attendance' : '/attendance?tab=team'),
         ),
     ];
     final kpis = switch (kind) {
@@ -94,6 +111,7 @@ class HomeScreen extends ConsumerWidget {
           ref.invalidate(direkturDashboardProvider);
           ref.invalidate(financeDashboardProvider);
           ref.invalidate(pmDashboardProvider);
+          ref.invalidate(projectProgressProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -120,6 +138,10 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 8),
             ],
             for (final a in actions) Padding(padding: const EdgeInsets.only(bottom: 12), child: a),
+            if (profile.has(Role.pm) || profile.has(Role.owner)) ...[
+              const SizedBox(height: 4),
+              const ProjectProgressSummary(),
+            ],
           ],
         ),
       ),

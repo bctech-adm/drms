@@ -1264,7 +1264,7 @@ abstract class AppLocalizations {
   /// No description provided for @attendanceNoProjects.
   ///
   /// In id, this message translates to:
-  /// **'Anda belum ditugaskan di project mana pun. Hubungi PM/Admin.'**
+  /// **'Anda belum ditugaskan di project atau pusat biaya mana pun. Hubungi PM/Admin.'**
   String get attendanceNoProjects;
 
   /// No description provided for @attendanceProject.
@@ -1294,19 +1294,19 @@ abstract class AppLocalizations {
   /// No description provided for @attendanceOutside.
   ///
   /// In id, this message translates to:
-  /// **'Anda di luar radius project ({distance} m dari titik). Absen hanya bisa di lokasi project.'**
-  String attendanceOutside(int distance);
+  /// **'Anda di luar radius lokasi ({distance} m dari titik, radius {radius} m). Absen hanya bisa di lokasi.'**
+  String attendanceOutside(int distance, int radius);
 
   /// No description provided for @attendanceInside.
   ///
   /// In id, this message translates to:
-  /// **'Di dalam radius project ({distance} m dari titik).'**
-  String attendanceInside(int distance);
+  /// **'Di dalam radius lokasi ({distance} m dari titik, radius {radius} m).'**
+  String attendanceInside(int distance, int radius);
 
   /// No description provided for @attendanceNoGeofence.
   ///
   /// In id, this message translates to:
-  /// **'Titik lokasi project belum diatur Admin. Absen belum bisa dilakukan di project ini.'**
+  /// **'Titik lokasi/radius belum diatur Admin. Absen belum bisa dilakukan di lokasi ini.'**
   String get attendanceNoGeofence;
 
   /// No description provided for @attendanceMocked.
@@ -1938,6 +1938,1062 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Ke beranda'**
   String get routeErrorHome;
+
+  /// No description provided for @actionProgress.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan progress'**
+  String get actionProgress;
+
+  /// No description provided for @actionProgressRead.
+  ///
+  /// In id, this message translates to:
+  /// **'Progress project'**
+  String get actionProgressRead;
+
+  /// No description provided for @progressPendingCount.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} laporan belum terkirim'**
+  String progressPendingCount(int count);
+
+  /// No description provided for @actionAttendanceSub.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen masuk/pulang, rekap bulanan'**
+  String get actionAttendanceSub;
+
+  /// No description provided for @actionAttendanceOffSub.
+  ///
+  /// In id, this message translates to:
+  /// **'Rekap bulanan (absen dari aplikasi belum diaktifkan Admin)'**
+  String get actionAttendanceOffSub;
+
+  /// No description provided for @actionAttendanceTeamSub.
+  ///
+  /// In id, this message translates to:
+  /// **'Kehadiran tim hari ini'**
+  String get actionAttendanceTeamSub;
+
+  /// No description provided for @seeAll.
+  ///
+  /// In id, this message translates to:
+  /// **'Lihat semua'**
+  String get seeAll;
+
+  /// No description provided for @attendanceTabCheck.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen'**
+  String get attendanceTabCheck;
+
+  /// No description provided for @attendanceTabRecap.
+  ///
+  /// In id, this message translates to:
+  /// **'Rekap'**
+  String get attendanceTabRecap;
+
+  /// No description provided for @attendanceTabTeam.
+  ///
+  /// In id, this message translates to:
+  /// **'Tim'**
+  String get attendanceTabTeam;
+
+  /// No description provided for @attendanceLocation.
+  ///
+  /// In id, this message translates to:
+  /// **'Lokasi (project / pusat biaya)'**
+  String get attendanceLocation;
+
+  /// No description provided for @attendanceRadius.
+  ///
+  /// In id, this message translates to:
+  /// **'radius {meters} m'**
+  String attendanceRadius(int meters);
+
+  /// No description provided for @attendanceCheckDistance.
+  ///
+  /// In id, this message translates to:
+  /// **'Cek jarak ke lokasi'**
+  String get attendanceCheckDistance;
+
+  /// No description provided for @siteProject.
+  ///
+  /// In id, this message translates to:
+  /// **'Project'**
+  String get siteProject;
+
+  /// No description provided for @siteCostCenter.
+  ///
+  /// In id, this message translates to:
+  /// **'Pusat biaya'**
+  String get siteCostCenter;
+
+  /// No description provided for @distanceInside.
+  ///
+  /// In id, this message translates to:
+  /// **'Di dalam area absen'**
+  String get distanceInside;
+
+  /// No description provided for @distanceOutside.
+  ///
+  /// In id, this message translates to:
+  /// **'Di luar area absen'**
+  String get distanceOutside;
+
+  /// No description provided for @distanceDetail.
+  ///
+  /// In id, this message translates to:
+  /// **'Radius {radius} m + toleransi GPS {allowance} m (akurasi GPS ±{accuracy} m, maks. 50 m dihitung).'**
+  String distanceDetail(int radius, int allowance, int accuracy);
+
+  /// No description provided for @dowMon.
+  ///
+  /// In id, this message translates to:
+  /// **'Sen'**
+  String get dowMon;
+
+  /// No description provided for @dowTue.
+  ///
+  /// In id, this message translates to:
+  /// **'Sel'**
+  String get dowTue;
+
+  /// No description provided for @dowWed.
+  ///
+  /// In id, this message translates to:
+  /// **'Rab'**
+  String get dowWed;
+
+  /// No description provided for @dowThu.
+  ///
+  /// In id, this message translates to:
+  /// **'Kam'**
+  String get dowThu;
+
+  /// No description provided for @dowFri.
+  ///
+  /// In id, this message translates to:
+  /// **'Jum'**
+  String get dowFri;
+
+  /// No description provided for @dowSat.
+  ///
+  /// In id, this message translates to:
+  /// **'Sab'**
+  String get dowSat;
+
+  /// No description provided for @dowSun.
+  ///
+  /// In id, this message translates to:
+  /// **'Min'**
+  String get dowSun;
+
+  /// No description provided for @recapPrevMonth.
+  ///
+  /// In id, this message translates to:
+  /// **'Bulan sebelumnya'**
+  String get recapPrevMonth;
+
+  /// No description provided for @recapNextMonth.
+  ///
+  /// In id, this message translates to:
+  /// **'Bulan berikutnya'**
+  String get recapNextMonth;
+
+  /// No description provided for @recapSchedule.
+  ///
+  /// In id, this message translates to:
+  /// **'Jadwal {name}: {start}–{end}, toleransi {tolerance} menit'**
+  String recapSchedule(String name, String start, String end, int tolerance);
+
+  /// No description provided for @recapPresent.
+  ///
+  /// In id, this message translates to:
+  /// **'Hadir'**
+  String get recapPresent;
+
+  /// No description provided for @recapWorkingDays.
+  ///
+  /// In id, this message translates to:
+  /// **'dari hari kerja s.d. hari ini'**
+  String get recapWorkingDays;
+
+  /// No description provided for @recapWorkHours.
+  ///
+  /// In id, this message translates to:
+  /// **'Total jam kerja'**
+  String get recapWorkHours;
+
+  /// No description provided for @recapLate.
+  ///
+  /// In id, this message translates to:
+  /// **'Terlambat'**
+  String get recapLate;
+
+  /// No description provided for @recapEarlyLeave.
+  ///
+  /// In id, this message translates to:
+  /// **'Pulang cepat'**
+  String get recapEarlyLeave;
+
+  /// No description provided for @recapAbsent.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak hadir'**
+  String get recapAbsent;
+
+  /// No description provided for @recapIncomplete.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum absen pulang'**
+  String get recapIncomplete;
+
+  /// No description provided for @recapDays.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} hari'**
+  String recapDays(int count);
+
+  /// No description provided for @recapMinutes.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} menit'**
+  String recapMinutes(int count);
+
+  /// No description provided for @recapStatusDone.
+  ///
+  /// In id, this message translates to:
+  /// **'Selesai'**
+  String get recapStatusDone;
+
+  /// No description provided for @recapStatusPresent.
+  ///
+  /// In id, this message translates to:
+  /// **'Hadir'**
+  String get recapStatusPresent;
+
+  /// No description provided for @recapStatusNotYet.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum absen'**
+  String get recapStatusNotYet;
+
+  /// No description provided for @recapStatusAbsent.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak hadir'**
+  String get recapStatusAbsent;
+
+  /// No description provided for @recapStatusHoliday.
+  ///
+  /// In id, this message translates to:
+  /// **'Libur'**
+  String get recapStatusHoliday;
+
+  /// No description provided for @recapStatusNoSchedule.
+  ///
+  /// In id, this message translates to:
+  /// **'Tanpa jadwal'**
+  String get recapStatusNoSchedule;
+
+  /// No description provided for @recapLegendMark.
+  ///
+  /// In id, this message translates to:
+  /// **'terlambat / oleh PM / dikoreksi'**
+  String get recapLegendMark;
+
+  /// No description provided for @recapInOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Masuk {checkIn} · Pulang {checkOut}'**
+  String recapInOut(String checkIn, String checkOut);
+
+  /// No description provided for @recapWorked.
+  ///
+  /// In id, this message translates to:
+  /// **'Jam kerja: {duration}'**
+  String recapWorked(String duration);
+
+  /// No description provided for @recapLateBy.
+  ///
+  /// In id, this message translates to:
+  /// **'Terlambat {minutes} menit'**
+  String recapLateBy(int minutes);
+
+  /// No description provided for @recapEarlyBy.
+  ///
+  /// In id, this message translates to:
+  /// **'Pulang cepat {minutes} menit'**
+  String recapEarlyBy(int minutes);
+
+  /// No description provided for @recapOnBehalf.
+  ///
+  /// In id, this message translates to:
+  /// **'Diabsenkan oleh PM: {names}'**
+  String recapOnBehalf(String names);
+
+  /// No description provided for @recapCorrected.
+  ///
+  /// In id, this message translates to:
+  /// **'Jam absen dikoreksi (T10).'**
+  String get recapCorrected;
+
+  /// No description provided for @recapFlags.
+  ///
+  /// In id, this message translates to:
+  /// **'Penanda: {flags}'**
+  String recapFlags(String flags);
+
+  /// No description provided for @recapMemberTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Rekap absensi karyawan'**
+  String get recapMemberTitle;
+
+  /// No description provided for @teamStatusNotYet.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum absen'**
+  String get teamStatusNotYet;
+
+  /// No description provided for @teamStatusPresent.
+  ///
+  /// In id, this message translates to:
+  /// **'Hadir'**
+  String get teamStatusPresent;
+
+  /// No description provided for @teamStatusDone.
+  ///
+  /// In id, this message translates to:
+  /// **'Selesai'**
+  String get teamStatusDone;
+
+  /// No description provided for @teamAll.
+  ///
+  /// In id, this message translates to:
+  /// **'Semua {count}'**
+  String teamAll(int count);
+
+  /// No description provided for @teamEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada anggota tim dengan status ini.'**
+  String get teamEmpty;
+
+  /// No description provided for @teamIn.
+  ///
+  /// In id, this message translates to:
+  /// **'Masuk'**
+  String get teamIn;
+
+  /// No description provided for @teamOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Pulang'**
+  String get teamOut;
+
+  /// No description provided for @teamOnBehalfTag.
+  ///
+  /// In id, this message translates to:
+  /// **'Oleh PM'**
+  String get teamOnBehalfTag;
+
+  /// No description provided for @teamCorrectedTag.
+  ///
+  /// In id, this message translates to:
+  /// **'Dikoreksi'**
+  String get teamCorrectedTag;
+
+  /// No description provided for @onBehalfAction.
+  ///
+  /// In id, this message translates to:
+  /// **'Absenkan anggota tim'**
+  String get onBehalfAction;
+
+  /// No description provided for @onBehalfTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Diabsenkan PM'**
+  String get onBehalfTitle;
+
+  /// No description provided for @onBehalfIntro.
+  ///
+  /// In id, this message translates to:
+  /// **'Untuk anggota tim yang tidak bisa absen sendiri. Lokasi diambil dari HP Anda, foto karyawan diambil dengan kamera HP Anda. Nama Anda dan alasannya tercatat.'**
+  String get onBehalfIntro;
+
+  /// No description provided for @onBehalfNoTeam.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada anggota tim yang ditugaskan hari ini (data tim dari server; tarik ulang di Beranda saat online).'**
+  String get onBehalfNoTeam;
+
+  /// No description provided for @onBehalfEmployee.
+  ///
+  /// In id, this message translates to:
+  /// **'Karyawan'**
+  String get onBehalfEmployee;
+
+  /// No description provided for @onBehalfReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan (wajib)'**
+  String get onBehalfReason;
+
+  /// No description provided for @onBehalfReasonHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Contoh: tidak punya HP / HP rusak'**
+  String get onBehalfReasonHint;
+
+  /// No description provided for @onBehalfCamera.
+  ///
+  /// In id, this message translates to:
+  /// **'Kamera untuk foto karyawan'**
+  String get onBehalfCamera;
+
+  /// No description provided for @lensBack.
+  ///
+  /// In id, this message translates to:
+  /// **'Belakang'**
+  String get lensBack;
+
+  /// No description provided for @lensFront.
+  ///
+  /// In id, this message translates to:
+  /// **'Depan'**
+  String get lensFront;
+
+  /// No description provided for @onBehalfCheckIn.
+  ///
+  /// In id, this message translates to:
+  /// **'Absenkan masuk'**
+  String get onBehalfCheckIn;
+
+  /// No description provided for @onBehalfCheckOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Absenkan pulang'**
+  String get onBehalfCheckOut;
+
+  /// No description provided for @onBehalfPhotoTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto {name}'**
+  String onBehalfPhotoTitle(String name);
+
+  /// No description provided for @onBehalfSavedOnline.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen {name} tersimpan dan sedang dikirim.'**
+  String onBehalfSavedOnline(String name);
+
+  /// No description provided for @onBehalfSavedOffline.
+  ///
+  /// In id, this message translates to:
+  /// **'Absen {name} tersimpan di HP (offline). Dikirim otomatis saat ada sinyal.'**
+  String onBehalfSavedOffline(String name);
+
+  /// No description provided for @correctionTitleIn.
+  ///
+  /// In id, this message translates to:
+  /// **'Koreksi jam masuk'**
+  String get correctionTitleIn;
+
+  /// No description provided for @correctionTitleOut.
+  ///
+  /// In id, this message translates to:
+  /// **'Koreksi jam pulang'**
+  String get correctionTitleOut;
+
+  /// No description provided for @correctionOld.
+  ///
+  /// In id, this message translates to:
+  /// **'Tercatat: {date} {time}'**
+  String correctionOld(String date, String time);
+
+  /// No description provided for @correctionNew.
+  ///
+  /// In id, this message translates to:
+  /// **'Jam baru: {time}'**
+  String correctionNew(String time);
+
+  /// No description provided for @correctionReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan koreksi (wajib)'**
+  String get correctionReason;
+
+  /// No description provided for @correctionReasonHelp.
+  ///
+  /// In id, this message translates to:
+  /// **'Tanggal tetap sama; jam lama dan baru tercatat di audit.'**
+  String get correctionReasonHelp;
+
+  /// No description provided for @correctionSaved.
+  ///
+  /// In id, this message translates to:
+  /// **'Koreksi absensi tersimpan.'**
+  String get correctionSaved;
+
+  /// No description provided for @progressTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Progress project'**
+  String get progressTitle;
+
+  /// No description provided for @progressTabReports.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan'**
+  String get progressTabReports;
+
+  /// No description provided for @progressTabProjects.
+  ///
+  /// In id, this message translates to:
+  /// **'Project'**
+  String get progressTabProjects;
+
+  /// No description provided for @progressNew.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan baru'**
+  String get progressNew;
+
+  /// No description provided for @progressHomeTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Progress fisik vs anggaran'**
+  String get progressHomeTitle;
+
+  /// No description provided for @progressLocalTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Di HP ini (belum diterima server)'**
+  String get progressLocalTitle;
+
+  /// No description provided for @progressServerTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan terbaru'**
+  String get progressServerTitle;
+
+  /// No description provided for @progressFilterProject.
+  ///
+  /// In id, this message translates to:
+  /// **'Filter project'**
+  String get progressFilterProject;
+
+  /// No description provided for @progressFilterAll.
+  ///
+  /// In id, this message translates to:
+  /// **'Semua project'**
+  String get progressFilterAll;
+
+  /// No description provided for @progressListOffline.
+  ///
+  /// In id, this message translates to:
+  /// **'Daftar laporan butuh koneksi internet. Laporan baru tetap bisa dibuat offline.'**
+  String get progressListOffline;
+
+  /// No description provided for @progressListEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada laporan progress.'**
+  String get progressListEmpty;
+
+  /// No description provided for @progressProjectsIntro.
+  ///
+  /// In id, this message translates to:
+  /// **'Selisih = % anggaran terpakai − % progress fisik. Hijau aman, kuning perlu dicek, merah anggaran jauh mendahului pekerjaan.'**
+  String get progressProjectsIntro;
+
+  /// No description provided for @progressProjectsEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada project.'**
+  String get progressProjectsEmpty;
+
+  /// No description provided for @progressPhysical.
+  ///
+  /// In id, this message translates to:
+  /// **'Progress fisik'**
+  String get progressPhysical;
+
+  /// No description provided for @progressBudgetUsed.
+  ///
+  /// In id, this message translates to:
+  /// **'Anggaran terpakai'**
+  String get progressBudgetUsed;
+
+  /// No description provided for @progressGap.
+  ///
+  /// In id, this message translates to:
+  /// **'Selisih {value}'**
+  String progressGap(String value);
+
+  /// No description provided for @progressStagesIncomplete.
+  ///
+  /// In id, this message translates to:
+  /// **'Bobot tahapan baru {value} (harus 100%).'**
+  String progressStagesIncomplete(String value);
+
+  /// No description provided for @progressNoReportYet.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada laporan progress.'**
+  String get progressNoReportYet;
+
+  /// No description provided for @progressLastReport.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan terakhir {date} · {count} laporan'**
+  String progressLastReport(String date, int count);
+
+  /// No description provided for @progressToneOk.
+  ///
+  /// In id, this message translates to:
+  /// **'Sesuai'**
+  String get progressToneOk;
+
+  /// No description provided for @progressToneWarn.
+  ///
+  /// In id, this message translates to:
+  /// **'Perlu dicek'**
+  String get progressToneWarn;
+
+  /// No description provided for @progressToneBad.
+  ///
+  /// In id, this message translates to:
+  /// **'Anggaran mendahului'**
+  String get progressToneBad;
+
+  /// No description provided for @progressToneNone.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum bisa dihitung'**
+  String get progressToneNone;
+
+  /// No description provided for @progressRemovePhoto.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus foto'**
+  String get progressRemovePhoto;
+
+  /// No description provided for @progressStateQueued.
+  ///
+  /// In id, this message translates to:
+  /// **'Menunggu kirim'**
+  String get progressStateQueued;
+
+  /// No description provided for @progressStateLocal.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum terkirim'**
+  String get progressStateLocal;
+
+  /// No description provided for @progressStateConflict.
+  ///
+  /// In id, this message translates to:
+  /// **'Konflik'**
+  String get progressStateConflict;
+
+  /// No description provided for @progressStateRejected.
+  ///
+  /// In id, this message translates to:
+  /// **'Ditolak'**
+  String get progressStateRejected;
+
+  /// No description provided for @progressStateSynced.
+  ///
+  /// In id, this message translates to:
+  /// **'Terkirim'**
+  String get progressStateSynced;
+
+  /// No description provided for @progressEditTag.
+  ///
+  /// In id, this message translates to:
+  /// **'edit'**
+  String get progressEditTag;
+
+  /// No description provided for @progressPhotoCount.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} foto'**
+  String progressPhotoCount(int count);
+
+  /// No description provided for @progressConflictHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Ketuk untuk memilih versi yang dipakai.'**
+  String get progressConflictHint;
+
+  /// No description provided for @progressOfflineTag.
+  ///
+  /// In id, this message translates to:
+  /// **'offline'**
+  String get progressOfflineTag;
+
+  /// No description provided for @progressEditableTag.
+  ///
+  /// In id, this message translates to:
+  /// **'bisa diedit'**
+  String get progressEditableTag;
+
+  /// No description provided for @progressPhotoTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto progress'**
+  String get progressPhotoTitle;
+
+  /// No description provided for @progressEditTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Edit laporan progress'**
+  String get progressEditTitle;
+
+  /// No description provided for @progressNewTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan progress harian'**
+  String get progressNewTitle;
+
+  /// No description provided for @progressNotFound.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan tidak ditemukan di HP ini.'**
+  String get progressNotFound;
+
+  /// No description provided for @progressPickProject.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih project.'**
+  String get progressPickProject;
+
+  /// No description provided for @progressPickStage.
+  ///
+  /// In id, this message translates to:
+  /// **'Pilih tahapan.'**
+  String get progressPickStage;
+
+  /// No description provided for @progressPhotoFailed.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto gagal diproses. Ambil ulang foto.'**
+  String get progressPhotoFailed;
+
+  /// No description provided for @progressSent.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan terkirim.'**
+  String get progressSent;
+
+  /// No description provided for @progressQueuedOnline.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan tersimpan dan sedang dikirim.'**
+  String get progressQueuedOnline;
+
+  /// No description provided for @progressQueuedOffline.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan tersimpan di HP (offline). Dikirim otomatis saat ada sinyal.'**
+  String get progressQueuedOffline;
+
+  /// No description provided for @progressKeptLocal.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada koneksi. Laporan disimpan di HP; kirim dari menu Progress saat online.'**
+  String get progressKeptLocal;
+
+  /// No description provided for @progressDiscardTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Hapus laporan ini?'**
+  String get progressDiscardTitle;
+
+  /// No description provided for @progressDiscardBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan dan fotonya dihapus dari HP. Server belum menerimanya.'**
+  String get progressDiscardBody;
+
+  /// No description provided for @progressOnlineOnlyNote.
+  ///
+  /// In id, this message translates to:
+  /// **'Server belum mengizinkan kirim offline: laporan dikirim langsung (butuh internet).'**
+  String get progressOnlineOnlyNote;
+
+  /// No description provided for @progressOnlineOnlyOffline.
+  ///
+  /// In id, this message translates to:
+  /// **'Anda offline dan server belum mengizinkan kirim offline. Laporan disimpan di HP dan dikirim saat online.'**
+  String get progressOnlineOnlyOffline;
+
+  /// No description provided for @progressEditWindow.
+  ///
+  /// In id, this message translates to:
+  /// **'Bisa diedit sampai {time}.'**
+  String progressEditWindow(String time);
+
+  /// No description provided for @progressProject.
+  ///
+  /// In id, this message translates to:
+  /// **'Project'**
+  String get progressProject;
+
+  /// No description provided for @progressNoProjects.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada project untuk Anda.'**
+  String get progressNoProjects;
+
+  /// No description provided for @progressStagesCached.
+  ///
+  /// In id, this message translates to:
+  /// **'Offline: tahapan dan % dari data terakhir di HP; server memeriksa ulang saat kirim.'**
+  String get progressStagesCached;
+
+  /// No description provided for @progressStage.
+  ///
+  /// In id, this message translates to:
+  /// **'Tahapan'**
+  String get progressStage;
+
+  /// No description provided for @progressStageOption.
+  ///
+  /// In id, this message translates to:
+  /// **'{name} (bobot {weight}, sekarang {pct})'**
+  String progressStageOption(String name, String weight, String pct);
+
+  /// No description provided for @progressPctTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Progress tahapan {stage}'**
+  String progressPctTitle(String stage);
+
+  /// No description provided for @progressPctBefore.
+  ///
+  /// In id, this message translates to:
+  /// **'Sebelum laporan: {value}'**
+  String progressPctBefore(String value);
+
+  /// No description provided for @progressPctAfterLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Progress setelah pekerjaan'**
+  String get progressPctAfterLabel;
+
+  /// No description provided for @progressPctDelta.
+  ///
+  /// In id, this message translates to:
+  /// **'Naik {value} dari sebelumnya.'**
+  String progressPctDelta(String value);
+
+  /// No description provided for @progressWork.
+  ///
+  /// In id, this message translates to:
+  /// **'Pekerjaan'**
+  String get progressWork;
+
+  /// No description provided for @progressWorkHint.
+  ///
+  /// In id, this message translates to:
+  /// **'Pekerjaan yang dilakukan hari ini'**
+  String get progressWorkHint;
+
+  /// No description provided for @progressIssues.
+  ///
+  /// In id, this message translates to:
+  /// **'Kendala (opsional)'**
+  String get progressIssues;
+
+  /// No description provided for @progressPhotosTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto ({count}/{max})'**
+  String progressPhotosTitle(int count, int max);
+
+  /// No description provided for @progressPhotosOnServer.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} foto sudah di server (foto tidak bisa dihapus, hanya ditambah).'**
+  String progressPhotosOnServer(int count);
+
+  /// No description provided for @progressAddPhoto.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto'**
+  String get progressAddPhoto;
+
+  /// No description provided for @progressReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan edit (wajib)'**
+  String get progressReason;
+
+  /// No description provided for @progressReasonHelp.
+  ///
+  /// In id, this message translates to:
+  /// **'Tercatat di riwayat audit laporan.'**
+  String get progressReasonHelp;
+
+  /// No description provided for @progressSaveQueue.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan & kirim'**
+  String get progressSaveQueue;
+
+  /// No description provided for @progressSendOnline.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim laporan'**
+  String get progressSendOnline;
+
+  /// No description provided for @progressDetailTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Laporan progress'**
+  String get progressDetailTitle;
+
+  /// No description provided for @progressWeight.
+  ///
+  /// In id, this message translates to:
+  /// **'bobot {value}'**
+  String progressWeight(String value);
+
+  /// No description provided for @progressStageBeforeAfter.
+  ///
+  /// In id, this message translates to:
+  /// **'Tahapan (sebelumnya {before})'**
+  String progressStageBeforeAfter(String before);
+
+  /// No description provided for @progressProjectBeforeAfter.
+  ///
+  /// In id, this message translates to:
+  /// **'Project (sebelumnya {before})'**
+  String progressProjectBeforeAfter(String before);
+
+  /// No description provided for @progressNoPhotos.
+  ///
+  /// In id, this message translates to:
+  /// **'Tanpa foto.'**
+  String get progressNoPhotos;
+
+  /// No description provided for @progressDate.
+  ///
+  /// In id, this message translates to:
+  /// **'Tanggal'**
+  String get progressDate;
+
+  /// No description provided for @progressReporter.
+  ///
+  /// In id, this message translates to:
+  /// **'Pelapor'**
+  String get progressReporter;
+
+  /// No description provided for @progressReceivedAt.
+  ///
+  /// In id, this message translates to:
+  /// **'Diterima server'**
+  String get progressReceivedAt;
+
+  /// No description provided for @progressTimeTrust.
+  ///
+  /// In id, this message translates to:
+  /// **'dibuat offline (waktu: {trust})'**
+  String progressTimeTrust(String trust);
+
+  /// No description provided for @progressFlags.
+  ///
+  /// In id, this message translates to:
+  /// **'Penanda'**
+  String get progressFlags;
+
+  /// No description provided for @progressEditableUntil.
+  ///
+  /// In id, this message translates to:
+  /// **'Bisa diedit s.d.'**
+  String get progressEditableUntil;
+
+  /// No description provided for @progressEdit.
+  ///
+  /// In id, this message translates to:
+  /// **'Edit laporan (≤ 24 jam)'**
+  String get progressEdit;
+
+  /// No description provided for @progressConflictTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Konflik laporan'**
+  String get progressConflictTitle;
+
+  /// No description provided for @progressConflictGone.
+  ///
+  /// In id, this message translates to:
+  /// **'Konflik sudah diselesaikan.'**
+  String get progressConflictGone;
+
+  /// No description provided for @progressPhotosLabel.
+  ///
+  /// In id, this message translates to:
+  /// **'Foto'**
+  String get progressPhotosLabel;
+
+  /// No description provided for @progressNewPhotos.
+  ///
+  /// In id, this message translates to:
+  /// **'+{count} foto baru'**
+  String progressNewPhotos(int count);
+
+  /// No description provided for @progressUseServer.
+  ///
+  /// In id, this message translates to:
+  /// **'Pakai versi server'**
+  String get progressUseServer;
+
+  /// No description provided for @progressResendMine.
+  ///
+  /// In id, this message translates to:
+  /// **'Kirim versi HP (dengan alasan)'**
+  String get progressResendMine;
+
+  /// No description provided for @progressNotEditableAnymore.
+  ///
+  /// In id, this message translates to:
+  /// **'Batas edit 24 jam sudah lewat: hanya versi server yang berlaku.'**
+  String get progressNotEditableAnymore;
+
+  /// No description provided for @progressDiffers.
+  ///
+  /// In id, this message translates to:
+  /// **'berbeda'**
+  String get progressDiffers;
+
+  /// No description provided for @progressServerVersion.
+  ///
+  /// In id, this message translates to:
+  /// **'Server'**
+  String get progressServerVersion;
+
+  /// No description provided for @progressMyVersion.
+  ///
+  /// In id, this message translates to:
+  /// **'HP ini'**
+  String get progressMyVersion;
+
+  /// No description provided for @progressUsedServer.
+  ///
+  /// In id, this message translates to:
+  /// **'Versi server dipakai; salinan di HP dihapus.'**
+  String get progressUsedServer;
+
+  /// No description provided for @progressResent.
+  ///
+  /// In id, this message translates to:
+  /// **'Versi HP dikirim sebagai edit.'**
+  String get progressResent;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

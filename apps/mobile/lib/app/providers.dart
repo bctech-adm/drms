@@ -19,7 +19,11 @@ import '../features/expense/application/draft_service.dart';
 import '../features/expense/data/draft_repository.dart';
 import '../features/expense/data/expense_api.dart';
 import '../features/masters/data/masters_repository.dart';
+import '../features/attendance/data/attendance_api.dart';
 import '../features/notifications/data/push_service.dart';
+import '../features/progress/data/progress_api.dart';
+import '../features/progress/data/progress_repository.dart';
+import '../features/sync/domain/sync_models.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/background/background_sync.dart';
 import '../features/sync/data/outbox_repository.dart';
@@ -86,6 +90,9 @@ final approvalsApiProvider = Provider((ref) => ApprovalsApi(ref.watch(apiClientP
 final syncApiProvider = Provider((ref) => SyncApi(ref.watch(apiClientProvider)));
 
 final draftRepositoryProvider = Provider((ref) => DraftRepository(ref.watch(databaseProvider)));
+final progressRepositoryProvider = Provider((ref) => ProgressRepository(ref.watch(databaseProvider)));
+final progressApiProvider = Provider((ref) => ProgressApi(ref.watch(apiClientProvider)));
+final attendanceApiProvider = Provider((ref) => AttendanceApi(ref.watch(apiClientProvider)));
 final outboxRepositoryProvider = Provider((ref) => OutboxRepository(ref.watch(databaseProvider)));
 final mastersRepositoryProvider = Provider(
   (ref) => MastersRepository(ref.watch(apiClientProvider), ref.watch(databaseProvider)),
@@ -101,15 +108,11 @@ final syncEngineProvider = Provider((ref) {
     clock: ref.watch(deviceClockProvider),
     deviceId: () => device.deviceId,
     lock: ref.watch(syncLockProvider),
-    // Local kind → `POST /media/{kind}`: receipt photos and attendance selfies (F4b).
+    progress: ref.watch(progressRepositoryProvider),
+    // Local kind → `POST /media/{kind}`: receipts, attendance selfies (F4b/E6), progress photos (E4).
     uploadMedia: (blob) => ref
         .read(expenseApiProvider)
-        .uploadMedia(
-          blob.kind == 'selfie' ? 'selfies' : 'receipts',
-          blob.bytes,
-          filename: '${blob.clientUuid}.jpg',
-          mime: blob.mimeType,
-        ),
+        .uploadMedia(mediaUploadPath(blob.kind), blob.bytes, filename: '${blob.clientUuid}.jpg', mime: blob.mimeType),
   );
 });
 

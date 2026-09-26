@@ -43,7 +43,11 @@ UserProfile userProfileFromJson(Json j) {
     roles: roles,
     capabilities: caps == null
         ? Capabilities.fromRoles(roles)
-        : Capabilities(approvalInbox: caps['approvalInbox'] == true, teamMonitor: caps['teamMonitor'] == true),
+        : Capabilities(
+            approvalInbox: caps['approvalInbox'] == true,
+            teamMonitor: caps['teamMonitor'] == true,
+            progressReportCreate: caps['progressReportCreate'] == true,
+          ),
     employee: emp == null
         ? null
         : Employee(id: _int(emp['id']), code: '${emp['code'] ?? ''}', name: '${emp['name'] ?? ''}'),
@@ -439,9 +443,29 @@ const mediaPlaceholderKey = 'pk_media_uuid';
 /// Local-only key of an attendance item's selfie (replaced by `selfie_media_id`).
 const selfiePlaceholderKey = 'pk_selfie_uuid';
 
+/// Local-only key of a progress report item: local photo ids, replaced by `photo_media_ids` (E4).
+const progressPhotosPlaceholderKey = 'pk_photo_uuids';
+
 /// Replaces [mediaPlaceholderKey] by `media_id` using [mediaIds] (local uuid → server id).
 /// Returns null when a photo has no server id yet.
 Json? resolveMediaIds(Json payload, Map<String, int> mediaIds) {
+  // Progress report: local photos are appended to the ids already known on the server.
+  if (payload.containsKey(progressPhotosPlaceholderKey)) {
+    final out = Map<String, dynamic>.of(payload);
+    final locals = (out.remove(progressPhotosPlaceholderKey) as List<dynamic>? ?? const []).map((e) => '$e');
+    final ids = <int>[for (final e in (out['photo_media_ids'] as List<dynamic>? ?? const [])) (e as num).toInt()];
+    for (final l in locals) {
+      final id = mediaIds[l];
+      if (id == null) return null;
+      ids.add(id);
+    }
+    if (ids.isEmpty) {
+      out.remove('photo_media_ids');
+    } else {
+      out['photo_media_ids'] = ids;
+    }
+    return out;
+  }
   // Attendance: the selfie sits at the top level (`selfie_media_id`, SyncAttendancePayload).
   if (payload.containsKey(selfiePlaceholderKey)) {
     final out = Map<String, dynamic>.of(payload);

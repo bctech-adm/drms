@@ -17,9 +17,11 @@ import '../../../core/util/async_lock.dart';
 import '../../auth/data/token_manager.dart';
 import '../../expense/data/draft_repository.dart';
 import '../../expense/data/expense_api.dart';
+import '../../progress/data/progress_repository.dart';
 import '../application/sync_engine.dart';
 import '../data/outbox_repository.dart';
 import '../data/sync_api.dart';
+import '../domain/sync_models.dart';
 
 /// Background sync with Android WorkManager (E3-b, ADR 0010 decision 12): the offline outbox is sent
 /// while the app is closed. A periodic task (Android minimum 15 min, network required) is the safety
@@ -193,8 +195,9 @@ BackgroundSyncDeps platformDeps({
     clock: clock,
     deviceId: () => device.deviceId,
     lock: AsyncLock(),
+    progress: ProgressRepository(db),
     uploadMedia: (blob) => expenseApi.uploadMedia(
-      blob.kind == 'selfie' ? 'selfies' : 'receipts',
+      mediaUploadPath(blob.kind),
       blob.bytes,
       filename: '${blob.clientUuid}.jpg',
       mime: blob.mimeType,

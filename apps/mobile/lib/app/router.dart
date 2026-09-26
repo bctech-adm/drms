@@ -7,7 +7,10 @@ import '../features/app_config/application/app_config_providers.dart';
 import '../features/app_config/domain/app_config.dart';
 import '../features/app_config/presentation/update_required_screen.dart';
 import '../features/approvals/presentation/inbox_screen.dart';
+import '../features/attendance/domain/attendance.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
+import '../features/attendance/presentation/on_behalf_screen.dart';
+import '../features/attendance/presentation/team_view.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
@@ -19,6 +22,10 @@ import '../features/expense/presentation/requests_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/home/presentation/home_shell.dart';
 import '../features/notifications/presentation/notifications_screen.dart';
+import '../features/progress/presentation/progress_conflict_screen.dart';
+import '../features/progress/presentation/progress_detail_screen.dart';
+import '../features/progress/presentation/progress_editor_screen.dart';
+import '../features/progress/presentation/progress_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
 import '../features/sync/presentation/queue_screen.dart';
 import 'route_error_screen.dart';
@@ -94,7 +101,53 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
-      GoRoute(path: '/attendance', builder: (_, _) => const AttendanceScreen()),
+      GoRoute(
+        path: '/attendance',
+        builder: (_, s) => AttendanceScreen(
+          initialTab: AttendanceTab.values.where((t) => t.name == s.uri.queryParameters['tab']).firstOrNull,
+        ),
+        routes: [
+          GoRoute(
+            path: 'on-behalf',
+            builder: (_, s) => OnBehalfScreen(
+              employeeId: int.tryParse(s.uri.queryParameters['employee'] ?? ''),
+              kind: s.uri.queryParameters['kind'] == 'check_out' ? AttendanceKind.checkOut : null,
+            ),
+          ),
+          GoRoute(
+            path: 'recap/:employeeId',
+            builder: (_, s) => MemberRecapScreen(employeeId: int.tryParse(s.pathParameters['employeeId'] ?? '') ?? 0),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/progress',
+        builder: (_, s) => ProgressScreen(initialTab: s.uri.queryParameters['tab'] == 'projects' ? 1 : 0),
+        routes: [
+          GoRoute(
+            path: 'new',
+            builder: (_, s) => ProgressEditorRoute(projectId: int.tryParse(s.uri.queryParameters['project'] ?? '')),
+          ),
+          GoRoute(
+            path: 'draft/:uuid',
+            builder: (_, s) => ProgressEditorRoute(localUuid: s.pathParameters['uuid']),
+          ),
+          GoRoute(
+            path: 'conflict/:uuid',
+            builder: (_, s) => ProgressConflictScreen(uuid: s.pathParameters['uuid'] ?? ''),
+          ),
+          GoRoute(
+            path: 'report/:id',
+            builder: (_, s) => ProgressDetailScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
+            routes: [
+              GoRoute(
+                path: 'edit',
+                builder: (_, s) => ProgressEditorRoute(reportId: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
+              ),
+            ],
+          ),
+        ],
+      ),
       GoRoute(
         path: '/drafts/new',
         builder: (_, s) => DraftEditorRoute(type: RequestType.fromCode(s.uri.queryParameters['type'])),
