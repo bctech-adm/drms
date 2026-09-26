@@ -32,6 +32,8 @@ export const ACTIONS = [
   'lpj_request_revision',
   'lpj_verify',
   'settle',
+  // E9 — settlement reversal (Finance): void the refund KM / shortfall transfer, back to "LPJ Terverifikasi".
+  'settle_reverse',
 ] as const
 export type Action = (typeof ACTIONS)[number]
 
@@ -71,6 +73,7 @@ export const TRANSITIONS: readonly Row[] = [
   { types: ['advance'], from: ['lpj_submitted'], action: 'lpj_request_revision', to: ['lpj_revision'] },
   { types: ['advance'], from: ['lpj_submitted'], action: 'lpj_verify', to: ['lpj_verified', 'completed'] },
   { types: ['advance'], from: ['lpj_verified'], action: 'settle', to: ['completed'] },
+  { types: ['advance'], from: ['completed'], action: 'settle_reverse', to: ['lpj_verified'] },
 ]
 
 export class TransitionError extends Error {
@@ -129,7 +132,7 @@ export type ActorContext = {
 const NON_TRANSITION: ReadonlySet<Action> = new Set<Action>(['edit', 'resubmit', 'review_flag', 'add_receipt', 'receipt_verify'])
 
 /** Finance actions refused on a request where the Finance user is requester or creator (F2e). */
-export const FINANCE_SELF_GUARDED: ReadonlySet<Action> = new Set<Action>(['receipt_verify', 'receipt_reject', 'verify_receipts', 'review_flag', 'lpj_request_revision', 'lpj_verify', 'settle'])
+export const FINANCE_SELF_GUARDED: ReadonlySet<Action> = new Set<Action>(['receipt_verify', 'receipt_reject', 'verify_receipts', 'review_flag', 'lpj_request_revision', 'lpj_verify', 'settle', 'settle_reverse'])
 
 const has = (ctx: ActorContext, ...roles: Role[]) => ctx.roles.some((r) => roles.includes(r))
 const office = (ctx: ActorContext) => has(ctx, 'pk-finance', 'pk-owner')
@@ -184,6 +187,46 @@ export function allowedActions(ctx: ActorContext): Action[] {
   add('lpj_request_revision', has(ctx, 'pk-finance') && !selfInvolved)
   add('lpj_verify', has(ctx, 'pk-finance') && !selfInvolved)
   add('settle', has(ctx, 'pk-finance') && !selfInvolved)
+  add('settle_reverse', has(ctx, 'pk-finance') && !selfInvolved)
   add('add_receipt', own && receiptsEditable(ctx.type, ctx.status))
   return out
+}
+
+/**
+ * E9 (UAT 5.2, "409 vs 403"): may the caller EVER perform `action` on this document, whatever its
+ * status? Role and ownership only (requirements v1.1 §4, G1/G17, ADR 0013) — the status-dependent
+ * parts (whose turn, current step, already decided) stay in `allowedActions`. The service checks
+ * this FIRST, so an authorization failure is always 403 and only an authorized caller learns that
+ * the status does not allow the action (409). Pure (unit-tested).
+ */
+export function mayPerform(ctx: ActorContext, action: Action): boolean {
+  const own = ctx.isCreator || ctx.isRequester
+  const finance = has(ctx, 'pk-finance')
+  switch (action) {
+    case 'edit':
+    case 'submit':
+    case 'withdraw':
+    case 'resubmit':
+    case 'receipts_resubmit':
+    case 'add_receipt':
+    case 'receipts_complete':
+    case 'lpj_submit':
+      return own
+    case 'cancel':
+      return own || office(ctx)
+    case 'acknowledge':
+    case 'approve':
+    case 'reject':
+      // G1 / Q-08: never on one's own request; ADR 0013: only Direktur/Finance decide.
+      return !own && !ctx.lacksDecisionRole
+    case 'transfer':
+    case 'transfer_void':
+      return finance
+    case 'complete':
+      return own || finance
+    default:
+      // receipt_verify, receipt_reject, verify_receipts, review_flag, lpj_request_revision, lpj_verify,
+      // settle, settle_reverse: Finance, never on a request it requested/created (F2e, G17).
+      return finance && !own
+  }
 }

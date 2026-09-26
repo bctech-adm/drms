@@ -6,7 +6,7 @@ import { writeAuditDetached } from '@/audit/writer'
 import { DEFAULT_TZ, localDateInTz } from '@/lib/time'
 import { getRequestTx } from '@/lib/tx'
 
-import { allowedActions, FINANCE_SELF_GUARDED, targets, type Action, type ActorContext } from './state'
+import { allowedActions, FINANCE_SELF_GUARDED, mayPerform, targets, type Action, type ActorContext } from './state'
 import { lacksDecisionRole } from './decision'
 import { matchesAcknowledger, matchesStep, type ApprovalSnapshot } from './rules'
 import { BUDGET_COMMITTED, type RequestStatus, type RequestType } from './types'
@@ -169,8 +169,13 @@ export async function actorContext(req: PayloadRequest, doc: RequestDoc): Promis
   }
 }
 
-/** 409 when the status does not allow the action, 403 when the caller may not perform it. */
+/**
+ * 403 when the caller may not perform the action on this document at all (role/ownership — checked
+ * FIRST, E9 / UAT 5.2), 409 when the status does not allow it, else 403 for the remaining
+ * status-dependent turn rules (not the caller's step / already decided).
+ */
 export function requireAction(ctx: ActorContext, action: Action): void {
+  if (!mayPerform(ctx, action)) fail(403, 'Anda tidak berhak melakukan aksi ini pada pengajuan ini.')
   const nonTransition = ['edit', 'add_receipt', 'receipt_verify', 'review_flag', 'resubmit'].includes(action)
   if (!nonTransition && targets(ctx.type, ctx.status, action).length === 0) {
     fail(409, `Aksi tidak dapat dilakukan pada status pengajuan saat ini (${ctx.status}).`)
@@ -180,6 +185,8 @@ export function requireAction(ctx: ActorContext, action: Action): void {
     if (own && action === 'edit') fail(409, 'Pengajuan hanya dapat diubah saat Draft (tarik kembali dulu).')
     if (own && action === 'add_receipt') fail(409, 'Nota tidak dapat diubah pada status pengajuan saat ini.')
     if (own && action === 'resubmit') fail(409, 'Hanya pengajuan yang ditolak yang dapat diajukan ulang.')
+    // E9: a decision already recorded is a STATE of the document (the owner may withdraw/cancel in principle).
+    if (own && (action === 'withdraw' || action === 'cancel') && ctx.hasDecision) fail(409, 'Pengajuan sudah mendapat keputusan; tidak dapat ditarik kembali atau dibatalkan oleh pemohon.')
     fail(403, 'Anda tidak berhak melakukan aksi ini pada pengajuan ini.')
   }
 }
