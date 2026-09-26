@@ -167,3 +167,8 @@ None.
   refund KM (`settlement_refund`, source `LPJ`) / shortfall `lpj_shortfall` transfer + KK, exact amount settles
   at verification, DB cross-checks; void of a refund KM or of a shortfall transfer → 409, settlement reversal
   not implemented (F6 backlog). Status stays accepted.
+- **2026-09-26 (E9, S3 track A):** settlement reversal implemented — `POST …/settle/reverse` (Finance, reason)
+  voids the refund KM (reversal row) or the shortfall transfer + KK and returns the LPJ to "Terverifikasi"; refused
+  (409) when the settlement transaction lies in a closed period (§6: re-open by Direktur first), so the reversal row
+  is always dated like the original. A refund KM still cannot be voided from the cash book alone (409 with a pointer
+  to the LPJ action). Architecture §5.1 updated. Status stays accepted.
