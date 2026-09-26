@@ -30,6 +30,7 @@ export const PROGRESS_STYLE = `
 .pk-f3 .pk-pvb-row .v { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pk-f3 .pk-pvb-row .v b { color: var(--pk-fg); }
 @container (max-width: 720px) { .pk-f3 .pk-pvb-row { grid-template-columns: minmax(0, 1fr) auto; } .pk-f3 .pk-pvb-row .t { grid-column: 1 / -1; grid-row: 2; } }
+@container (max-width: 520px) { .pk-f3 .pk-pvb-row { grid-template-columns: minmax(0, 1fr); } .pk-f3 .pk-pvb-row .t { grid-row: 3; } .pk-f3 .pk-pvb-row .v { align-items: flex-start; white-space: normal; } }
 .pk-f3 .pk-pvb-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--pk-muted-fg); margin: 2px 264px 0 calc(30% + 10px); }
 @container (max-width: 720px) { .pk-f3 .pk-pvb-axis { display: none; } }
 /* stages */
