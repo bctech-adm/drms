@@ -39,7 +39,7 @@ describe('ProgressVsBudgetRows', () => {
   it('clamps > 100 % and shows no physical bar while stages are incomplete', () => {
     const html = renderToStaticMarkup(React.createElement(ProgressVsBudgetRows, { id: 't', rows: [row({ budgetPct: 130, stagesComplete: false, gap: null, tone: 'none', toneLabel: 'Tahapan belum 100%' })], empty: 'kosong' }))
     expect(html).toContain('width:100%')
-    expect(html).toContain('width:0%')
+    expect(html.match(/<i style/g)).toHaveLength(1) // no physical bar while stages are incomplete
     expect(html).toContain('Tahapan belum 100%')
     expect(html).not.toContain('selisih')
   })

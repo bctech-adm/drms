@@ -518,7 +518,7 @@ export async function ProgressReportDetail(props: AdminViewServerProps) {
             <p className="pk-kpi-x">bobot tahapan {pctText(r.stage.weightPct)}</p>
           </KpiTile>
           <KpiTile id="r-project" icon="scale" label="Progress project" value={`${pctText(r.projectPctBefore)} → ${pctText(r.projectPctAfter)}`} kpi="report-project" i={1}>
-            <p className="pk-kpi-x">naik {pctText(r.projectPctAfter !== null && r.projectPctBefore !== null ? r.projectPctAfter - r.projectPctBefore : null, 2)} poin</p>
+            <p className="pk-kpi-x">{r.projectPctAfter !== null && r.projectPctBefore !== null ? `naik ${(r.projectPctAfter - r.projectPctBefore).toFixed(2).replace('.', ',')} poin` : '—'}</p>
           </KpiTile>
           <KpiTile id="r-photos" icon="doc" label="Foto" value={`${r.photos.length} / 5`} kpi="report-photos" i={2}>
             <p className="pk-kpi-x">diperkecil ≤ 1600 px, tanpa lokasi EXIF</p>

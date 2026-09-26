@@ -18,20 +18,20 @@ import { EmptyState, pctText, rp, StatusPill } from './viz'
  */
 export const PROGRESS_STYLE = `
 .pk-f3 .pk-pvb { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.pk-f3 .pk-pvb-row { display: grid; grid-template-columns: minmax(0, 32%) minmax(0, 1fr) auto; align-items: center; gap: 4px 14px; padding: 4px; margin: 0 -4px; border-radius: 6px; color: inherit; text-decoration: none; }
+.pk-f3 .pk-pvb-row { display: grid; grid-template-columns: minmax(0, 30%) minmax(0, 1fr) 250px; align-items: center; gap: 4px 14px; padding: 4px; margin: 0 -4px; border-radius: 6px; color: inherit; text-decoration: none; }
 .pk-f3 a.pk-pvb-row:hover, .pk-f3 .pk-pvb-row:focus-visible { background: color-mix(in oklab, var(--pk-primary) 6%, transparent); }
 .pk-f3 .pk-pvb-row .l { min-width: 0; font-size: 13px; }
 .pk-f3 .pk-pvb-row .l span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pk-f3 .pk-pvb-row .l small { display: block; color: var(--pk-muted-fg); font-size: 11px; }
 .pk-f3 .pk-pvb-row .t { display: grid; gap: 2px; position: relative; }
 .pk-f3 .pk-pvb-row .t > span { position: relative; height: 10px; background: var(--viz-track); border-radius: 0 4px 4px 0; }
-.pk-f3 .pk-pvb-row .t > span > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; min-width: 2px; }
+.pk-f3 .pk-pvb-row .t > span > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; }
 .pk-f3 .pk-pvb-row .t .b > i { background: var(--viz-soft); } .pk-f3 .pk-pvb-row .t .p > i { background: var(--viz-strong); }
 .pk-f3 .pk-pvb-row .v { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pk-f3 .pk-pvb-row .v b { color: var(--pk-fg); }
-@container (max-width: 520px) { .pk-f3 .pk-pvb-row { grid-template-columns: minmax(0, 1fr) auto; } .pk-f3 .pk-pvb-row .t { grid-column: 1 / -1; grid-row: 2; } }
-.pk-f3 .pk-pvb-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--pk-muted-fg); margin: 2px 0 0 calc(32% + 14px); padding-right: 120px; }
-@container (max-width: 520px) { .pk-f3 .pk-pvb-axis { display: none; } }
+@container (max-width: 720px) { .pk-f3 .pk-pvb-row { grid-template-columns: minmax(0, 1fr) auto; } .pk-f3 .pk-pvb-row .t { grid-column: 1 / -1; grid-row: 2; } }
+.pk-f3 .pk-pvb-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--pk-muted-fg); margin: 2px 264px 0 calc(30% + 10px); }
+@container (max-width: 720px) { .pk-f3 .pk-pvb-axis { display: none; } }
 /* stages */
 .pk-f3 .pk-stages { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .pk-f3 .pk-stage { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; }
@@ -46,6 +46,7 @@ export const PROGRESS_STYLE = `
 .pk-f3 .pk-tl { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 2px solid var(--pk-border); display: grid; gap: 14px; }
 .pk-f3 .pk-tl > li { position: relative; }
 .pk-f3 .pk-tl > li::before { content: ''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; border-radius: 999px; background: var(--pk-card); border: 2px solid var(--viz-1); }
+.pk-f3 .pk-tl > li[data-pk-done='yes']::before { background: var(--viz-1); }
 .pk-f3 .pk-tl .when { font-size: 12px; color: var(--pk-muted-fg); }
 .pk-f3 .pk-tl .what { font-size: 13px; margin: 2px 0 0; }
 .pk-f3 .pk-tl .what b { font-variant-numeric: tabular-nums; }
@@ -134,12 +135,8 @@ export function ProgressVsBudgetRows({ id, rows, hrefOf, empty }: { id: string; 
                 <small>{p.budget ? `RAB ${rp(p.budget)}` : 'Tanpa RAB'} · {p.reportCount} laporan{p.lastReportDate ? ` · terakhir ${dateId(p.lastReportDate)}` : ''}</small>
               </span>
               <span className="t" aria-hidden>
-                <span className="b">
-                  <i style={{ width: w(p.budgetPct) }} />
-                </span>
-                <span className="p">
-                  <i style={{ width: w(p.stagesComplete ? p.progressPct : 0) }} />
-                </span>
+                <span className="b">{(p.budgetPct ?? 0) > 0 ? <i style={{ width: w(p.budgetPct) }} /> : null}</span>
+                <span className="p">{p.stagesComplete && p.progressPct > 0 ? <i style={{ width: w(p.progressPct) }} /> : null}</span>
               </span>
               <span className="v">
                 <span>
