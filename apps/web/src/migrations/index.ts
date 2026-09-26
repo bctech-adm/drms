@@ -19,6 +19,7 @@ import * as migration_20260926_095319_e4_progress_reports from './20260926_09531
 import * as migration_20260926_104606_s2b_attendance_reminders from './20260926_104606_s2b_attendance_reminders';
 import * as migration_20260926_114555_e5_budget_addenda from './20260926_114555_e5_budget_addenda';
 import * as migration_20260926_131136_s3a_e9_hardening from './20260926_131136_s3a_e9_hardening';
+import * as migration_20260926_133934_s3b_data_import from './20260926_133934_s3b_data_import';
 
 export const migrations = [
   {
@@ -125,5 +126,10 @@ export const migrations = [
     up: migration_20260926_131136_s3a_e9_hardening.up,
     down: migration_20260926_131136_s3a_e9_hardening.down,
     name: '20260926_131136_s3a_e9_hardening',
+  },
+  {
+    up: migration_20260926_133934_s3b_data_import.up,
+    down: migration_20260926_133934_s3b_data_import.down,
+    name: '20260926_133934_s3b_data_import',
   },
 ];

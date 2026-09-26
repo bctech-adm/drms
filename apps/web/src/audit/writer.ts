@@ -53,6 +53,8 @@ export const AUDIT_ACTIONS = [
   // E6 S2 (Q-33): the selfieRetention job deleted selfie files past the retention period (one
   // summary row per run, counts only).
   'retention_purge',
+  // S3b / E11: go-live data import (one row per changed master + one summary row per run).
+  'import',
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
