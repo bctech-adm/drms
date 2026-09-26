@@ -66,3 +66,8 @@ export const S2A_ADMIN_VIEWS = {
   addendumNew: { Component: '@/admin/views/Addendum#AddendumNew', path: '/addendum/baru' as const, exact: true, meta: { title: 'Ajukan addendum RAB' } },
   addendumDetail: { Component: '@/admin/views/Addendum#AddendumDetail', path: '/addendum/detail/:id' as const, exact: true, meta: { title: 'Addendum RAB' } },
 }
+
+/** S3e (US-05, S-04): the caller's notifications (bell in the nav, admin.components.beforeNavLinks). */
+export const S3E_ADMIN_VIEWS = {
+  notifications: { Component: '@/admin/views/Notifikasi#NotificationsView', path: '/notifikasi' as const, exact: true, meta: { title: 'Notifikasi' } },
+}

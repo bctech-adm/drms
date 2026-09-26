@@ -25,7 +25,7 @@ export const TeamTodayQuery = z
 export const AttendanceCorrectBody = z
   .object({
     new_time: z.iso.datetime({ offset: true }).meta({ description: 'Corrected time (same local date as the attendance; not in the future).' }),
-    reason: z.string().trim().min(3).max(500).meta({ description: 'Mandatory (T10).' }),
+    reason: z.string({ error: 'Alasan wajib diisi.' }).trim().min(3, 'Alasan wajib diisi, minimal 3 karakter.').max(500, 'Alasan maksimal 500 karakter.').meta({ description: 'Mandatory (T10).' }),
   })
   .strict()
   .meta({ id: 'AttendanceCorrectBody' })

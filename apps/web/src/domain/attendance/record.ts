@@ -7,6 +7,7 @@ import { haversineM, insideGeofence, localDateString, type AttendanceKind } from
 import { getRequestTx } from '@/lib/tx'
 
 import { snapshotOf, type ScheduleSnapshot } from './schedule'
+import { effectiveRadiusM } from './calendar'
 
 /**
  * E6 — the ONE write path of `attendances` (sync items attendance.check_in / check_out / on_behalf,
@@ -127,8 +128,13 @@ async function loadLocation(req: PayloadRequest, loc: Location, field: string): 
   if (!doc) return reject('NOT_FOUND', loc.type === 'project' ? 'Project tidak ditemukan.' : 'Pusat biaya tidak ditemukan.', field)
   if (loc.type === 'project' && doc.status === 'arsip') reject('VALIDATION', 'Project sudah diarsipkan.', field)
   if (loc.type === 'cost_center' && doc.active === false) reject('VALIDATION', 'Pusat biaya sudah dinonaktifkan.', field)
-  if (typeof doc.lat !== 'number' || typeof doc.lng !== 'number' || typeof doc.radiusM !== 'number') {
-    reject('NO_GEOFENCE', `Titik lokasi/radius ${LABEL[loc.type]} belum diisi Admin. Absensi belum bisa dipakai di ${LABEL[loc.type]} ini.`, field)
+  if (typeof doc.lat !== 'number' || typeof doc.lng !== 'number') {
+    reject('NO_GEOFENCE', `Titik lokasi ${LABEL[loc.type]} belum diisi Admin. Absensi belum bisa dipakai di ${LABEL[loc.type]} ini.`, field)
+  }
+  if (typeof doc.radiusM !== 'number') {
+    // S3e (US-01, S-19): a point without its own radius uses the company default radius.
+    const s = (await req.payload.findGlobal({ slug: 'company-settings', depth: 0, overrideAccess: true /* SYSTEM-READ: default geofence radius */, req })) as { defaultGeofenceRadiusM?: number | null }
+    return { ...doc, radiusM: effectiveRadiusM(null, s.defaultGeofenceRadiusM) }
   }
   return doc
 }

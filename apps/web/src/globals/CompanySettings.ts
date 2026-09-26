@@ -52,7 +52,11 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
         validate: (v: unknown) => (typeof v === 'string' && isValidTimeZone(v) ? true : 'Zona waktu IANA tidak valid.'),
         admin: { description: 'Proses server memakai env TZ (cron, tanggal bisnis); ubah keduanya bersamaan.' },
       },
-      intField('defaultGeofenceRadiusM', 'Radius geofence default (m)', 100, 10, 5000),
+      {
+        ...intField('defaultGeofenceRadiusM', 'Radius geofence default (m)', 100, 10, 5000),
+        // S3e (US-01, S-19): used for attendance when a project / cost center has a point but no own radius.
+        admin: { description: 'Dipakai untuk absensi bila project/pusat biaya punya titik lokasi tetapi radiusnya kosong.' },
+      },
       intField('lateReportDays', 'Batas hari laporan progress terlambat', 3, 1, 60),
       {
         type: 'row',
@@ -199,13 +203,42 @@ export const CompanySettings: GlobalConfig = withGlobalAudit(
           },
         ],
       },
+      // S3e (US-05, US-41, S-04): status notifications outside the scheduled reminders. In-app rows are
+      // written in the same transaction as the status change; email goes through the sendEmail queue
+      // (same mailer + SMTP rate guard as the E7 reminders).
+      {
+        type: 'collapsible',
+        label: 'Notifikasi status pengajuan',
+        admin: { initCollapsed: false },
+        fields: [
+          {
+            type: 'row',
+            fields: [
+              {
+                name: 'notifyRequesterStatusEnabled',
+                type: 'checkbox',
+                label: 'Beri tahu pemohon saat diajukan, ditarik, atau dibuat atas namanya (in-app)',
+                defaultValue: true,
+                admin: { description: 'Pemohon lain dan pembuat diberi tahu; pelaku aksi tidak diberi tahu tentang aksinya sendiri.' },
+              },
+              {
+                name: 'approvalEmailEnabled',
+                type: 'checkbox',
+                label: 'Email ke Direktur/Finance saat pengajuan menunggu keputusannya',
+                defaultValue: false,
+                admin: { description: 'Selain notifikasi in-app. Isi email tanpa nominal/nama pemohon. Batas SMTP 30 email/jam per mailbox.' },
+              },
+            ],
+          },
+        ],
+      },
       intField('offlineMaxAgeDays', 'Umur maksimal sesi offline APK (hari)', 30, 1, 30),
       {
         name: 'imageTargets',
         type: 'group',
         label: 'Target resize foto di perangkat (px, sisi terpanjang)',
         fields: [
-          intField('receiptsMaxPx', 'Nota', 2000, 640, 4000),
+          intField('receiptsMaxPx', 'Nota', 1600, 640, 4000),
           intField('selfiesMaxPx', 'Selfie', 720, 320, 2000),
           intField('transferProofsMaxPx', 'Bukti transfer', 1600, 640, 4000),
           intField('progressPhotosMaxPx', 'Foto progress', 1600, 640, 4000),

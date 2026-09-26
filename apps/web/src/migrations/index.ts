@@ -20,6 +20,7 @@ import * as migration_20260926_104606_s2b_attendance_reminders from './20260926_
 import * as migration_20260926_114555_e5_budget_addenda from './20260926_114555_e5_budget_addenda';
 import * as migration_20260926_131136_s3a_e9_hardening from './20260926_131136_s3a_e9_hardening';
 import * as migration_20260926_133934_s3b_data_import from './20260926_133934_s3b_data_import';
+import * as migration_20260926_141606_s3e_uat_gap_fixes from './20260926_141606_s3e_uat_gap_fixes';
 
 export const migrations = [
   {
@@ -131,5 +132,10 @@ export const migrations = [
     up: migration_20260926_133934_s3b_data_import.up,
     down: migration_20260926_133934_s3b_data_import.down,
     name: '20260926_133934_s3b_data_import',
+  },
+  {
+    up: migration_20260926_141606_s3e_uat_gap_fixes.up,
+    down: migration_20260926_141606_s3e_uat_gap_fixes.down,
+    name: '20260926_141606_s3e_uat_gap_fixes'
   },
 ];

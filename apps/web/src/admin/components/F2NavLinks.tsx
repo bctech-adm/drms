@@ -3,14 +3,16 @@ import Link from 'next/link'
 import React from 'react'
 
 import { isStaffOnly, rolesOf } from '@/access/roles'
+import { TRANSFER_QUEUE_WHERE } from '@/domain/expense/types'
 
 /**
  * admin.components.afterNavLinks: entries of the F2 work views with badge counts (US-19 "badge
  * jumlah antrian"). Counts respect the user's read access (overrideAccess:false).
  * F2c: staff-only users get the requester shortcuts instead (own requests, new request, profile
  * signature); the approval/finance views are not linked for them. F2d: "Profil & tanda tangan" for
- * every panel role (Owner signs approvals); the Antrian Transfer badge also counts Reimburse
- * receipts waiting for Finance verification (same view).
+ * every panel role (Owner signs approvals). S3e (S-07): the Antrian Transfer badge counts exactly
+ * the transfer queue of the page title (Reimburse receipts waiting for verification are listed in a
+ * separate section of the same page, not in the badge).
  */
 export async function F2NavLinks({ payload, user }: { payload: Payload; user?: TypedUser }) {
   if (!user) return null
@@ -54,12 +56,7 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
     const [t, l] = await Promise.all([
       payload.count({
         collection: 'expense-requests',
-        where: {
-          or: [
-            { and: [{ type: { equals: 'advance' } }, { status: { equals: 'approved' } }] },
-            { and: [{ type: { equals: 'reimburse' } }, { status: { in: ['approved', 'receipts_verified'] } }] },
-          ],
-        },
+        where: TRANSFER_QUEUE_WHERE, // S3e (S-07): same set as the page title "Antrian Transfer (n)"
         user,
         overrideAccess: false,
       }),
@@ -111,7 +108,8 @@ export async function F2NavLinks({ payload, user }: { payload: Payload; user?: T
         </>
       ) : null}
       {/* F3: reports (Finance/Owner all, PM team) and the global audit log (Owner/Admin/Finance, Q-F3-4) */}
-      {office || roles.includes('pk-pm') ? (
+      {/* S3e (S-23): Admin gets the attendance report (only report besides the audit log) */}
+      {office || roles.includes('pk-pm') || roles.includes('pk-admin') ? (
         <Link href="/admin/laporan" style={link} data-pk-nav-link="laporan">
           Laporan
         </Link>

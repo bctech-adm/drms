@@ -154,9 +154,10 @@ export function v1<B extends z.ZodType | undefined = undefined>(opts: V1Options<
           }
           const parsed = opts.body.safeParse(raw)
           if (!parsed.success) {
-            return problem(400, 'Bad Request', {
-              errors: parsed.error.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
-            })
+            const errors = parsed.error.issues.map((i) => ({ path: i.path.join('.'), message: i.message }))
+            // S3e (S-06): `detail` = the field messages, so a client that shows only `detail` (web
+            // ActionButton, APK snackbar) tells the user WHAT is wrong.
+            return problem(400, 'Bad Request', { detail: bodyErrorDetail(errors), errors })
           }
           body = parsed.data
         }
@@ -236,4 +237,11 @@ export function headOf(endpoint: Endpoint): Endpoint {
       return new Response(null, { status: res.status, statusText: res.statusText, headers: res.headers })
     },
   }
+}
+
+/** S3e (S-06): human `detail` of a body validation error — distinct messages joined, max 3. */
+export function bodyErrorDetail(errors: Array<{ path: string; message: string }>): string {
+  const msgs = [...new Set(errors.map((e) => e.message).filter(Boolean))]
+  if (msgs.length === 0) return 'Data tidak valid.'
+  return msgs.slice(0, 3).join(' ') + (msgs.length > 3 ? ` (+${msgs.length - 3} lainnya)` : '')
 }

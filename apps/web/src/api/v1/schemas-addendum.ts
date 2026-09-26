@@ -8,7 +8,7 @@ import { ADDENDUM_ACTIONS, ADDENDUM_STATUSES, MAX_ADDITION } from '@/domain/adde
  */
 const id = z.number().int().positive()
 const rupiah = z.number().int()
-const reason = z.string().trim().min(3).max(1000)
+const reason = z.string({ error: 'Alasan wajib diisi.' }).trim().min(3, 'Alasan wajib diisi, minimal 3 karakter.').max(1000, 'Alasan maksimal 1000 karakter.')
 
 export const AddendumCreate = z
   .object({

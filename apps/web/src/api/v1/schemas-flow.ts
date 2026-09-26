@@ -9,7 +9,17 @@ const id = z.number().int().positive()
 const rupiah = z.number().int().min(0).max(1e13)
 const rupiahPos = z.number().int().min(1).max(1e13)
 const businessDate = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 'YYYY-MM-DD')
-const reason = z.string().trim().min(3).max(1000)
+// S3e (S-06): specific Indonesian messages (the web shows them as-is; before: generic "Data tidak valid.").
+const reason = z
+  .string({ error: 'Alasan wajib diisi.' })
+  .trim()
+  .min(3, 'Alasan wajib diisi, minimal 3 karakter.')
+  .max(1000, 'Alasan maksimal 1000 karakter.')
+const note = z
+  .string({ error: 'Catatan wajib diisi.' })
+  .trim()
+  .min(3, 'Catatan wajib diisi, minimal 3 karakter.')
+  .max(1000, 'Catatan maksimal 1000 karakter.')
 const qty = z
   .number()
   .positive()
@@ -354,7 +364,7 @@ export const LpjSubmitBody = z
   .strict()
   .meta({ id: 'LpjSubmitBody' })
 
-export const RevisionBody = z.object({ note: reason }).strict().meta({ id: 'LpjRevisionBody' })
+export const RevisionBody = z.object({ note }).strict().meta({ id: 'LpjRevisionBody' })
 
 export const SettleReverseResult = z
   .object({

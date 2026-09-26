@@ -57,7 +57,7 @@ export const meEndpoint = v1({
         receiptRoundingTolerance: s.receiptRoundingTolerance,
         receiptMaxAgeDays: s.receiptMaxAgeDays,
         imageTargets: {
-          receiptsMaxPx: s.imageTargets?.receiptsMaxPx ?? 2000,
+          receiptsMaxPx: s.imageTargets?.receiptsMaxPx ?? 1600,
           selfiesMaxPx: s.imageTargets?.selfiesMaxPx ?? 720,
           transferProofsMaxPx: s.imageTargets?.transferProofsMaxPx ?? 1600,
           progressPhotosMaxPx: s.imageTargets?.progressPhotosMaxPx ?? 1600,

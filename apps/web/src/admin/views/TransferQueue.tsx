@@ -3,6 +3,7 @@ import React from 'react'
 
 import { voidableTransfers } from '@/domain/cash/book'
 import { transferQueue } from '@/domain/expense/queues'
+import { approvedByCaller } from '@/domain/expense/transfers'
 import { withReqTransaction } from '@/lib/system-tx'
 
 import { ReasonAction } from '../components/kas/ReasonAction'
@@ -19,7 +20,10 @@ import { Empty, Forbidden, Shell, allowed, badge, docLink, num, rp, table, td, t
 export async function TransferQueue(props: AdminViewServerProps) {
   const req = props.initPageResult.req
   if (!allowed(req, ['pk-finance', 'pk-owner'])) return <Forbidden props={props} title="Antrian Transfer" roles={['pk-finance', 'pk-owner']} />
-  const { items, review, done } = await withReqTransaction(req, async () => ({ items: await transferQueue(req), review: await loadReimburseReview(req), done: await voidableTransfers(req) }))
+  const { items, review, done, mine } = await withReqTransaction(req, async () => {
+    const q = await transferQueue(req)
+    return { items: q, review: await loadReimburseReview(req), done: await voidableTransfers(req), mine: await approvedByCaller(req, q.map((x) => x.id)) }
+  })
   const canTransfer = allowed(req, ['pk-finance'])
   const accounts = canTransfer
     ? (
@@ -63,6 +67,12 @@ export async function TransferQueue(props: AdminViewServerProps) {
                   <tr>
                     <td style={td} />
                     <td style={td} colSpan={5}>
+                      {mine.has(r.id) ? (
+                        // ADR 0013 O-2: allowed (audited), but made visible before the money moves.
+                        <div role="note" data-pk-self-approved={r.id} style={{ margin: '0 0 6px', padding: '6px 8px', borderLeft: '3px solid var(--pk-tone-warn)', background: 'var(--theme-elevation-50)', fontSize: 13 }}>
+                          <span style={badge('warn')}>Perhatian</span> <strong>Anda juga yang menyetujui</strong> pengajuan ini. Bila ada Finance lain, sebaiknya transfer dicatat oleh orang lain (pemisahan tugas).
+                        </div>
+                      ) : null}
                       <MoneyForm
                         url={`/api/v1/expense-requests/${r.id}/transfer`}
                         submitLabel="Catat transfer"

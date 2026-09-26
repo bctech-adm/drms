@@ -73,6 +73,9 @@ describe('attendance calendar classification', () => {
     expect(geofenceError({ lat: null, lng: null, radiusM: null })).toBeNull()
     expect(geofenceError({ lat: -2.21, lng: 113.91, radiusM: 150 })).toBeNull()
     expect(geofenceError({ lat: -2.21, lng: null, radiusM: 150 })).toMatch(/sekaligus/)
+    // S3e (US-01): radius optional (company default), but only with a point
+    expect(geofenceError({ lat: -2.21, lng: 113.91, radiusM: null })).toBeNull()
+    expect(geofenceError({ lat: null, lng: null, radiusM: 150 })).toMatch(/titik lokasi/)
     expect(geofenceError({ lat: 95, lng: 113.91, radiusM: 150 })).toMatch(/Latitude/)
     expect(geofenceError({ lat: -2.21, lng: 190, radiusM: 150 })).toMatch(/Longitude/)
     expect(geofenceError({ lat: -2.21, lng: 113.91, radiusM: 5 })).toMatch(/Radius/)

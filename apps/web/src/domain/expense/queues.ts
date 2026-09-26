@@ -6,7 +6,9 @@ import { actorContext, ids, projectCommitted, settings, type RequestDoc } from '
 import { isDecisionSnapshot } from './decision'
 import { budgetImpact } from './rules'
 import { allowedActions } from './state'
-import { REQUEST_TYPE_LABELS, statusLabel } from './types'
+import { REQUEST_TYPE_LABELS, statusLabel, TRANSFER_QUEUE_WHERE } from './types'
+
+export { TRANSFER_QUEUE_WHERE }
 
 /**
  * Work queues of the F2 admin views and the APK (US-19 transfer queue, US-21 LPJ verification,
@@ -94,19 +96,9 @@ export async function approvalInbox(req: PayloadRequest) {
   return { items: out, budgetWarnPct: warnPct }
 }
 
-/** US-19: Uang Muka "Disetujui (Antri Transfer)" + Reimburse "Nota Terverifikasi", by needed date. */
+/** US-19: transfer queue by needed date. */
 export async function transferQueue(req: PayloadRequest) {
-  const docs = await findVisible(
-    req,
-    {
-      or: [
-        { and: [{ type: { equals: 'advance' } }, { status: { equals: 'approved' } }] },
-        { and: [{ type: { equals: 'reimburse' } }, { status: { equals: 'receipts_verified' } }] },
-      ],
-    },
-    'neededDate',
-    500,
-  )
+  const docs = await findVisible(req, TRANSFER_QUEUE_WHERE, 'neededDate', 500)
   const items = []
   for (const d of docs) items.push({ ...base(d), bank: d.bankSnapshot ?? null, flags: await flagCounts(req, d.id) })
   // needed date ascending, requests without a date last
@@ -117,12 +109,7 @@ export async function transferQueue(req: PayloadRequest) {
 export async function transferQueueCount(req: PayloadRequest): Promise<number> {
   const r = await req.payload.count({
     collection: 'expense-requests',
-    where: {
-      or: [
-        { and: [{ type: { equals: 'advance' } }, { status: { equals: 'approved' } }] },
-        { and: [{ type: { equals: 'reimburse' } }, { status: { equals: 'receipts_verified' } }] },
-      ],
-    },
+    where: TRANSFER_QUEUE_WHERE,
     user: req.user,
     overrideAccess: false,
     req,

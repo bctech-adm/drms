@@ -86,7 +86,7 @@ export async function ReportView(props: AdminViewServerProps) {
   const def = reportByCode(code)
   if (!def || def.code === 'audit-log') return <Shell props={props} title="Laporan tidak ditemukan"><p><Link href="/admin/laporan">← Daftar laporan</Link></p></Shell>
   if (!hasRole(req, ...def.roles)) return <Denied props={props} def={def} />
-  const scope = await officeScope(req)
+  const scope = def.scope ? await def.scope(req) : await officeScope(req)
   if (scope.kind === 'none') return <Denied props={props} def={def} />
   return <ReportPage props={props} def={def} scope={scope} base={`/admin/laporan/${def.code}`} />
 }

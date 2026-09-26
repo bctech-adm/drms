@@ -25,6 +25,7 @@ import {
   spending,
   STAFF_ACTION_STATUSES,
   teamMonth,
+  teamWaiting,
   transferQueueSummary,
   transferQueueTop,
   visibleAccounts,
@@ -196,7 +197,7 @@ export async function pmDashboard(req: PayloadRequest) {
   const ctx = await reportContext(req)
   const scope = await teamScope(req)
   const from = addMonths(ctx.month, -5)
-  const [mine, month, lpjRows, projects, costCenters, latest, trend, statuses, categories] = await inSequence(
+  const [mine, month, lpjRows, projects, costCenters, latest, trend, statuses, categories, waiting] = await inSequence(
     () => waitingForMe(req),
     () => teamMonth(req, scope, ctx.month),
     () => advancesWithoutLpj(req, scope),
@@ -206,12 +207,16 @@ export async function pmDashboard(req: PayloadRequest) {
     () => requestTrendMonthly(req, scope, from, ctx.month),
     () => requestStatusCounts(req, scope),
     () => categoryMix(req, scope, firstDay(from), ctx.today),
+    () => teamWaiting(req, scope),
   )
   return {
     asOf: ctx.today,
     month: ctx.month,
     hasScope: scope.kind === 'team' && (scope.projects.length > 0 || scope.costCenters.length > 0),
+    /** ADR 0013: always 0 for requests under the Direktur → Finance flow (PM never decides); kept for API compatibility. */
     waitingForMe: mine.count,
+    /** S3e (US-17, S-01): team requests waiting for the Direktur / Finance (monitoring, oldest first). */
+    teamWaiting: waiting,
     teamMonth: month,
     lpj: { withoutLpj: lpjRows.length, overdue: lpjRows.filter((r) => r.overdue).length, lpjDueDays: ctx.lpjDueDays },
     projects,

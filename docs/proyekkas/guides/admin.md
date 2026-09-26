@@ -63,6 +63,10 @@ Hal penting yang harus Anda nyalakan/atur sebelum go-live:
 | **Versi APK minimum / terbaru, URL unduh APK** | Isi saat rilis APK baru (minimum yang terlalu tinggi mengunci semua HP) |
 | **Toleransi pembulatan nota per baris (Rp)** | 1.000 |
 | **Pengingat terjadwal**: Pengingat aktif, Jam kirim, batas hari, ambang anggaran, Juga kirim email | Sesuai kesepakatan |
+| **Notifikasi status pengajuan → Beri tahu pemohon saat diajukan, ditarik, atau dibuat atas namanya** | Nyala (default) |
+| **Notifikasi status pengajuan → Email ke Direktur/Finance saat pengajuan menunggu keputusannya** | Default mati (mengikuti "Juga kirim email" saat upgrade); nyalakan setelah alamat email pengguna benar. Batas SMTP 30 email/jam |
+| **Radius geofence default (m)** | 100 — dipakai untuk lokasi yang punya titik tetapi radiusnya kosong |
+| **Target resize foto di perangkat → Nota** | 1600 px (spesifikasi §9) |
 | Nama, Kode singkat, Logo, Kop PDF | Data perusahaan |
 
 ![TODO screenshot: Setting perusahaan bagian absensi dan pengingat](img/admin-setting.png)
@@ -71,14 +75,19 @@ Hal penting yang harus Anda nyalakan/atur sebelum go-live:
 
 - **Absensi → Jadwal & hari libur:** jadwal default (08.00–17.00, toleransi 15 menit, Senin–Sabtu), jadwal per
   karyawan, **hari libur**, dan **Geofence pusat biaya** (Latitude, Longitude, Radius, tombol **Cek di peta ↗**).
-- Titik & radius **project** diisi di **Proyek → Project**. Lokasi tanpa titik tidak bisa dipakai absen.
+- Titik & radius **project** diisi di **Proyek → Project**. Lokasi tanpa titik tidak bisa dipakai absen; titik tanpa
+  radius memakai **Radius geofence default** (Setting perusahaan). Server menambah toleransi akurasi GPS HP (maks.
+  50 m) ke radius.
+- **Laporan → Laporan Absensi**: Admin bisa melihat dan mengunduh (CSV/Excel) untuk semua karyawan.
 - **Koreksi jam** karyawan: **Absensi → Rekap bulanan** → **Koreksi jam masuk/pulang** + alasan.
 - Mengabsenkan karyawan tanpa HP hanya bisa oleh PM dari APK.
 
 ## 8. Pengajuan atas nama karyawan
 
 **+ Buat pengajuan** → **Diajukan Oleh** = karyawan → rekening milik karyawan itu → isi baris (& nota untuk
-Reimburse) → **Kirim pengajuan**. Anda tercatat sebagai "Dibuat Oleh". Beri tahu karyawan secara langsung.
+Reimburse) → **Kirim pengajuan**. Anda tercatat sebagai "Dibuat Oleh". Daftar **Rekening tujuan** hanya berisi
+rekening pemohon; bila dikosongkan, dipakai rekening default pemohon pertama. Karyawan yang punya akun menerima
+notifikasi "Pengajuan atas nama Anda" (dan saat diajukan/ditarik); karyawan tanpa akun tetap diberi tahu langsung.
 
 ## 9. Audit Log
 

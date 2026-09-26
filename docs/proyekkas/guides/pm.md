@@ -11,8 +11,10 @@ Anda juga bisa mengajukan dana untuk diri sendiri (lihat [panduan Staff](staff.m
 
 - **APK:** tab **Pengajuan** → **Tim**. Tertulis "Pantauan tim — hanya lihat". Buka untuk melihat status dan
   **Giliran** (Direktur atau Finance). Tidak ada tombol Setujui/Tolak — itu memang disengaja.
-- **Web:** Beranda (kartu pengajuan tim, LPJ tim, realisasi anggaran) dan menu **Keuangan → Pengajuan biaya**.
-  Kartu 'Menunggu "Diketahui" saya' di Beranda web selalu kosong; abaikan.
+- **Web:** Beranda → kartu **Pengajuan tim menunggu keputusan** (jumlah yang menunggu **Direktur** dan **Finance**,
+  umur tertua) dan tabel di bawahnya (nomor, pemohon, project, **Menunggu** Direktur/Finance, lama dalam hari,
+  terlama dulu). Juga kartu pengajuan tim bulan ini, LPJ tim, realisasi anggaran, dan menu **Keuangan → Pengajuan
+  biaya**. Buka pengajuan untuk melihat baris, foto nota, dan flag per baris (bagian **Rincian untuk pemeriksa**).
 - Anda hanya melihat project/pusat biaya yang Anda pegang.
 
 ## 2. Laporan progress harian (APK)
@@ -67,3 +69,4 @@ Butuh internet. Hanya untuk project yang Anda pegang dan sudah punya RAB.
 - Web **Laporan**: Anggaran Project, Pengeluaran per Kategori, Rekap Pengajuan, Kelengkapan Nota/LPJ, Biaya per
   Kendaraan, Laporan Absensi — untuk project tim Anda; unduh Excel/CSV/PDF.
 - Pengingat otomatis (lonceng): project Anda belum ada laporan progress beberapa hari, atau anggaran melewati ambang.
+  Di web, lonceng **Notifikasi** ada di atas menu kiri (angka = belum dibaca).

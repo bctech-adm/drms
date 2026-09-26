@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **S3 track E — Fase 1 UAT gap fixes** (`apps/web`, branch `feat/s3e-uat-gap-fixes`; S-ids of
+  `docs/proyekkas/uat/fase1/README.md`):
+  - S-01 PM home: "Pengajuan tim menunggu keputusan" (Direktur / Finance) instead of the empty "Diketahui saya" card;
+    `GET /api/v1/dashboard/pm` adds `teamWaiting`.
+  - S-03 web bank account picker filtered to the requesters' active accounts; empty = first requester's default.
+  - S-04 in-app notifications on submit / withdraw / created on behalf; optional approval email to the deciding
+    Direktur/Finance (sendEmail queue); web notification bell + `/admin/notifikasi`. Settings
+    `notifyRequesterStatusEnabled` (on), `approvalEmailEnabled` (off, upgrade copies `reminderEmailEnabled`).
+  - S-05 Persetujuan + request panel show lines, receipt photos and per-line flags to deciders; `approvals.openFlags`
+    = open flags of both levels.
+  - S-06 reject/revision reason: client min length, server detail "Alasan wajib diisi, minimal 3 karakter.".
+  - S-07 Antrian Transfer badge = page count. S-08 LPJ "Tandai flag diperiksa". S-29 "Anda juga yang menyetujui".
+  - S-19 default geofence radius for points without radius (server + masters). S-23 Admin attendance report export.
+  - S-24 receipts ≤ 1600 px, logo ≤ 1024 px, 50 MP / 2 MB caps. S-26 resubmit copies receipts.
+  - Migration `20260926_141606_s3e_uat_gap_fixes` (additive, `company_settings`).
 - **S3 web A — E9 hardening F6** (`apps/web`, fase1-golive §E9; branch `feat/s3a-e9-hardening`):
   - Signed, time-limited media URLs (ADR 0004 §4b): `GET /api/v1/media/{collection}/{id}/signed-url` mints a 5-minute
     HMAC-SHA256 URL of the file endpoint (keys `MEDIA_URL_KEYS[_FILE]` with rotation, default derived from

@@ -379,7 +379,7 @@ export function HolidayAdd({ year }: { year: string }) {
 
 const numOrNull = (v: string) => (v.trim() === '' ? null : Number(v.replace(',', '.')))
 
-/** Cost-center geofence (PATCH /api/cost-centers/{id}; Admin/Owner). All three values or none. */
+/** Cost-center geofence (PATCH /api/cost-centers/{id}; Admin/Owner). Point = lat + lng; empty radius = company default (S3e). */
 export function GeofenceForm({ costCenterId, name, lat, lng, radiusM, defaultRadius, disabled }: { costCenterId: number; name: string; lat: number | null; lng: number | null; radiusM: number | null; defaultRadius: number; disabled?: boolean }) {
   const [v, setV] = useState({ lat: lat === null ? '' : String(lat), lng: lng === null ? '' : String(lng), r: radiusM === null ? '' : String(radiusM) })
   const [err, setErr] = useState<string | null>(null)
@@ -405,7 +405,7 @@ export function GeofenceForm({ costCenterId, name, lat, lng, radiusM, defaultRad
         [
           ['lat', 'Latitude', 'mis. -2.21'],
           ['lng', 'Longitude', 'mis. 113.91'],
-          ['r', 'Radius (m)', `mis. ${defaultRadius}`],
+          ['r', 'Radius (m)', `kosong = ${defaultRadius}`],
         ] as const
       ).map(([k, label, ph]) => (
         <div key={k} className="pk-fld">

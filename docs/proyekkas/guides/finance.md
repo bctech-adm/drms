@@ -14,8 +14,12 @@ Badge merah di menu = jumlah pekerjaan menunggu.
 Urutan: **Direktur** menyetujui dulu ("Diketahui"), baru pengajuan masuk ke Anda.
 
 - **Web:** **Persetujuan** → periksa Jenis, Grand total, **Dampak anggaran** (merah = anggaran project sesudah
-  disetujui > 85%), **Flag** → **Setujui** atau **Tolak** (alasan wajib, minimal 3 huruf). Untuk melihat baris
-  item dan nota, buka nomor pengajuannya (flag rinci: **Keuangan → Flag validasi nota**).
+  disetujui > 85%), **Flag** → buka **Rincian baris, nota & flag** di bawah baris pengajuan (tiap baris item dengan
+  foto nota — klik untuk ukuran penuh —, total nota & selisih per baris, flag per baris) → **Setujui** atau
+  **Tolak** (alasan wajib, minimal 3 huruf; alasan yang terlalu pendek langsung ditolak dengan pesan "Alasan wajib
+  diisi, minimal 3 karakter."). Rincian yang sama ada di halaman detail pengajuan.
+- Angka **Flag** = flag **terbuka** (peringatan + info). Angka inilah yang tersimpan bersama keputusan Anda; flag
+  yang sudah "diperiksa" tidak dihitung.
 - **APK:** **Menunggu Persetujuan** → buka → **Setujui** → pilih **Pakai tanda tangan profil** atau **Tanda tangan
   di layar** → Konfirmasi.
 - Anda tidak bisa memutuskan pengajuan yang Anda buat/ajukan sendiri; bila Anda satu-satunya Finance, posisi
@@ -36,9 +40,14 @@ kegiatan*. Flag tidak menghalangi, tetapi wajib diperiksa.
 
 ## 3. Mencatat transfer
 
+Angka di menu **Antrian Transfer** = jumlah **Siap ditransfer** (sama dengan judul halaman); Reimburse yang notanya
+belum diverifikasi ada di bagian atas halaman tetapi tidak dihitung di angka menu.
+
 **Antrian Transfer** → **Siap ditransfer** (urut tanggal dibutuhkan) → **Catat transfer**:
 Akun kas, Tanggal (kosong = hari ini), **No. referensi bank**, **Bukti** (foto/PDF) → simpan.
 - Nominal otomatis = nominal disetujui; rekening tujuan dari pengajuan.
+- Kotak **"Anda juga yang menyetujui"**: Anda sendiri yang memberi Approval pada pengajuan ini. Boleh tetap
+  dicatat (tercatat di audit), tetapi bila ada Finance lain sebaiknya transfer dicatat orang lain.
 - Kas keluar (KK) tercatat otomatis; status **Ditransfer**.
 - Salah catat? **Void transfer** (di bagian "Transfer tercatat — dapat dibatalkan" atau di detail pengajuan) + alasan:
   KK dibalik, pengajuan kembali ke antrian.
@@ -46,7 +55,8 @@ Akun kas, Tanggal (kosong = hari ini), **No. referensi bank**, **Bukti** (foto/P
 ## 4. LPJ Uang Muka
 
 **Verifikasi LPJ** → **LPJ diajukan**:
-1. Periksa Ditransfer / Nota / Selisih. Tiap nota **Valid**/**Tolak**.
+1. Periksa Ditransfer / Nota / Selisih. Tiap nota **Valid**/**Tolak**. Tiap flag terbuka (mis. *Nota terlalu
+   lama*): **Tandai flag diperiksa** (catatan opsional, tercatat di Riwayat/Audit).
 2. **Verifikasi LPJ**, atau **Minta revisi** dengan catatan untuk pemohon.
 3. Bagian **Menunggu penyelesaian selisih**:
    - Sisa dana → **Catat pengembalian & selesaikan** (kas masuk "Pengembalian LPJ").
