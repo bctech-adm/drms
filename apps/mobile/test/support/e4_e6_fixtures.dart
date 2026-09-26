@@ -237,3 +237,57 @@ Map<String, dynamic> teamTodayJson() => {
     },
   ],
 };
+
+/// E5 addendum (fictional). [step] only on inbox items.
+Map<String, dynamic> addendumJson({
+  int id = 61,
+  String status = 'pending_ack',
+  String? step = 'acknowledge',
+  List<String> actions = const ['acknowledge', 'reject'],
+}) => {
+  'id': id,
+  'uuid': null,
+  'docNo': 'ADD/2609/0003',
+  'status': status,
+  'statusLabel': status == 'pending_ack' ? 'Menunggu Direktur' : 'Draft',
+  'stepLabel': status == 'pending_ack' ? 'Direktur' : null,
+  'project': {'id': 7, 'code': 'P-07', 'name': 'Gudang Contoh', 'budget': 1500000000},
+  'addition': 250000000,
+  'reason': 'Tambahan pondasi karena tanah lunak',
+  'budgetAtSubmit': 1500000000,
+  'oldBudget': null,
+  'newBudget': null,
+  'createdBy': {'id': 5, 'name': 'Doni Pratama'},
+  'submittedAt': '2026-09-26T03:00:00Z',
+  'decidedAt': null,
+  'rejectReason': null,
+  'cancelReason': null,
+  'currentLevel': null,
+  'source': 'apk',
+  'createdAt': '2026-09-26T02:50:00Z',
+  'step': ?step,
+  'budget': {
+    'current': 1500000000,
+    'committed': 780000000,
+    'afterAddition': 1750000000,
+    'committedPctBefore': 52,
+    'committedPctAfter': 44.57,
+  },
+  'allowedActions': actions,
+  'approvalRule': null,
+  'decisions': [
+    if (status != 'draft' && status != 'pending_ack')
+      {
+        'id': 1,
+        'position': 'diketahui',
+        'level': 0,
+        'actor': {'id': 2, 'name': 'Direktur Contoh'},
+        'decision': 'acknowledged',
+        'reason': null,
+        'decidedAt': '2026-09-26T04:00:00Z',
+        'budgetPctBefore': 52,
+        'budgetPctAfter': 44.57,
+        'signatureSource': 'profile',
+      },
+  ],
+};

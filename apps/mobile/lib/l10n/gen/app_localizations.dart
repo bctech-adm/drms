@@ -2994,6 +2994,180 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Versi HP dikirim sebagai edit.'**
   String get progressResent;
+
+  /// No description provided for @addendumTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Addendum RAB'**
+  String get addendumTitle;
+
+  /// No description provided for @addendumInboxTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Addendum RAB menunggu Anda ({count})'**
+  String addendumInboxTitle(int count);
+
+  /// No description provided for @addendumWaitingCount.
+  ///
+  /// In id, this message translates to:
+  /// **'{count} menunggu keputusan Anda'**
+  String addendumWaitingCount(int count);
+
+  /// No description provided for @addendumNew.
+  ///
+  /// In id, this message translates to:
+  /// **'Addendum baru'**
+  String get addendumNew;
+
+  /// No description provided for @addendumNewTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Ajukan addendum RAB'**
+  String get addendumNewTitle;
+
+  /// No description provided for @addendumEmpty.
+  ///
+  /// In id, this message translates to:
+  /// **'Belum ada addendum RAB.'**
+  String get addendumEmpty;
+
+  /// No description provided for @addendumAddition.
+  ///
+  /// In id, this message translates to:
+  /// **'Tambahan RAB'**
+  String get addendumAddition;
+
+  /// No description provided for @addendumReason.
+  ///
+  /// In id, this message translates to:
+  /// **'Alasan'**
+  String get addendumReason;
+
+  /// No description provided for @addendumSubmit.
+  ///
+  /// In id, this message translates to:
+  /// **'Ajukan'**
+  String get addendumSubmit;
+
+  /// No description provided for @addendumSaveDraft.
+  ///
+  /// In id, this message translates to:
+  /// **'Simpan sebagai draft'**
+  String get addendumSaveDraft;
+
+  /// No description provided for @addendumSubmitted.
+  ///
+  /// In id, this message translates to:
+  /// **'Addendum diajukan. Menunggu Direktur.'**
+  String get addendumSubmitted;
+
+  /// No description provided for @addendumSavedDraft.
+  ///
+  /// In id, this message translates to:
+  /// **'Draft addendum tersimpan.'**
+  String get addendumSavedDraft;
+
+  /// No description provided for @addendumRabBeforeAfter.
+  ///
+  /// In id, this message translates to:
+  /// **'RAB {before} → {after}'**
+  String addendumRabBeforeAfter(String before, String after);
+
+  /// No description provided for @addendumCommittedPct.
+  ///
+  /// In id, this message translates to:
+  /// **'Komitmen terhadap RAB {before} → {after}'**
+  String addendumCommittedPct(String before, String after);
+
+  /// No description provided for @addendumWaiting.
+  ///
+  /// In id, this message translates to:
+  /// **'Menunggu: {step}'**
+  String addendumWaiting(String step);
+
+  /// No description provided for @addendumRejectedBecause.
+  ///
+  /// In id, this message translates to:
+  /// **'Ditolak: {reason}'**
+  String addendumRejectedBecause(String reason);
+
+  /// No description provided for @addendumCancelledBecause.
+  ///
+  /// In id, this message translates to:
+  /// **'Dibatalkan: {reason}'**
+  String addendumCancelledBecause(String reason);
+
+  /// No description provided for @addendumBy.
+  ///
+  /// In id, this message translates to:
+  /// **'Diajukan oleh {name}'**
+  String addendumBy(String name);
+
+  /// No description provided for @addendumSubmittedAt.
+  ///
+  /// In id, this message translates to:
+  /// **'diajukan {time}'**
+  String addendumSubmittedAt(String time);
+
+  /// No description provided for @addendumTimeline.
+  ///
+  /// In id, this message translates to:
+  /// **'Riwayat keputusan'**
+  String get addendumTimeline;
+
+  /// No description provided for @addendumDecAck.
+  ///
+  /// In id, this message translates to:
+  /// **'Disetujui Direktur'**
+  String get addendumDecAck;
+
+  /// No description provided for @addendumDecApproved.
+  ///
+  /// In id, this message translates to:
+  /// **'Disetujui Finance'**
+  String get addendumDecApproved;
+
+  /// No description provided for @addendumDecRejected.
+  ///
+  /// In id, this message translates to:
+  /// **'Ditolak'**
+  String get addendumDecRejected;
+
+  /// No description provided for @addendumAcknowledge.
+  ///
+  /// In id, this message translates to:
+  /// **'Setujui (Direktur)'**
+  String get addendumAcknowledge;
+
+  /// No description provided for @addendumApprove.
+  ///
+  /// In id, this message translates to:
+  /// **'Setujui (Finance)'**
+  String get addendumApprove;
+
+  /// No description provided for @addendumReject.
+  ///
+  /// In id, this message translates to:
+  /// **'Tolak'**
+  String get addendumReject;
+
+  /// No description provided for @addendumCancel.
+  ///
+  /// In id, this message translates to:
+  /// **'Batalkan addendum'**
+  String get addendumCancel;
+
+  /// No description provided for @addendumConfirmBody.
+  ///
+  /// In id, this message translates to:
+  /// **'Keputusan dicatat dengan nama dan tanda tangan profil Anda. Setelah persetujuan terakhir, RAB project bertambah.'**
+  String get addendumConfirmBody;
+
+  /// No description provided for @addendumDone.
+  ///
+  /// In id, this message translates to:
+  /// **'Tersimpan.'**
+  String get addendumDone;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

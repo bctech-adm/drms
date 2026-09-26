@@ -9,6 +9,8 @@ import '../../../l10n/gen/app_localizations.dart';
 import '../../../shared/widgets/async_body.dart';
 import '../../expense/domain/expense_request.dart';
 import '../../expense/presentation/request_detail_screen.dart' show pct;
+import '../../addendum/presentation/addendum_providers.dart';
+import '../../addendum/presentation/addendum_screens.dart';
 import '../application/inbox_providers.dart';
 
 /// Inbox label of the caller's step: the server's `stepLabel` (E1) wins; older servers get the local text.
@@ -20,10 +22,7 @@ String inboxStepLabel(AppLocalizations t, InboxItem it) {
 }
 
 /// Direktur/Finance inbox (ADR 0013) with budget impact (red above the warn %, US-26) and open flags (US-59).
-///
-/// TODO(E5-APK): approve/reject budget addenda (`budget-addenda`, docType `budget_addendum`, US-18/30) here once
-/// the E5 backend is on develop — as of develop 63c4fb6 the API contract has no addendum endpoints and
-/// `/approvals/inbox` returns expense requests only (checked 2026-09-26, branch feat/mobile-s2-progress-attendance).
+/// E5: budget addenda waiting for the caller are listed above the expense requests ([AddendumInboxSection]).
 class InboxScreen extends ConsumerWidget {
   const InboxScreen({super.key});
 
@@ -33,13 +32,18 @@ class InboxScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(t.inboxTitle)),
       body: RefreshIndicator(
-        onRefresh: () => ref.refresh(inboxProvider.future),
+        onRefresh: () {
+          ref.invalidate(addendumInboxProvider);
+          return ref.refresh(inboxProvider.future);
+        },
         child: AsyncBody(
           value: ref.watch(inboxProvider),
           onRetry: () => ref.invalidate(inboxProvider),
           data: (page) => page.items.isEmpty
               ? ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                   children: [
+                    const AddendumInboxSection(),
                     Padding(
                       padding: const EdgeInsets.all(32),
                       child: Column(
@@ -54,8 +58,8 @@ class InboxScreen extends ConsumerWidget {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-                  itemCount: page.items.length,
-                  itemBuilder: (_, i) => InboxCard(item: page.items[i]),
+                  itemCount: page.items.length + 1,
+                  itemBuilder: (_, i) => i == 0 ? const AddendumInboxSection() : InboxCard(item: page.items[i - 1]),
                 ),
         ),
       ),

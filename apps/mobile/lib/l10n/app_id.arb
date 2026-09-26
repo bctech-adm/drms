@@ -980,5 +980,103 @@
   "progressServerVersion": "Server",
   "progressMyVersion": "HP ini",
   "progressUsedServer": "Versi server dipakai; salinan di HP dihapus.",
-  "progressResent": "Versi HP dikirim sebagai edit."
+  "progressResent": "Versi HP dikirim sebagai edit.",
+  "addendumTitle": "Addendum RAB",
+  "addendumInboxTitle": "Addendum RAB menunggu Anda ({count})",
+  "@addendumInboxTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addendumWaitingCount": "{count} menunggu keputusan Anda",
+  "@addendumWaitingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addendumNew": "Addendum baru",
+  "addendumNewTitle": "Ajukan addendum RAB",
+  "addendumEmpty": "Belum ada addendum RAB.",
+  "addendumAddition": "Tambahan RAB",
+  "addendumReason": "Alasan",
+  "addendumSubmit": "Ajukan",
+  "addendumSaveDraft": "Simpan sebagai draft",
+  "addendumSubmitted": "Addendum diajukan. Menunggu Direktur.",
+  "addendumSavedDraft": "Draft addendum tersimpan.",
+  "addendumRabBeforeAfter": "RAB {before} → {after}",
+  "@addendumRabBeforeAfter": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumCommittedPct": "Komitmen terhadap RAB {before} → {after}",
+  "@addendumCommittedPct": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumWaiting": "Menunggu: {step}",
+  "@addendumWaiting": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumRejectedBecause": "Ditolak: {reason}",
+  "@addendumRejectedBecause": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumCancelledBecause": "Dibatalkan: {reason}",
+  "@addendumCancelledBecause": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumBy": "Diajukan oleh {name}",
+  "@addendumBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumSubmittedAt": "diajukan {time}",
+  "@addendumSubmittedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "addendumTimeline": "Riwayat keputusan",
+  "addendumDecAck": "Disetujui Direktur",
+  "addendumDecApproved": "Disetujui Finance",
+  "addendumDecRejected": "Ditolak",
+  "addendumAcknowledge": "Setujui (Direktur)",
+  "addendumApprove": "Setujui (Finance)",
+  "addendumReject": "Tolak",
+  "addendumCancel": "Batalkan addendum",
+  "addendumConfirmBody": "Keputusan dicatat dengan nama dan tanda tangan profil Anda. Setelah persetujuan terakhir, RAB project bertambah.",
+  "addendumDone": "Tersimpan."
 }

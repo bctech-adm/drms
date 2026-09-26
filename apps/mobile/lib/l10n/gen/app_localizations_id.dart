@@ -1600,4 +1600,110 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get progressResent => 'Versi HP dikirim sebagai edit.';
+
+  @override
+  String get addendumTitle => 'Addendum RAB';
+
+  @override
+  String addendumInboxTitle(int count) {
+    return 'Addendum RAB menunggu Anda ($count)';
+  }
+
+  @override
+  String addendumWaitingCount(int count) {
+    return '$count menunggu keputusan Anda';
+  }
+
+  @override
+  String get addendumNew => 'Addendum baru';
+
+  @override
+  String get addendumNewTitle => 'Ajukan addendum RAB';
+
+  @override
+  String get addendumEmpty => 'Belum ada addendum RAB.';
+
+  @override
+  String get addendumAddition => 'Tambahan RAB';
+
+  @override
+  String get addendumReason => 'Alasan';
+
+  @override
+  String get addendumSubmit => 'Ajukan';
+
+  @override
+  String get addendumSaveDraft => 'Simpan sebagai draft';
+
+  @override
+  String get addendumSubmitted => 'Addendum diajukan. Menunggu Direktur.';
+
+  @override
+  String get addendumSavedDraft => 'Draft addendum tersimpan.';
+
+  @override
+  String addendumRabBeforeAfter(String before, String after) {
+    return 'RAB $before → $after';
+  }
+
+  @override
+  String addendumCommittedPct(String before, String after) {
+    return 'Komitmen terhadap RAB $before → $after';
+  }
+
+  @override
+  String addendumWaiting(String step) {
+    return 'Menunggu: $step';
+  }
+
+  @override
+  String addendumRejectedBecause(String reason) {
+    return 'Ditolak: $reason';
+  }
+
+  @override
+  String addendumCancelledBecause(String reason) {
+    return 'Dibatalkan: $reason';
+  }
+
+  @override
+  String addendumBy(String name) {
+    return 'Diajukan oleh $name';
+  }
+
+  @override
+  String addendumSubmittedAt(String time) {
+    return 'diajukan $time';
+  }
+
+  @override
+  String get addendumTimeline => 'Riwayat keputusan';
+
+  @override
+  String get addendumDecAck => 'Disetujui Direktur';
+
+  @override
+  String get addendumDecApproved => 'Disetujui Finance';
+
+  @override
+  String get addendumDecRejected => 'Ditolak';
+
+  @override
+  String get addendumAcknowledge => 'Setujui (Direktur)';
+
+  @override
+  String get addendumApprove => 'Setujui (Finance)';
+
+  @override
+  String get addendumReject => 'Tolak';
+
+  @override
+  String get addendumCancel => 'Batalkan addendum';
+
+  @override
+  String get addendumConfirmBody =>
+      'Keputusan dicatat dengan nama dan tanda tangan profil Anda. Setelah persetujuan terakhir, RAB project bertambah.';
+
+  @override
+  String get addendumDone => 'Tersimpan.';
 }

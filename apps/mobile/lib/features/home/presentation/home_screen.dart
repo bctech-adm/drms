@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../../shared/widgets/big_action_button.dart';
+import '../../addendum/presentation/addendum_providers.dart';
 import '../../app_config/application/app_config_providers.dart';
 import '../../app_config/domain/app_config.dart';
 import '../../approvals/application/inbox_providers.dart';
@@ -31,7 +32,9 @@ class HomeScreen extends ConsumerWidget {
     final kind = profile.homeKind;
     final attendanceOn = ref.watch(appConfigProvider).value?.syncAttendance ?? false;
     final openProgress = profile.canReadProgress ? (ref.watch(openProgressDraftsProvider).value?.length ?? 0) : 0;
-    final inboxCount = profile.hasApprovalInbox ? ref.watch(inboxProvider).value?.items.length : null;
+    final expenseInbox = profile.hasApprovalInbox ? ref.watch(inboxProvider).value?.items.length : null;
+    final addendumInbox = profile.hasApprovalInbox ? (ref.watch(addendumInboxProvider).value?.length ?? 0) : 0;
+    final inboxCount = expenseInbox == null ? null : expenseInbox + addendumInbox;
 
     final actions = <Widget>[
       if (profile.hasApprovalInbox)
@@ -71,6 +74,15 @@ class HomeScreen extends ConsumerWidget {
           badge: openProgress > 0 ? '$openProgress' : null,
           onPressed: () => context.push('/progress'),
         ),
+      // E5 Addendum RAB: PM creates (team projects), Direktur/Finance follow all (decisions via the inbox).
+      if (profile.has(Role.pm) || profile.hasApprovalInbox)
+        BigActionButton(
+          key: const Key('home-addenda'),
+          icon: Icons.request_quote,
+          label: t.addendumTitle,
+          subtitle: addendumInbox > 0 ? t.addendumWaitingCount(addendumInbox) : null,
+          onPressed: () => context.push('/addenda'),
+        ),
       // E6: the recap (own month) and "Tim hari ini" are online reads and stay available when the company
       // setting "Absensi dari APK" is off; only check-in / on-behalf follow the flag.
       if (profile.hasOwnAttendance || profile.canSeeTeamAttendance)
@@ -107,6 +119,7 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () async {
           await ref.read(authControllerProvider.notifier).refreshProfile();
           ref.invalidate(inboxProvider);
+          ref.invalidate(addendumInboxProvider);
           ref.invalidate(notificationsProvider);
           ref.invalidate(direkturDashboardProvider);
           ref.invalidate(financeDashboardProvider);

@@ -14,8 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   phone), K-09 "progress fisik vs anggaran" cards (PM/Direktur home + tab). Absensi: check-in/out at a project or a
   pusat biaya with distance feedback, monthly recap calendar, "Tim hari ini", PM on-behalf (reason, front/back
   camera, offline), corrections (online). Local DB schema v2 (`local_progress_reports`, additive). Fix: saving an
-  expense draft no longer deletes queued selfies/progress photos. E5 addendum approval on the APK not yet (backend
-  not on develop).
+  expense draft no longer deletes queued selfies/progress photos. E5 Addendum RAB on the APK: section in the
+  Direktur/Finance inbox, detail with RAB impact + timeline + server `allowedActions` (Setujui Direktur / Finance,
+  Tolak with reason), PM create/submit/cancel (online, Idempotency-Key).
 - **S2 web A — E4 progress web + E5 Addendum RAB** (`apps/web`, fase1-golive §E4/§E5, US-12/18/29/30/31; branch
   `feat/s2a-progress-web-addendum`):
   - Admin views `/admin/progress` (K-09 progress fisik vs % anggaran per project, KPI tiles, table view),

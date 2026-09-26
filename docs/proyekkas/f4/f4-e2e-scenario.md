@@ -10,7 +10,8 @@
 > **laporan progress** (offline, foto kamera belakang, edit ≤ 24 jam, konflik) dan **absensi lengkap** (project **atau**
 > pusat biaya, jarak ke titik, rekap bulanan, Tim hari ini, diabsenkan PM, koreksi). Persiapan baru 0.7–0.10; bagian
 > baru **S** (progress) dan **T** (absensi E6); teks pesan I.2 / I.7 berubah ("radius lokasi"). APK: artefak CI dari
-> branch tersebut. Approve addendum RAB (E5) **belum** ada di APK (backend E5 belum di `develop`).
+> branch tersebut. Bagian baru **U**: **Addendum RAB (E5)** — PM mengajukan, Direktur/Finance memutuskan dari Persetujuan
+> (backend E5 = `develop` 47819f6).
 
 Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` §F4):
 
@@ -236,6 +237,18 @@ Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` �
 | T.11 | (Flag mati) Admin mematikan "Absensi dari APK…". Staff: Beranda → Absensi. PM: tab Tim. | Staff / PM, HP | Beranda: "Rekap bulanan (absen dari aplikasi belum diaktifkan Admin)"; tab Absen: tombol mati + pesan; **Rekap** dan **Tim** tetap jalan; tombol Absenkan hilang; koreksi tetap ada. Nyalakan kembali setting. | | |
 | T.12 | Direktur Uji / Finance Uji → Beranda → Absensi. | Direktur / Finance, HP | Langsung **Tim hari ini** (tanpa tab Absen/Rekap), tanpa tombol Absenkan/Koreksi (Finance). | | |
 
+## U. Addendum RAB (E5, US-18/30) — PM ajukan, Direktur lalu Finance di HP
+
+| No | Langkah | Aktor & perangkat | Hasil yang diharapkan | PASS/FAIL | Catatan |
+|---|---|---|---|---|---|
+| U.1 | PM Uji → Beranda → **Addendum RAB** → **Addendum baru**. Tekan **Ajukan** tanpa isian. | PM Uji, HP | "Pilih project.", "Tambahan RAB harus lebih dari Rp 0.", "Alasan wajib diisi…". | | |
+| U.2 | Pilih project uji, Tambahan RAB `25.000.000`, alasan "Uji U — tambahan pondasi" → **Ajukan**. Catat RAB project sebelum: `Rp ____`. | PM Uji, HP (online) | "Addendum diajukan. Menunggu Direktur."; detail: nomor `ADD/YYMM/####`, "Menunggu: Direktur", RAB lama → baru, komitmen % lama → baru. Mode pesawat: tombol Ajukan mati + "Butuh koneksi internet". | | |
+| U.3 | Direktur Uji → Beranda: jumlah di **Persetujuan** bertambah; buka **Persetujuan**. | Direktur Uji, HP | Bagian "Addendum RAB menunggu Anda (1)" di atas daftar pengajuan: +Rp 25.000.000, RAB → baru. | | |
+| U.4 | Buka addendum → **Setujui (Direktur)** → Ya. | Direktur Uji, HP | Status "Menunggu Finance"; riwayat keputusan "Disetujui Direktur · nama". Tidak ada tombol Setujui (Finance). | | |
+| U.5 | Finance Uji → Persetujuan → addendum → **Setujui (Finance)** → Ya. | Finance Uji, HP | Status Disetujui; web: RAB project = lama + 25.000.000, audit before → after; kartu "Progress fisik vs anggaran" memakai RAB baru (tarik ulang). | | |
+| U.6 | (Negatif) Ulangi U.2 (addendum kedua) → Direktur **Tolak** tanpa alasan, lalu dengan alasan "Belum ada BoQ". | Direktur Uji, HP | Tanpa alasan: "Wajib diisi…". Dengan alasan: Ditolak; PM melihat "Ditolak: Belum ada BoQ"; RAB tidak berubah. | | |
+| U.7 | (Negatif) Staff Uji → Beranda. | Staff Uji, HP | Tidak ada tombol Addendum RAB. | | |
+
 ## Ringkasan
 
 | Bagian | PASS/FAIL | Catatan |
@@ -255,5 +268,6 @@ Dokumen ini adalah naskah uji untuk **gerbang penerimaan F4** (`phase-plan.md` �
 | Q. Tautan tak dikenal | | |
 | S. Laporan progress (E4) | | |
 | T. Absensi lengkap (E6) | | |
+| U. Addendum RAB (E5) | | |
 
 Diuji oleh: ____________ · Tanggal: ____________ · Model HP / Android: ____________ · Versi APK: ____________

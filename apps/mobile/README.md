@@ -68,6 +68,10 @@ sync item. Works offline; the server decides and stamps the time (ADR 0010 decis
   conflict screen (server version vs phone version). With `features.syncProgressReports` the report goes through the
   queue (`progress_report.draft_upsert`, table `local_progress_reports`, drift schema v2); without it the app posts
   online (`POST/PATCH /progress-reports`, Idempotency-Key). K-09 cards: `GET /projects/progress`.
+- **Addendum RAB** (E5, `/addenda`): PM creates/submits for a team project; Direktur ("Setujui") and Finance
+  (approval) decide from the **Persetujuan** inbox section (`GET /budget-addenda/inbox`) or the detail, whose buttons
+  follow `allowedActions`. All writes online with an Idempotency-Key (server rate limit 30/min); the server uses the
+  profile signature.
 
 ## APK secret scan
 

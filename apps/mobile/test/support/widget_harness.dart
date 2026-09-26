@@ -11,6 +11,8 @@ import 'package:proyekkas/core/storage/secure_store.dart';
 import 'package:proyekkas/features/auth/application/auth_controller.dart';
 import 'package:proyekkas/features/auth/domain/user_profile.dart';
 import 'package:proyekkas/core/network/api_exception.dart';
+import 'package:proyekkas/features/addendum/domain/addendum.dart';
+import 'package:proyekkas/features/addendum/presentation/addendum_providers.dart';
 import 'package:proyekkas/features/progress/application/progress_providers.dart';
 import 'package:proyekkas/features/progress/domain/progress.dart';
 import 'package:proyekkas/l10n/gen/app_localizations.dart';
@@ -80,6 +82,7 @@ Future<void> pumpScreen(
         if (stubProgress) ...[
           openProgressDraftsProvider.overrideWith((ref) => Stream.value(const <ProgressDraft>[])),
           projectProgressProvider.overrideWith((ref) async => throw const NetworkException()),
+          addendumInboxProvider.overrideWith((ref) async => const <Addendum>[]),
         ],
         ...overrides,
       ],

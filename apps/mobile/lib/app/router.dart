@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/addendum/presentation/addendum_screens.dart';
 import '../features/app_config/application/app_config_providers.dart';
 import '../features/app_config/domain/app_config.dart';
 import '../features/app_config/presentation/update_required_screen.dart';
@@ -117,6 +118,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'recap/:employeeId',
             builder: (_, s) => MemberRecapScreen(employeeId: int.tryParse(s.pathParameters['employeeId'] ?? '') ?? 0),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/addenda',
+        builder: (_, _) => const AddendumListScreen(),
+        routes: [
+          GoRoute(path: 'new', builder: (_, _) => const AddendumCreateScreen()),
+          GoRoute(
+            path: ':id',
+            builder: (_, s) => AddendumDetailScreen(id: int.tryParse(s.pathParameters['id'] ?? '') ?? 0),
           ),
         ],
       ),
