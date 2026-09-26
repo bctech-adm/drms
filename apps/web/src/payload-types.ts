@@ -101,6 +101,7 @@ export interface Config {
     attendances: Attendance;
     'attendance-corrections': AttendanceCorrection;
     'progress-reports': ProgressReport;
+    'budget-addenda': BudgetAddendum;
     notifications: Notification;
     devices: Device;
     'web-sessions': WebSession;
@@ -154,6 +155,7 @@ export interface Config {
     attendances: AttendancesSelect<false> | AttendancesSelect<true>;
     'attendance-corrections': AttendanceCorrectionsSelect<false> | AttendanceCorrectionsSelect<true>;
     'progress-reports': ProgressReportsSelect<false> | ProgressReportsSelect<true>;
+    'budget-addenda': BudgetAddendaSelect<false> | BudgetAddendaSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     devices: DevicesSelect<false> | DevicesSelect<true>;
     'web-sessions': WebSessionsSelect<false> | WebSessionsSelect<true>;
@@ -985,7 +987,8 @@ export interface ExpenseLineSnapshot {
 export interface Approval {
   id: number;
   docType: 'expense_request' | 'budget_addendum';
-  request: number | ExpenseRequest;
+  request?: (number | null) | ExpenseRequest;
+  addendum?: (number | null) | BudgetAddendum;
   cycle: number;
   position: 'diajukan' | 'dibuat' | 'diketahui' | 'approval';
   level: number;
@@ -1004,6 +1007,51 @@ export interface Approval {
   signatureSource?: ('profile' | 'captured' | 'none') | null;
   deviceId?: string | null;
   source?: ('web' | 'apk' | 'system' | 'job') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Diajukan dan diputuskan lewat layar Addendum RAB (bukan dari form ini).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "budget-addenda".
+ */
+export interface BudgetAddendum {
+  id: number;
+  docNo?: string | null;
+  project: number | Project;
+  status: 'draft' | 'pending_ack' | 'pending_approval' | 'approved' | 'rejected' | 'cancelled';
+  addition: number;
+  reason: string;
+  budgetAtSubmit?: number | null;
+  /**
+   * Dibaca ulang saat disetujui (terkunci).
+   */
+  oldBudget?: number | null;
+  newBudget?: number | null;
+  createdBy: number | User;
+  submittedAt?: string | null;
+  decidedAt?: string | null;
+  approvalRule?: (number | null) | ApprovalRule;
+  approvalSnapshot?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  approvalCycle?: number | null;
+  currentLevel?: number | null;
+  rejectReason?: string | null;
+  cancelReason?: string | null;
+  source?: ('web' | 'apk') | null;
+  uuid?: string | null;
+  /**
+   * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
+   */
+  changeReason?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1886,6 +1934,10 @@ export interface PayloadLockedDocument {
         value: number | ProgressReport;
       } | null)
     | ({
+        relationTo: 'budget-addenda';
+        value: number | BudgetAddendum;
+      } | null)
+    | ({
         relationTo: 'devices';
         value: number | Device;
       } | null)
@@ -2428,6 +2480,7 @@ export interface ExpenseLineSnapshotsSelect<T extends boolean = true> {
 export interface ApprovalsSelect<T extends boolean = true> {
   docType?: T;
   request?: T;
+  addendum?: T;
   cycle?: T;
   position?: T;
   level?: T;
@@ -2693,6 +2746,34 @@ export interface ProgressReportsSelect<T extends boolean = true> {
   flags?: T;
   syncRev?: T;
   clientUuid?: T;
+  uuid?: T;
+  changeReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "budget-addenda_select".
+ */
+export interface BudgetAddendaSelect<T extends boolean = true> {
+  docNo?: T;
+  project?: T;
+  status?: T;
+  addition?: T;
+  reason?: T;
+  budgetAtSubmit?: T;
+  oldBudget?: T;
+  newBudget?: T;
+  createdBy?: T;
+  submittedAt?: T;
+  decidedAt?: T;
+  approvalRule?: T;
+  approvalSnapshot?: T;
+  approvalCycle?: T;
+  currentLevel?: T;
+  rejectReason?: T;
+  cancelReason?: T;
+  source?: T;
   uuid?: T;
   changeReason?: T;
   updatedAt?: T;

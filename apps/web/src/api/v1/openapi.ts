@@ -1,6 +1,7 @@
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi'
 import { z } from 'zod'
 
+import { registerAddendumPaths } from './openapi-addendum'
 import { registerAttendancePaths } from './openapi-attendance'
 import { Device, DeviceRegister, DeviceRevoke, Health, Masters, MastersQuery, Me, Problem, Ready, TestEmailQueued } from './schemas'
 import * as F from './schemas-flow'
@@ -479,6 +480,8 @@ export function buildOpenApiDocument(version: string) {
 
   // ---- E6 attendance (US-09/13/15, Q-33) -------------------------------------------------------
   registerAttendancePaths(registry, { security, deviceHeader, idem, res, problemResponses })
+  // ---- E5 addendum RAB (T12, US-18/US-30) ------------------------------------------------------
+  registerAddendumPaths(registry, { security, deviceHeader, idem, res })
 
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: '3.1.0',

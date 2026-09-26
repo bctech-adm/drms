@@ -19,38 +19,7 @@ import { buildSnapshot, selectRule, type ApprovalSnapshot, type RuleInput } from
  * before E1 (PM acknowledger, F2e delegation) keep working unchanged at decision time.
  */
 export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): Promise<{ rule: RuleInput; snapshot: ApprovalSnapshot }> {
-  const res = await req.payload.find({
-    collection: 'approval-rules',
-    where: { and: [{ active: { equals: true } }, { docType: { equals: 'expense_request' } }] },
-    depth: 0,
-    pagination: false,
-    overrideAccess: true, // SYSTEM-READ: approval rules
-    req,
-  })
-  const rules: RuleInput[] = (res.docs as unknown as Array<Record<string, unknown>>).map((r) => ({
-    id: r.id as number,
-    name: r.name as string,
-    active: r.active as boolean,
-    docType: r.docType as string,
-    requestType: r.requestType as RuleInput['requestType'],
-    minAmount: (r.minAmount as number) ?? 0,
-    maxAmount: (r.maxAmount as number | null) ?? null,
-    category: relId(r.category) ?? null,
-    project: relId(r.project) ?? null,
-    costCenter: relId(r.costCenter) ?? null,
-    priority: (r.priority as number | null) ?? 100,
-    acknowledge: (r.acknowledge as RuleInput['acknowledge']) ?? 'none',
-    acknowledgeBy: (r.acknowledgeBy as RuleInput['acknowledgeBy']) ?? 'scope_manager',
-    acknowledgeRole: (r.acknowledgeRole as RuleInput['acknowledgeRole']) ?? null,
-    acknowledgeUser: relId(r.acknowledgeUser) ?? null,
-    signDiajukan: (r.signDiajukan as RuleInput['signDiajukan']) ?? 'required',
-    signDibuat: (r.signDibuat as RuleInput['signDibuat']) ?? 'required',
-    steps: ((r.steps as Array<Record<string, unknown>>) ?? []).map((s) => ({
-      level: s.level as number,
-      approverRole: (s.approverRole as RuleInput['steps'][number]['approverRole']) ?? null,
-      approverUser: relId(s.approverUser) ?? null,
-    })),
-  }))
+  const rules = await loadActiveRules(req, 'expense_request')
   const projectId = relId(doc.project) ?? null
   const costCenterId = relId(doc.costCenter) ?? null
   const rule = selectRule(rules, {
@@ -62,6 +31,16 @@ export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): P
   })
   if (!rule) fail(409, 'Tidak ada aturan approval yang berlaku untuk pengajuan ini (US-34). Hubungi Admin.')
 
+  const snapshot = await snapshotForRule(req, rule, await involvedUserIds(req, doc))
+  return { rule, snapshot }
+}
+
+/**
+ * ADR 0013 snapshot of `rule` for a document whose requester/creator accounts are `excluded` (G1):
+ * rule validity (legacy rules → 409), position plan (G1-2 skip rule), decision roles. Shared by
+ * expense requests and budget addenda (E5).
+ */
+export async function snapshotForRule(req: PayloadRequest, rule: RuleInput, excluded: ReadonlySet<number>): Promise<ApprovalSnapshot> {
   // ADR 0013: only rules of the Direktur → Finance model may be used for NEW submissions. A rule saved
   // before E1 (e.g. "Diketahui" by the PM) is refused here instead of being silently reinterpreted.
   const named = [...new Set([rule.acknowledgeUser, ...rule.steps.map((s) => s.approverUser)].filter((x): x is number => typeof x === 'number'))]
@@ -69,7 +48,6 @@ export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): P
   const ruleErr = ruleDecisionError(rule, (id) => namedUsers.get(id)?.roles)
   if (ruleErr) fail(409, `Aturan approval "${rule.name}" tidak sesuai alur Direktur → Finance (ADR 0013): ${ruleErr} Hubungi Admin.`)
 
-  const excluded = await involvedUserIds(req, doc)
   const holders = async (role: Role | null | undefined, user: number | null | undefined): Promise<number[]> => {
     if (user) return namedUsers.get(user)?.active ? [user] : []
     return role ? activeUsersWithRole(req, role) : []
@@ -95,11 +73,47 @@ export async function selectAndSnapshot(req: PayloadRequest, doc: RequestDoc): P
     decisionRoles: [...DECISION_ROLES],
     skipped: plan.skipped,
   }
-  return { rule, snapshot }
+  return snapshot
+}
+
+/** Active `approval-rules` of one document type, mapped to the engine shape (SYSTEM-READ). */
+export async function loadActiveRules(req: PayloadRequest, docType: 'expense_request' | 'budget_addendum'): Promise<RuleInput[]> {
+  const res = await req.payload.find({
+    collection: 'approval-rules',
+    where: { and: [{ active: { equals: true } }, { docType: { equals: docType } }] },
+    depth: 0,
+    pagination: false,
+    overrideAccess: true, // SYSTEM-READ: approval rules
+    req,
+  })
+  return (res.docs as unknown as Array<Record<string, unknown>>).map((r) => ({
+    id: r.id as number,
+    name: r.name as string,
+    active: r.active as boolean,
+    docType: r.docType as string,
+    requestType: r.requestType as RuleInput['requestType'],
+    minAmount: (r.minAmount as number) ?? 0,
+    maxAmount: (r.maxAmount as number | null) ?? null,
+    category: relId(r.category) ?? null,
+    project: relId(r.project) ?? null,
+    costCenter: relId(r.costCenter) ?? null,
+    priority: (r.priority as number | null) ?? 100,
+    acknowledge: (r.acknowledge as RuleInput['acknowledge']) ?? 'none',
+    acknowledgeBy: (r.acknowledgeBy as RuleInput['acknowledgeBy']) ?? 'scope_manager',
+    acknowledgeRole: (r.acknowledgeRole as RuleInput['acknowledgeRole']) ?? null,
+    acknowledgeUser: relId(r.acknowledgeUser) ?? null,
+    signDiajukan: (r.signDiajukan as RuleInput['signDiajukan']) ?? 'required',
+    signDibuat: (r.signDibuat as RuleInput['signDibuat']) ?? 'required',
+    steps: ((r.steps as Array<Record<string, unknown>>) ?? []).map((s) => ({
+      level: s.level as number,
+      approverRole: (s.approverRole as RuleInput['steps'][number]['approverRole']) ?? null,
+      approverUser: relId(s.approverUser) ?? null,
+    })),
+  }))
 }
 
 /** Active users holding `role` (SYSTEM-READ: decision position holders, ADR 0013). */
-async function activeUsersWithRole(req: PayloadRequest, role: Role): Promise<number[]> {
+export async function activeUsersWithRole(req: PayloadRequest, role: Role): Promise<number[]> {
   const res = await req.payload.find({
     collection: 'users',
     where: { and: [{ roles: { in: [role] } }, { active: { equals: true } }] },
@@ -114,7 +128,7 @@ async function activeUsersWithRole(req: PayloadRequest, role: Role): Promise<num
 }
 
 /** Roles + active flag of users named in a rule (acknowledgeUser / approverUser). */
-async function usersById(req: PayloadRequest, ids: number[]): Promise<Map<number, { roles: Role[]; active: boolean }>> {
+export async function usersById(req: PayloadRequest, ids: number[]): Promise<Map<number, { roles: Role[]; active: boolean }>> {
   const out = new Map<number, { roles: Role[]; active: boolean }>()
   if (ids.length === 0) return out
   const res = await req.payload.find({

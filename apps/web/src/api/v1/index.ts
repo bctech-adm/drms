@@ -1,5 +1,6 @@
 import type { Endpoint } from 'payload'
 
+import { ADDENDUM_ENDPOINTS } from './endpoints/addenda'
 import { testEmailEndpoint } from './endpoints/admin'
 import { ATTENDANCE_ENDPOINTS } from './endpoints/attendance'
 import { registerDeviceEndpoint, revokeDeviceEndpoint } from './endpoints/devices'
@@ -44,4 +45,6 @@ export const v1Endpoints: Endpoint[] = [
   ...ATTENDANCE_ENDPOINTS,
   // E4: project stages (G11 editor), progress reports (T11), K-09 progress vs budget
   ...PROGRESS_ENDPOINTS,
+  // E5: budget addenda (T12, US-18/US-30) — web + APK approve
+  ...ADDENDUM_ENDPOINTS,
 ]
