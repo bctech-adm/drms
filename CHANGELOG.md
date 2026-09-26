@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **S3 track C — E10 images on GHCR + prod compose** (branch `feat/s3c-e10-ghcr-ci`): `ci.yml` job `image` builds web +
+  migrate on GitHub runners (buildx, GHA cache), Trivy gate (fail on fixable CRITICAL, HIGH/CRITICAL reported in the job
+  summary), pushes `ghcr.io/bctech-adm/proyekkas-{web,migrate}` with OCI labels, SBOM and provenance (`develop` →
+  `sha-<sha7>` + `<ver>-stg-<sha7>`, tag `vX.Y.Z` → `X.Y.Z`, `ci/ghcr-*` → `test-<sha7>`); `deploy/prod/docker-compose.yml`
+  (identical to the infra prep except comments); inert, approval-gated `deploy-prod.yml` (environment `infra-deploy`);
+  runbook `docs/proyekkas/runbooks/ci-ghcr.md`.
 - **APK S2 — laporan progress (E4) + absensi lengkap (E6)** (`apps/mobile`, branch
   `feat/mobile-s2-progress-attendance`). Progress: offline-first reports (project/stage, % never below the stage %,
   ≤ 5 rear-camera photos compressed on the phone, `progress_report.draft_upsert` or online POST/PATCH when
