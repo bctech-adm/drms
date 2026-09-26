@@ -27,8 +27,10 @@ menu **Profil & tanda tangan** → unggah gambar PNG (tanda tangan di kertas put
 tangan, aplikasi menolak dengan pesan "Tanda tangan wajib…". Tanda tangan tidak bisa diunggah dari APK.
 
 **Notifikasi:** di APK, lihat **ikon lonceng** di kanan atas Beranda (diperbarui tiap ± 2 menit saat aplikasi
-terbuka). Notifikasi *push* ke HP yang terkunci **belum aktif** — buka aplikasi secara rutin. Di web, notifikasi ada
-di menu **Sistem → Notifikasi**.
+terbuka). Notifikasi *push* ke HP yang terkunci **belum aktif** — buka aplikasi secara rutin. Di web, **lonceng
+Notifikasi** ada di atas menu kiri (angka = belum dibaca; diperbarui saat pindah halaman) → halaman Notifikasi:
+**Buka** menandai dibaca dan membuka dokumennya, **Tandai semua dibaca**. Direktur/Finance dapat juga menerima email
+saat pengajuan menunggu keputusannya (bila dinyalakan Admin).
 
 **Bekerja tanpa sinyal (APK):** draft pengajuan, absen, dan laporan progress bisa disimpan tanpa internet; banner
 "Offline — data disimpan di HP dan dikirim otomatis saat online." akan tampil. Cek pengiriman di tab **Antrean**
