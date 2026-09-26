@@ -6,8 +6,8 @@ import { DEFAULT_TZ, localDateInTz } from '@/lib/time'
 import type { TimeVerdict } from './clock'
 
 /**
- * F4 slice of attendance (US-01/US-02, ADR 0010 decision 8): server-authoritative checks of one
- * `attendance.check_in` / `attendance.check_out` sync item. Pure helpers are exported for unit tests.
+ * Attendance helpers of the sync service (US-01/US-02, ADR 0010 decision 8). Pure helpers are
+ * exported for unit tests; the checks + the write live in domain/attendance/record.ts (E6).
  */
 
 export type AttendanceKind = 'check_in' | 'check_out'
@@ -45,39 +45,6 @@ export function localDateString(instant: Date, timeZone: string = DEFAULT_TZ): s
   const d = localDateInTz(instant, timeZone)
   const two = (n: number) => String(n).padStart(2, '0')
   return `${d.year}-${two(d.month)}-${two(d.day)}`
-}
-
-/** Is `employee` assigned to `project` on `localDate` (team-assignments, start/end inclusive)? */
-export async function isAssigned(req: PayloadRequest, employee: number, project: number, localDate: string): Promise<boolean> {
-  const res = await req.payload.find({
-    collection: 'team-assignments',
-    where: { and: [{ employee: { equals: employee } }, { project: { equals: project } }] },
-    depth: 0,
-    pagination: false,
-    overrideAccess: true, // SYSTEM-READ: assignment check of the caller's own employee
-    req,
-  })
-  return (res.docs as Array<{ startDate?: string | null; endDate?: string | null }>).some((a) => {
-    const start = a.startDate ? a.startDate.slice(0, 10) : null
-    const end = a.endDate ? a.endDate.slice(0, 10) : null
-    return (!start || start <= localDate) && (!end || end >= localDate)
-  })
-}
-
-type AttendanceRow = { id: number; kind: AttendanceKind; attendanceTime: string }
-
-/** Today's rows of this employee at this project (for the one-per-day rules). */
-export async function dayRows(req: PayloadRequest, employee: number, project: number, localDate: string): Promise<AttendanceRow[]> {
-  const res = await req.payload.find({
-    collection: 'attendances',
-    where: { and: [{ employee: { equals: employee } }, { project: { equals: project } }, { localDate: { equals: localDate } }] },
-    depth: 0,
-    pagination: false,
-    sort: 'attendanceTime',
-    overrideAccess: true, // SYSTEM-READ: duplicate check of the caller's own attendance
-    req,
-  })
-  return res.docs as unknown as AttendanceRow[]
 }
 
 /** Employee linked to the user account (users.employee), or undefined. */

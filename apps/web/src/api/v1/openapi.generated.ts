@@ -3627,7 +3627,7 @@ export const openapiDocument = {
               "string",
               "null"
             ],
-            "description": "Server id (numeric, as string) of the expense request."
+            "description": "Server id (numeric, as string) of the expense request / attendance."
           },
           "rev": {
             "type": [
@@ -3661,7 +3661,7 @@ export const openapiDocument = {
               "properties": {
                 "code": {
                   "type": "string",
-                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT."
+                  "description": "VALIDATION, NOT_EDITABLE, STALE_REV (conflict), NOT_FOUND, FORBIDDEN, MEDIA_MISSING, CLIENT_UUID_CONFLICT, FEATURE_DISABLED, DEPENDENCY_FAILED, DEPENDENCY_PENDING, STATE_CONFLICT, INTEGRITY, UNSUPPORTED, INTERNAL; attendance: MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT (on_behalf also FORBIDDEN: not a PM / not a team location / own attendance)."
                 },
                 "field": {
                   "type": "string"
@@ -4122,11 +4122,14 @@ export const openapiDocument = {
                 "$ref": "#/components/schemas/SyncAttendancePayload"
               },
               {
+                "$ref": "#/components/schemas/SyncOnBehalfPayload"
+              },
+              {
                 "type": "object",
                 "additionalProperties": {}
               }
             ],
-            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload; other types: free-form until supported."
+            "description": "Type specific: expense_request.draft_upsert → SyncDraftUpsertPayload, expense_request.draft_delete → SyncDraftDeletePayload, attendance.check_in / attendance.check_out → SyncAttendancePayload, attendance.on_behalf → SyncOnBehalfPayload; other types: free-form until supported."
           }
         },
         "required": [
@@ -4150,7 +4153,7 @@ export const openapiDocument = {
           "expense_request.draft_delete",
           "progress_report.draft_upsert"
         ],
-        "description": "attendance.on_behalf and progress_report.draft_upsert are accepted by the schema but answered `unsupported` until F5."
+        "description": "progress_report.draft_upsert is accepted by the schema but answered `unsupported` until F5. attendance.on_behalf (US-14, E6): PM only."
       },
       "SyncDraftUpsertPayload": {
         "type": "object",
@@ -4431,7 +4434,13 @@ export const openapiDocument = {
         "properties": {
           "project_id": {
             "type": "integer",
-            "exclusiveMinimum": 0
+            "exclusiveMinimum": 0,
+            "description": "Project (one of project_id / cost_center_id)."
+          },
+          "cost_center_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Cost center / operational location (E6, Q-40)."
           },
           "lat": {
             "type": "number",
@@ -4469,11 +4478,702 @@ export const openapiDocument = {
           }
         },
         "required": [
-          "project_id",
           "lat",
           "lng",
           "is_mocked",
           "selfie_media_id"
+        ],
+        "additionalProperties": false
+      },
+      "SyncOnBehalfPayload": {
+        "type": "object",
+        "properties": {
+          "employee_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Team member (employees id; may have no user account)."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "check_in",
+              "check_out"
+            ]
+          },
+          "project_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "cost_center_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "accuracy_m": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "is_mocked": {
+            "type": "boolean"
+          },
+          "selfie_media_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "media-selfies id uploaded by the PM (photo of the employee)."
+          },
+          "camera_lens": {
+            "type": "string",
+            "enum": [
+              "front",
+              "back"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500,
+            "description": "Why the PM records it (e.g. \"tidak punya HP\"). Required."
+          }
+        },
+        "required": [
+          "employee_id",
+          "kind",
+          "lat",
+          "lng",
+          "is_mocked",
+          "selfie_media_id",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "AttendanceRecap": {
+        "type": "object",
+        "properties": {
+          "employee": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "code",
+              "name"
+            ]
+          },
+          "month": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/WorkScheduleSnapshot"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttendanceDay"
+            },
+            "description": "Every date of the month up to today."
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AttendanceSummary"
+          }
+        },
+        "required": [
+          "employee",
+          "month",
+          "from",
+          "to",
+          "timezone",
+          "schedule",
+          "days",
+          "summary"
+        ]
+      },
+      "WorkScheduleSnapshot": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "description": "HH:MM local"
+          },
+          "end": {
+            "type": "string"
+          },
+          "toleranceMin": {
+            "type": "integer"
+          },
+          "workDays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 7
+            },
+            "description": "ISO weekdays (1 = Monday … 7 = Sunday)."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "start",
+          "end",
+          "toleranceMin",
+          "workDays"
+        ]
+      },
+      "AttendanceDay": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "weekday": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 7
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "workday",
+              "holiday",
+              "off",
+              "unscheduled"
+            ]
+          },
+          "holidayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "selesai",
+              "hadir",
+              "belum_absen",
+              "tidak_hadir",
+              "libur",
+              "tanpa_jadwal"
+            ],
+            "description": "selesai = every check-in has a check-out; hadir = a location still open; tidak_hadir = past working day without check-in; libur = holiday/off day without attendance."
+          },
+          "checkIn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "First effective check-in (corrections applied)."
+          },
+          "checkOut": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Last effective check-out, null while a location is still open."
+          },
+          "checkInLocal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "HH:MM company TZ"
+          },
+          "checkOutLocal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Sum of closed check-in → check-out pairs."
+          },
+          "lateMinutes": {
+            "type": "integer",
+            "description": "Minutes after the schedule start when above the tolerance; 0 on holidays/off days."
+          },
+          "earlyLeaveMinutes": {
+            "type": "integer"
+          },
+          "onBehalf": {
+            "type": "boolean",
+            "description": "At least one row \"diabsenkan oleh PM\" (US-14)."
+          },
+          "onBehalfBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "corrected": {
+            "type": "boolean",
+            "description": "At least one row corrected (T10)."
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttendanceLocationDay"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "weekday",
+          "kind",
+          "holidayName",
+          "status",
+          "checkIn",
+          "checkOut",
+          "checkInLocal",
+          "checkOutLocal",
+          "workMinutes",
+          "lateMinutes",
+          "earlyLeaveMinutes",
+          "onBehalf",
+          "onBehalfBy",
+          "corrected",
+          "flags",
+          "locations"
+        ]
+      },
+      "AttendanceLocationDay": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "$ref": "#/components/schemas/AttendanceLocationRef"
+          },
+          "checkIn": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "time": {
+                "type": "string",
+                "description": "UTC ISO-8601 instant."
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "self",
+                  "pm"
+                ]
+              },
+              "corrected": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "time",
+              "source",
+              "corrected"
+            ]
+          },
+          "checkOut": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "time": {
+                "type": "string",
+                "description": "UTC ISO-8601 instant."
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "self",
+                  "pm"
+                ]
+              },
+              "corrected": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "time",
+              "source",
+              "corrected"
+            ]
+          }
+        },
+        "required": [
+          "location",
+          "checkIn",
+          "checkOut"
+        ]
+      },
+      "AttendanceLocationRef": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "project",
+              "cost_center"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "code",
+          "name"
+        ]
+      },
+      "AttendanceSummary": {
+        "type": "object",
+        "properties": {
+          "presentDays": {
+            "type": "integer"
+          },
+          "workingDays": {
+            "type": "integer",
+            "description": "Scheduled working days up to today (holidays excluded)."
+          },
+          "absentDays": {
+            "type": "integer"
+          },
+          "lateDays": {
+            "type": "integer"
+          },
+          "lateMinutes": {
+            "type": "integer"
+          },
+          "earlyLeaveDays": {
+            "type": "integer"
+          },
+          "earlyLeaveMinutes": {
+            "type": "integer"
+          },
+          "workMinutes": {
+            "type": "integer"
+          },
+          "holidayWorkDays": {
+            "type": "integer"
+          },
+          "offDayWorkDays": {
+            "type": "integer"
+          },
+          "incompleteDays": {
+            "type": "integer",
+            "description": "Past days with a check-in but without check-out."
+          },
+          "onBehalfDays": {
+            "type": "integer"
+          },
+          "correctedDays": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "presentDays",
+          "workingDays",
+          "absentDays",
+          "lateDays",
+          "lateMinutes",
+          "earlyLeaveDays",
+          "earlyLeaveMinutes",
+          "workMinutes",
+          "holidayWorkDays",
+          "offDayWorkDays",
+          "incompleteDays",
+          "onBehalfDays",
+          "correctedDays"
+        ]
+      },
+      "TeamToday": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "holidayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "all",
+              "team"
+            ]
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "belum_absen": {
+                "type": "integer"
+              },
+              "hadir": {
+                "type": "integer"
+              },
+              "selesai": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "belum_absen",
+              "hadir",
+              "selesai"
+            ]
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "employee": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "code",
+                    "name"
+                  ]
+                },
+                "assigned": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttendanceLocationRef"
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "belum_absen",
+                    "hadir",
+                    "selesai"
+                  ]
+                },
+                "checkIn": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "UTC ISO-8601 instant."
+                },
+                "checkOut": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "UTC ISO-8601 instant."
+                },
+                "checkInLocal": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "checkOutLocal": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "lateMinutes": {
+                  "type": "integer"
+                },
+                "onBehalf": {
+                  "type": "boolean"
+                },
+                "corrected": {
+                  "type": "boolean"
+                },
+                "locations": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttendanceLocationDay"
+                  }
+                }
+              },
+              "required": [
+                "employee",
+                "assigned",
+                "status",
+                "checkIn",
+                "checkOut",
+                "checkInLocal",
+                "checkOutLocal",
+                "lateMinutes",
+                "onBehalf",
+                "corrected",
+                "locations"
+              ]
+            }
+          }
+        },
+        "required": [
+          "date",
+          "timezone",
+          "holidayName",
+          "scope",
+          "counts",
+          "members"
+        ]
+      },
+      "AttendanceCorrection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "attendanceId": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "check_in",
+              "check_out"
+            ]
+          },
+          "localDate": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$"
+          },
+          "oldTime": {
+            "type": "string",
+            "description": "UTC ISO-8601 instant."
+          },
+          "newTime": {
+            "type": "string",
+            "description": "UTC ISO-8601 instant."
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "attendanceId",
+          "kind",
+          "localDate",
+          "oldTime",
+          "newTime",
+          "reason"
+        ]
+      },
+      "AttendanceCorrectBody": {
+        "type": "object",
+        "properties": {
+          "new_time": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Corrected time (same local date as the attendance; not in the future)."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500,
+            "description": "Mandatory (T10)."
+          }
+        },
+        "required": [
+          "new_time",
+          "reason"
         ],
         "additionalProperties": false
       }
@@ -10856,7 +11556,7 @@ export const openapiDocument = {
     "/sync/batch": {
       "post": {
         "summary": "APK offline queue replay (bearer + registered device = device_id). Items in order, one transaction each; always 200 with one result per item (applied | duplicate | rejected | conflict | deferred | unsupported). Rate limit 12/min.",
-        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN); attendance.on_behalf and progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
+        "description": "Item types: expense_request.draft_upsert (payload SyncDraftUpsertPayload), expense_request.draft_delete (payload SyncDraftDeletePayload), attendance.check_in / attendance.check_out (payload SyncAttendancePayload: project_id OR cost_center_id; selfie first with POST /media/selfies; company-settings.syncAttendanceEnabled, else rejected FEATURE_DISABLED; rejection codes MOCK_LOCATION, OUTSIDE_GEOFENCE, NOT_ASSIGNED, NO_GEOFENCE, ALREADY_CHECKED_IN, NO_CHECK_IN, ALREADY_CHECKED_OUT, MEDIA_MISSING, FORBIDDEN), attendance.on_behalf (payload SyncOnBehalfPayload, US-14: PM only, team location, not own, reason required; GPS + photo from the PM phone); progress_report.draft_upsert → unsupported (F5). Receipt images are uploaded first with POST /media/receipts and referenced by media_id. Replaying a client_uuid returns the stored result as duplicate. Edits of an existing draft need base_rev = server rev, else conflict + server_copy (server wins).",
         "security": [
           {
             "bearer": []
@@ -13693,6 +14393,7 @@ export const openapiDocument = {
                 "rekap-pengajuan",
                 "kelengkapan",
                 "biaya-kendaraan",
+                "absensi",
                 "audit-log"
               ]
             },
@@ -13855,6 +14556,16 @@ export const openapiDocument = {
           {
             "schema": {
               "type": "string",
+              "description": "YYYY-MM (absensi; default current month)"
+            },
+            "required": false,
+            "description": "YYYY-MM (absensi; default current month)",
+            "name": "bulan",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "format": "uuid",
               "description": "Registered install id (APK)."
             },
@@ -13892,6 +14603,7 @@ export const openapiDocument = {
                         "rekap-pengajuan",
                         "kelengkapan",
                         "biaya-kendaraan",
+                        "absensi",
                         "audit-log"
                       ]
                     },
@@ -14224,6 +14936,7 @@ export const openapiDocument = {
                 "rekap-pengajuan",
                 "kelengkapan",
                 "biaya-kendaraan",
+                "absensi",
                 "audit-log"
               ]
             },
@@ -14399,6 +15112,16 @@ export const openapiDocument = {
           {
             "schema": {
               "type": "string",
+              "description": "YYYY-MM (absensi; default current month)"
+            },
+            "required": false,
+            "description": "YYYY-MM (absensi; default current month)",
+            "name": "bulan",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "format": "uuid",
               "description": "Registered install id (APK)."
             },
@@ -14512,6 +15235,615 @@ export const openapiDocument = {
             }
           },
           "503": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/me": {
+      "get": {
+        "summary": "US-09 own monthly attendance recap (every day of the month up to today: check-in/out, duration, late / early minutes, holiday/off-day flags, PM on-behalf, corrections)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "description": "Default: current month (company TZ)."
+            },
+            "required": false,
+            "description": "Default: current month (company TZ).",
+            "name": "month",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceRecap"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/recap": {
+      "get": {
+        "summary": "Monthly recap of one employee: PM for team members (team locations only), Admin/Direktur/Finance all",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,10}$",
+              "description": "employees id"
+            },
+            "required": true,
+            "description": "employees id",
+            "name": "employee_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "required": false,
+            "name": "month",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceRecap"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/team-today": {
+      "get": {
+        "summary": "US-13 team presence for a date (belum absen / hadir / selesai per member): PM team, Admin/Direktur/Finance all",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$",
+              "description": "Default: today (company TZ); not in the future."
+            },
+            "required": false,
+            "description": "Default: today (company TZ); not in the future.",
+            "name": "date",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,10}$"
+            },
+            "required": false,
+            "name": "project_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{1,10}$"
+            },
+            "required": false,
+            "name": "cost_center_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team presence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamToday"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/{id}/correct": {
+      "post": {
+        "summary": "US-15 T10 correction of one attendance time (PM of the team location or Admin; never own attendance; reason required; same local date). Creates an append-only correction; audit old → new",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceCorrectBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Correction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceCorrection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance/{id}/selfie": {
+      "get": {
+        "summary": "Selfie of a visible attendance (own, PM team, Admin/Direktur/Finance). Viewing another person’s selfie is audited view_sensitive. 404 once removed by retention (Q-33)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JPEG",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Problem",
             "content": {
               "application/problem+json": {

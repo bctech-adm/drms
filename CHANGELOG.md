@@ -7,6 +7,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **E6 backend — absensi lengkap** (`apps/web`, fase1-golive §E6, US-01/02/09/13/14/15, Q-30/33/40; branch
+  `feat/e6-attendance-backend`). Web/APK screens follow in S2; `syncAttendanceEnabled` stays **off** by default.
+  - Cost-center geofence (Q-40): `cost-centers` lat/lng/radius (optional); sync check-in/out takes `project_id` XOR
+    `cost_center_id`; one check-in/out per employee/location/day (DB unique index for both).
+  - "Diabsenkan oleh PM" (US-14): sync item `attendance.on_behalf` (was `unsupported`) — PM only, team location,
+    employee assigned that day, not the PM themself, reason required, GPS + photo from the PM phone; stored with
+    `source = pm`, `recordedBy`, `onBehalfReason` (DB CHECK); employees without an account supported (`user` empty).
+  - Koreksi absensi T10 (US-15): `POST /api/v1/attendance/{id}/correct` (team PM or Admin, never own attendance,
+    reason ≥ 3, same local date, order check-in ≤ check-out, not in the future, Idempotency-Key). New append-only
+    collection `attendance-corrections` (DB triggers + no UPDATE/DELETE for the app role); the newest correction is
+    the effective time everywhere; audit `update attendanceTime` old → new with the reason; denied attempts audited.
+  - Jadwal/libur/terlambat (Q-30): `work-schedules.workDays` (Mon–Sat default), `employees.workSchedule`,
+    `company-settings.defaultWorkSchedule`; schedule snapshot on each attendance; late = minutes after start when
+    above the tolerance, early leave, work minutes, holiday/off-day attendance flagged (never late).
+  - Rekap bulanan (US-09) `GET /api/v1/attendance/me?month=`, recap of an employee `GET /api/v1/attendance/recap`
+    (PM team / Direktur / Finance / Admin), tim hari ini (US-13) `GET /api/v1/attendance/team-today`, selfie viewer
+    `GET /api/v1/attendance/{id}/selfie` (Q-33 roles, audited `view_sensitive`).
+  - Laporan absensi (M13): report `absensi` (CSV/XLSX) on `/admin/laporan` and `/api/v1/reports/absensi`.
+  - Retensi selfie (Q-33): `company-settings.selfieRetentionMonths` (default 12) + daily job `selfieRetention`
+    (**dry run**: counts candidates, never face reference photos; file deletion = S2).
+  - Masters for the APK: cost centers with lat/lng/radius, work schedules with `workDays`.
+  - Migration `20260926_091848_e6_attendance` (additive; staging-safe: no existing row rewritten).
 - **E1 APK + E3 APK parity** (`apps/mobile`, fase1-golive §E1 AC-10, §E3-b/c/d; branch `feat/mobile-e1-e3`):
   - Approval inbox/tab from `GET /api/v1/me` `capabilities.approvalInbox` (Direktur + Finance, ADR 0013), no longer
     `owner || pm`; PM gets a read-only **team monitor** (home KPIs from `/dashboard/pm`, "Tim" tab = `scope=team`).

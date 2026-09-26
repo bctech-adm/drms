@@ -4,6 +4,7 @@ import type { PayloadRequest } from 'payload'
 import type { Role } from '@/access/roles'
 import { REQUEST_STATUSES, REQUEST_TYPE_LABELS, REQUEST_TYPES, statusLabel, type RequestStatus, type RequestType } from '@/domain/expense/types'
 
+import { absensiReport } from './attendance-report'
 import { auditLogCount, auditLogPage, AUDIT_PAGE, AUDIT_SOURCES, parseAuditFilter, type AuditFilter } from './audit-log'
 import {
   cashBalances,
@@ -919,7 +920,7 @@ const auditLog: ReportDef = {
   },
 }
 
-export const REPORTS: ReportDef[] = [rekapKas, bukuKas, pengeluaranKategori, anggaranProject, rekapPengajuan, kelengkapan, biayaKendaraan]
+export const REPORTS: ReportDef[] = [rekapKas, bukuKas, pengeluaranKategori, anggaranProject, rekapPengajuan, kelengkapan, biayaKendaraan, absensiReport]
 export const AUDIT_REPORT = auditLog
 export const ALL_REPORTS: ReportDef[] = [...REPORTS, auditLog]
 export const REPORT_CODES = ALL_REPORTS.map((r) => r.code)

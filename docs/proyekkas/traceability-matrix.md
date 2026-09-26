@@ -12,21 +12,21 @@ Conventions:
 
 | US | Module | Roles | Payload collections | API | Screen | Phase | Test type |
 |---|---|---|---|---|---|---|---|
-| US-01 | M11 | Staff | `attendances`, `projects`, `media-selfies`, `devices`, `audit-logs` | `POST /api/v1/attendance/check-in` (brief), `POST /api/v1/attendance/check-out` (proposed) | APK | F5 (API) / F4 (APK) | unit (geofence, 1×/day), API, e2e (APK), manual (mock location) |
-| US-02 | M11 | Staff | `attendances`, `devices` | `POST /api/v1/sync/batch` (brief) | APK | F4 | unit (offline merge), API, e2e (airplane-mode) |
+| US-01 | M11 | Staff | `attendances`, `projects`, `cost-centers` (geofence Q-40), `work-schedules`, `media-selfies`, `devices`, `audit-logs` | `POST /api/v1/sync/batch` items `attendance.check_in` / `attendance.check_out` (payload `project_id` XOR `cost_center_id`); `POST /api/v1/media/selfies` — **E6 backend done** (`domain/attendance/record.ts`) | APK | F4b slice + E6 (API) / E6-APK S2 | unit `e6-attendance.test.ts`, `f4b-mobile.test.ts`; API `f4b-attendance.int.test.ts`, `e6-attendance.int.test.ts` (cost-center geofence, distance in rejection); e2e APK; manual (mock location) |
+| US-02 | M11 | Staff | `attendances`, `devices` | `POST /api/v1/sync/batch` (brief) — offline flag, server-estimated time (F4b) | APK | F4 | unit (offline merge), API `f4b-attendance.int.test.ts`, e2e (airplane-mode) |
 | US-03 | M03 | Staff, PM, Admin | `expense-requests` (+`lines`), `projects`, `cost-centers`, `employee-bank-accounts`, `expense-categories`, `uoms` | Payload REST `POST /api/expense-requests` (draft) **TBD-architecture**; `POST /api/v1/expense-requests/{id}/submit` (brief) | APK, web dashboard | F2 (API) / F4 (APK) | unit (grand total, project XOR cost center), API (validation errors), e2e |
 | US-04 | M03 | Staff, Admin (creator) | `expense-requests`, `approvals`, `audit-logs` | `POST /api/v1/expense-requests/{id}/withdraw`, `/cancel` (proposed); draft edit via Payload REST **TBD-architecture** | APK, web dashboard | F2 / F4 | unit (state guard), API (edit after decision → rejected) |
 | US-05 | M03, M12 | Staff | `expense-requests`, `notifications`, `devices` | `GET /api/v1/expense-requests/{id}` (proposed, includes timeline) | APK, web dashboard | F2 / F4 | API, e2e, manual (push) |
 | US-06 | M03 | Staff | `expense-requests` | `POST /api/v1/expense-requests/{id}/resubmit` (proposed; clones into new draft) | APK, web dashboard | F2 / F4 | unit (clone incl. lines/requesters), API |
 | US-07 | M06 | Staff | `receipts`, `media-receipts`, `expense-requests` | `POST /api/v1/expense-requests/{id}/receipts` (proposed) or Payload upload REST **TBD-architecture** | APK, web dashboard | F2 / F4 | unit (resize, totals), API, e2e |
 | US-08 | M06 | Staff | `settlements`, `receipts` | `POST /api/v1/expense-requests/{id}/lpj/submit` (brief `/lpj/submit`) | APK, web dashboard | F2 / F4 | unit (Uang Muka only), API |
-| US-09 | M11 | Staff | `attendances` | `GET /api/v1/attendance/me?month=` (proposed) | APK | F5 / F4 | API, e2e |
+| US-09 | M11 | Staff | `attendances`, `attendance-corrections`, `work-schedules`, `holidays` | `GET /api/v1/attendance/me?month=YYYY-MM` — **E6 backend done** (days, duration, late/early minutes, holiday/off-day flags, on-behalf, corrections); `GET /api/v1/attendance/recap?employee_id=&month=` (PM team / office) | APK, web dashboard (S2) | E6 (API) / S2 (APK + web) | unit (lateness table, recap numbers); API `e6-attendance.int.test.ts` (recap = SQL reconciliation, scope) |
 | US-10 | M09 | PM | `progress-reports`, `project-stages`, `media-progress-photos` | `POST /api/v1/progress-reports` (proposed) | APK, web dashboard | F5 | unit (weight × % recompute, ≤5 photos), API, e2e |
 | US-11 | M09, M12 | PM | `progress-reports`, `notifications`, `company-settings` | job/cron (pg-boss or Payload Jobs — **TBD-architecture**) | APK | F5 | unit (N-day rule), manual |
 | US-12 | M02, M08 | PM, Owner | `projects`, `project-stages`, `cash-entries`, `expense-requests` | `GET /api/v1/dashboard/pm` (proposed) | web dashboard, APK | F3 / F4 | unit (colour thresholds), e2e |
-| US-13 | M11 | PM | `attendances`, `team-assignments` | `GET /api/v1/attendance/team-today` (proposed) | APK, web dashboard | F5 | API (team scope), e2e |
-| US-14 | M11 | PM | `attendances`, `media-selfies` | `POST /api/v1/attendance/on-behalf` (proposed) | APK | F5 | unit, API (non-team member → rejected) |
-| US-15 | M11 | PM | `attendance-corrections`, `attendances`, `audit-logs` | `POST /api/v1/attendance/{id}/correct` (proposed) | web dashboard, APK | F5 | unit (reason required), API |
+| US-13 | M11 | PM | `attendances`, `team-assignments` | `GET /api/v1/attendance/team-today?date=&project_id=&cost_center_id=` — **E6 backend done** (belum absen / hadir / selesai; PM team, office all) | APK, web dashboard (S2) | E6 (API) / S2 | unit (status/counts); API (team scope, filters outside team → empty, staff 403) |
+| US-14 | M11 | PM | `attendances` (`source = pm`, `recordedBy`, `onBehalfReason`), `media-selfies` | `POST /api/v1/sync/batch` item `attendance.on_behalf` (payload `SyncOnBehalfPayload`; replaces the proposed `POST /attendance/on-behalf` — one offline-capable write path) — **E6 backend done** | APK (S2) | E6 (API) / S2 (APK) | unit (payload); API (staff / other-team PM / own / unassigned / foreign selfie / mock / no reason → rejected; DB CHECK) |
+| US-15 | M11 | PM, Admin | `attendance-corrections` (append-only), `attendances`, `audit-logs` | `POST /api/v1/attendance/{id}/correct` `{new_time, reason}` (Idempotency-Key) — **E6 backend done**; direct correction by the team PM or Admin, no approval step (requirements §4/§7 T10) | web dashboard, APK (S2) | E6 (API) / S2 | unit (reason required); API (400 without reason / other date / order, 403 Finance/Direktur/own, 404 other PM, audit old → new, append-only DB) |
 | US-16 | M10 | PM, Owner, Admin | `team-assignments`, `employees` | Payload REST `/api/team-assignments` (web admin) | web admin, web dashboard | F5 | API (PM scope), e2e |
 | US-17 | M03 | PM | `expense-requests` | `GET /api/v1/expense-requests?scope=team` (proposed) | APK, web dashboard | F2 / F4 | API (other PM's project → 403/empty; approve → rejected) |
 | US-18 | M08 | PM | `budget-addenda`, `approvals` | `POST /api/v1/budget-addenda` (proposed), `/submit` | web dashboard | F5 | unit, API |
@@ -120,3 +120,15 @@ Manual UAT by the user is in progress for all rows (F2 gate pending).
 
 Not in F2 scope and not implemented: batch/period PDF (worker), signed media URLs (ADR 0004 §4, F6), FCM push (F4),
 settlement reversal (F6 backlog).
+
+## E6 backend status (plan `plans/fase1-golive.md` §E6, sprint S1)
+
+- **M13 laporan absensi**: report `absensi` (`GET /api/v1/reports/absensi?bulan=YYYY-MM&project=&pusat=`, CSV/XLSX;
+  Finance/Direktur all, PM team) — same aggregation as the recap; test `e6-attendance.int.test.ts` reconciles recap and
+  report with an independent SQL query.
+- **Jadwal/libur/terlambat (Q-30)**: `work-schedules.workDays`, `employees.workSchedule`,
+  `company-settings.defaultWorkSchedule`; snapshot on the check-in row (`attendances.schedule`).
+- **Retensi selfie (Q-33)**: `company-settings.selfieRetentionMonths` (default 12) + job `selfieRetention` (dry run:
+  counts candidates, face reference photos excluded); deleting files = S2. Selfie viewer
+  `GET /api/v1/attendance/{id}/selfie` (audited `view_sensitive`).
+- Web views (rekap, tim hari ini, laporan UI beyond the generic report page) and APK screens: sprint S2.

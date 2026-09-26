@@ -1,6 +1,7 @@
 import type { Endpoint } from 'payload'
 
 import { testEmailEndpoint } from './endpoints/admin'
+import { ATTENDANCE_ENDPOINTS } from './endpoints/attendance'
 import { registerDeviceEndpoint, revokeDeviceEndpoint } from './endpoints/devices'
 import { healthEndpoint, healthHeadEndpoint, readyEndpoint, readyHeadEndpoint } from './endpoints/health'
 import { CASH_ENDPOINTS } from './endpoints/cash'
@@ -38,4 +39,6 @@ export const v1Endpoints: Endpoint[] = [
   syncBatchEndpoint,
   // F3: role dashboards, reports + CSV/XLSX/PDF exports, global audit log (Q-F3-1…8)
   ...REPORT_ENDPOINTS,
+  // E6: attendance recap (US-09), team today (US-13), T10 correction (US-15), selfie viewer (Q-33)
+  ...ATTENDANCE_ENDPOINTS,
 ]

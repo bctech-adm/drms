@@ -14,6 +14,7 @@ import * as migration_20260925_015425_f4b_device_integrity from './20260925_0154
 import * as migration_20260925_023715_f4b_attendance from './20260925_023715_f4b_attendance';
 import * as migration_20260925_023716_f4b_attendance_security from './20260925_023716_f4b_attendance_security';
 import * as migration_20260926_022918_e1_approval_direktur_finance from './20260926_022918_e1_approval_direktur_finance';
+import * as migration_20260926_091848_e6_attendance from './20260926_091848_e6_attendance';
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260926_022918_e1_approval_direktur_finance.up,
     down: migration_20260926_022918_e1_approval_direktur_finance.down,
     name: '20260926_022918_e1_approval_direktur_finance',
+  },
+  {
+    up: migration_20260926_091848_e6_attendance.up,
+    down: migration_20260926_091848_e6_attendance.down,
+    name: '20260926_091848_e6_attendance'
   },
 ];
