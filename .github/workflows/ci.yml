@@ -22,7 +22,7 @@ env:
 
 jobs:
   verify:
-    name: lint · typecheck · unit · openapi drift
+    name: lint · typecheck · unit + coverage · openapi drift
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -34,7 +34,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
+      # E9: unit tests with the coverage gate (thresholds in apps/web/vitest.config.ts)
+      - run: npm run test:coverage
       - name: OpenAPI contract up to date (packages/api-contract/openapi.json)
         run: npm run check:openapi
       - name: npm audit (high+)
