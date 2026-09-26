@@ -7,6 +7,7 @@ import {
   type CollectionBeforeChangeHook,
   type CollectionBeforeOperationHook,
   type CollectionConfig,
+  type Field,
   type ImageSize,
   type UploadConfig,
 } from 'payload'
@@ -39,6 +40,8 @@ export type MediaSpec = {
   /** Per-MIME size cap below the global 8 MiB (e.g. transfer-proof PDFs ≤ 2 MB). */
   maxBytesByMime?: Record<string, number>
   access: { read: Access; create: Access }
+  /** Extra read-only fields of one collection (e.g. selfie retention tombstone). */
+  extraFields?: Field[]
   /** Content-Disposition for served files (PDFs: attachment). */
   disposition?: 'inline' | 'attachment'
 }
@@ -149,6 +152,7 @@ export function mediaCollection(spec: MediaSpec): CollectionConfig {
         { name: 'originalHeight', type: 'number', access: never, admin: readOnly },
         { name: 'originalSize', type: 'number', access: never, admin: readOnly },
         { name: 'capturedAt', type: 'date', label: 'Waktu foto (perangkat)', access: never },
+        ...(spec.extraFields ?? []),
       ],
     },
     { docType: spec.slug.replace(/-/g, '_'), extraFields: ['filename', 'mimeType', 'filesize', 'width', 'height'] },

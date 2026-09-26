@@ -11,6 +11,7 @@ import { lastDay, MONTHS_SHORT, periodLabel } from '@/domain/reports/rules'
 import { delta, share, statusTone, type PipelineStage } from '@/domain/reports/viz'
 import { withReqTransaction } from '@/lib/system-tx'
 
+import { TeamTodayWidget } from './Absensi'
 import { ChartHover } from './ChartHover'
 import { BudgetBadge, F3Root, Placeholder } from './f3-ui'
 import {
@@ -977,7 +978,7 @@ async function Pm({ req }: { req: PayloadRequest }) {
         </Card>
         <Card id="f5" title="Lapangan" sub="Modul F5" span={6} i={11}>
           <div style={{ display: 'grid', gap: 8 }}>
-            <Placeholder id="attendance-f5" text="Kehadiran hari ini: tersedia setelah modul absensi (F5, US-13)." />
+            <TeamTodayWidget req={req} />
             <Placeholder id="progress-f5" text="Laporan progress terakhir: tersedia setelah modul laporan progress (F5, US-31)." />
           </div>
         </Card>

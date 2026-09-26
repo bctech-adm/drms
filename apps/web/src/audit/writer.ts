@@ -50,6 +50,9 @@ export const AUDIT_ACTIONS = [
   // E1 (ADR 0013 G1-2): a decision position was skipped at submit because its only holders are the
   // requester/creator (e.g. the only Direktur is the requester).
   'approval_skipped',
+  // E6 S2 (Q-33): the selfieRetention job deleted selfie files past the retention period (one
+  // summary row per run, counts only).
+  'retention_purge',
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
