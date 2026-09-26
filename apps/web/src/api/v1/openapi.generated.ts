@@ -1844,6 +1844,22 @@ export const openapiDocument = {
               "null"
             ],
             "exclusiveMinimum": 0
+          },
+          "reversalCount": {
+            "type": "integer",
+            "description": "E9: how often the settlement was reversed (void of the refund KM / shortfall transfer)."
+          },
+          "lastReversedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lastReversalReason": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -1863,7 +1879,10 @@ export const openapiDocument = {
           "verifiedAt",
           "settledAt",
           "refundCashEntryId",
-          "shortfallTransferId"
+          "shortfallTransferId",
+          "reversalCount",
+          "lastReversedAt",
+          "lastReversalReason"
         ],
         "description": "T5 LPJ (Uang Muka only; null before \"Nota Lengkap\")."
       },
@@ -1891,7 +1910,8 @@ export const openapiDocument = {
           "lpj_submit",
           "lpj_request_revision",
           "lpj_verify",
-          "settle"
+          "settle",
+          "settle_reverse"
         ]
       },
       "ExpenseRequestCreate": {
@@ -3189,6 +3209,72 @@ export const openapiDocument = {
         ],
         "additionalProperties": false
       },
+      "SettleReverseResult": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/ExpenseRequestDetail"
+          },
+          "voided": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "refund",
+                  "shortfall"
+                ]
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000000000000
+              },
+              "refundCashEntryId": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "refundCashEntryNo": {
+                "type": "string"
+              },
+              "shortfallTransferId": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "shortfallTransferNo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reversalCashEntryId": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "reversalCashEntryNo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "amount",
+              "reversalCashEntryId",
+              "reversalCashEntryNo"
+            ],
+            "description": "Documents voided by the reversal (also in the audit log)."
+          }
+        },
+        "required": [
+          "request",
+          "voided"
+        ]
+      },
       "ApprovalInbox": {
         "type": "object",
         "properties": {
@@ -3461,7 +3547,29 @@ export const openapiDocument = {
           "signatures",
           "attachments",
           "company",
-          "progress-photos"
+          "progress-photos",
+          "selfies"
+        ]
+      },
+      "SignedMediaUrl": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Relative URL: /api/v1/media/{collection}/{id}/file?…&exp=&uid=&sig="
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ttlSeconds": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt",
+          "ttlSeconds"
         ]
       },
       "AppConfig": {
@@ -12541,6 +12649,153 @@ export const openapiDocument = {
         }
       }
     },
+    "/expense-requests/{id}/settle/reverse": {
+      "post": {
+        "summary": "E9 Finance: reverse a settlement — void the refund KM / shortfall transfer (+ KK reversal) → LPJ \"Terverifikasi\" again (reason; closed period → 409)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": false,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422."
+            },
+            "required": false,
+            "description": "Required from the APK; a retry with the same key and body returns the stored response (header Idempotent-Replayed: true); another body → 422.",
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reversed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettleReverseResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/expense-requests/{id}/pdf": {
       "get": {
         "summary": "PDF \"Pengajuan Biaya\" (client form replica + receipt photos); any status after submit; audited as export",
@@ -13139,7 +13394,177 @@ export const openapiDocument = {
     },
     "/media/{collection}/{id}/file": {
       "get": {
-        "summary": "Download a stored file the caller may read (owner-document scope; else 404); private, no-store",
+        "summary": "Download a stored file the caller may read (owner-document scope; else 404); private, no-store. E9: alternatively a SIGNED URL from GET …/signed-url (query exp, uid, sig; no bearer/cookie needed) — expired/invalid → 403 (code URL_EXPIRED / URL_INVALID), valid signature but the user may not read the file → 403 (code FORBIDDEN)",
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "session": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/FileCollection"
+            },
+            "required": true,
+            "name": "collection",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "thumb"
+              ]
+            },
+            "required": false,
+            "name": "variant",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Signed URL: expiry (unix seconds)"
+            },
+            "required": false,
+            "description": "Signed URL: expiry (unix seconds)",
+            "name": "exp",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$",
+              "description": "Signed URL: user the URL was minted for"
+            },
+            "required": false,
+            "description": "Signed URL: user the URL was minted for",
+            "name": "uid",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Signed URL: base64url HMAC-SHA256 (ADR 0004 §4)"
+            },
+            "required": false,
+            "description": "Signed URL: base64url HMAC-SHA256 (ADR 0004 §4)",
+            "name": "sig",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Registered install id (APK)."
+            },
+            "required": true,
+            "description": "Registered install id (APK).",
+            "name": "X-Device-Id",
+            "in": "header"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "APK version; below company minimum → 426."
+            },
+            "required": false,
+            "description": "APK version; below company minimum → 426.",
+            "name": "X-App-Version",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File bytes (image/jpeg, image/png, image/webp thumb, application/pdf)",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "426": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/{collection}/{id}/signed-url": {
+      "get": {
+        "summary": "E9 (ADR 0004 §4): mint a signed, 5-minute URL of the file endpoint for the caller (same visibility as the download; else 404). The URL is relative to the API origin",
         "security": [
           {
             "bearer": []
@@ -13201,12 +13626,11 @@ export const openapiDocument = {
         ],
         "responses": {
           "200": {
-            "description": "File bytes (image/jpeg, image/png, image/webp thumb, application/pdf)",
+            "description": "Signed URL",
             "content": {
-              "application/octet-stream": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "format": "binary"
+                  "$ref": "#/components/schemas/SignedMediaUrl"
                 }
               }
             }

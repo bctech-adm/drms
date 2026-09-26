@@ -287,6 +287,13 @@ export function buildOpenApiDocument(version: string) {
     ['id'],
     res(200, 'Settled', F.SettleResult, [400, 401, 403, 404, 409, 422, 426, 429]),
   )
+  post(
+    '/expense-requests/{id}/settle/reverse',
+    'E9 Finance: reverse a settlement — void the refund KM / shortfall transfer (+ KK reversal) → LPJ "Terverifikasi" again (reason; closed period → 409)',
+    F.ReasonBody,
+    ['id'],
+    res(200, 'Reversed', F.SettleReverseResult, [400, 401, 403, 404, 409, 422, 426, 429]),
+  )
   registry.registerPath({
     method: 'get',
     path: '/expense-requests/{id}/pdf',
@@ -341,17 +348,35 @@ export function buildOpenApiDocument(version: string) {
   registry.registerPath({
     method: 'get',
     path: '/media/{collection}/{id}/file',
-    summary: 'Download a stored file the caller may read (owner-document scope; else 404); private, no-store',
+    summary:
+      'Download a stored file the caller may read (owner-document scope; else 404); private, no-store. E9: alternatively a SIGNED URL from GET …/signed-url (query exp, uid, sig; no bearer/cookie needed) — expired/invalid → 403 (code URL_EXPIRED / URL_INVALID), valid signature but the user may not read the file → 403 (code FORBIDDEN)',
+    security: [...security, {}],
+    request: {
+      headers: deviceHeader,
+      params: z.object({ collection: F.FileCollectionEnum, id: z.string().regex(/^\d+$/) }),
+      query: z.object({
+        variant: z.enum(['thumb']).optional(),
+        exp: z.string().regex(/^\d+$/).optional().meta({ description: 'Signed URL: expiry (unix seconds)' }),
+        uid: z.string().regex(/^\d+$/).optional().meta({ description: 'Signed URL: user the URL was minted for' }),
+        sig: z.string().optional().meta({ description: 'Signed URL: base64url HMAC-SHA256 (ADR 0004 §4)' }),
+      }),
+    },
+    responses: {
+      200: { description: 'File bytes (image/jpeg, image/png, image/webp thumb, application/pdf)', content: { 'application/octet-stream': { schema: z.string().meta({ format: 'binary' }) } } },
+      ...problemResponses(400, 401, 403, 404, 426, 429),
+    },
+  })
+  registry.registerPath({
+    method: 'get',
+    path: '/media/{collection}/{id}/signed-url',
+    summary: 'E9 (ADR 0004 §4): mint a signed, 5-minute URL of the file endpoint for the caller (same visibility as the download; else 404). The URL is relative to the API origin',
     security,
     request: {
       headers: deviceHeader,
       params: z.object({ collection: F.FileCollectionEnum, id: z.string().regex(/^\d+$/) }),
       query: z.object({ variant: z.enum(['thumb']).optional() }),
     },
-    responses: {
-      200: { description: 'File bytes (image/jpeg, image/png, image/webp thumb, application/pdf)', content: { 'application/octet-stream': { schema: z.string().meta({ format: 'binary' }) } } },
-      ...problemResponses(400, 401, 404, 426, 429),
-    },
+    responses: res(200, 'Signed URL', F.SignedMediaUrl, [400, 401, 404, 426, 429]),
   })
 
   // ---- F4: APK backend (ADR 0010) ----

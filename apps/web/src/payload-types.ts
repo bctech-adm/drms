@@ -1301,6 +1301,10 @@ export interface Settlement {
   settledBy?: (number | null) | User;
   refundCashEntry?: (number | null) | CashEntry;
   shortfallTransfer?: (number | null) | Transfer;
+  reversalCount?: number | null;
+  lastReversedAt?: string | null;
+  lastReversedBy?: (number | null) | User;
+  lastReversalReason?: string | null;
   uuid?: string | null;
   /**
    * Wajib saat menonaktifkan data atau mengubah data yang dilindungi. Dicatat di audit log.
@@ -2612,6 +2616,10 @@ export interface SettlementsSelect<T extends boolean = true> {
   settledBy?: T;
   refundCashEntry?: T;
   shortfallTransfer?: T;
+  reversalCount?: T;
+  lastReversedAt?: T;
+  lastReversedBy?: T;
+  lastReversalReason?: T;
   uuid?: T;
   changeReason?: T;
   updatedAt?: T;

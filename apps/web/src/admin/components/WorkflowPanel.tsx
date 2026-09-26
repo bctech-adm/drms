@@ -164,6 +164,24 @@ export async function WorkflowPanel(props: UIFieldServerProps) {
               ))}
           </div>
         ) : null}
+        {d.allowedActions.includes('settle_reverse') && d.settlement ? (
+          // E9: Finance reverses the LPJ settlement (void refund KM / shortfall transfer) → "LPJ Terverifikasi".
+          <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }} data-pk-settle-reverse>
+            <style>{KAS_STYLE}</style>
+            <ReasonAction
+              url={`/api/v1/expense-requests/${d.id}/settle/reverse`}
+              label="Batalkan penyelesaian LPJ"
+              title={`Batalkan penyelesaian LPJ ${d.settlement.docNo ?? ''}?`}
+              description={
+                d.settlement.settlementType === 'refund'
+                  ? `Kas masuk pengembalian ${rp(d.settlement.difference ?? 0)} di-void (jurnal balik), LPJ kembali ke Terverifikasi dan dapat diselesaikan ulang. Ditolak bila periode transaksinya sudah ditutup.`
+                  : `Transfer kekurangan ${rp(-(d.settlement.difference ?? 0))} di-void dan KK-nya dibalik, LPJ kembali ke Terverifikasi dan dapat diselesaikan ulang. Ditolak bila periode transaksinya sudah ditutup.`
+              }
+              confirmLabel="Batalkan penyelesaian"
+              testId="settle-reverse"
+            />
+          </div>
+        ) : null}
         {d.rejectReason ? <div style={{ marginTop: 6, color: 'var(--theme-error-500)' }}>Alasan ditolak: {d.rejectReason}</div> : null}
         {d.cancelReason ? <div style={{ marginTop: 6 }}>Alasan batal: {d.cancelReason}</div> : null}
         {(snap?.skipped ?? []).length > 0 ? (

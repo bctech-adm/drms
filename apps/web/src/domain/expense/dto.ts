@@ -227,11 +227,15 @@ export async function detail(req: PayloadRequest, id: number) {
           settledAt: lpj.settledAt ?? null,
           refundCashEntryId: relId(lpj.refundCashEntry) ?? null,
           shortfallTransferId: relId(lpj.shortfallTransfer) ?? null,
+          reversalCount: lpj.reversalCount ?? 0,
+          lastReversedAt: lpj.lastReversedAt ?? null,
+          lastReversalReason: lpj.lastReversalReason ?? null,
         }
       : null,
     budget,
     openWarningFlags: flags.filter((f) => f.status === 'open' && f.level === 'warning').length,
-    allowedActions: allowedActions(ctx),
+    // E9: reversal only for a settled LPJ that posted a refund KM / shortfall transfer (UI hint; the service re-checks).
+    allowedActions: allowedActions(ctx).filter((a) => a !== 'settle_reverse' || (lpj?.status === 'settled' && (lpj.settlementType === 'refund' || lpj.settlementType === 'shortfall'))),
     resubmitOfId: relId(doc.resubmitOf) ?? null,
     // F2e: the previous (rejected) request by number + title ("Pengajuan ulang dari").
     resubmitOf:

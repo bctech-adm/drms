@@ -200,14 +200,21 @@ export async function loadEntry(req: PayloadRequest, id: number): Promise<CashEn
  * if its period is open, else today (Odoo-like), and mark the original `void` with reason.
  * Entries created by a transfer are voided only through the transfer (keeps T1/T3 consistent).
  */
-export async function voidEntry(req: PayloadRequest, id: number, reason: string, opts: { viaTransfer?: boolean } = {}): Promise<{ original: CashEntryDoc; reversal: CashEntryDoc }> {
+export async function voidEntry(
+  req: PayloadRequest,
+  id: number,
+  reason: string,
+  opts: { viaTransfer?: boolean; viaSettlement?: boolean } = {},
+): Promise<{ original: CashEntryDoc; reversal: CashEntryDoc }> {
   const e = await loadEntry(req, id)
   if (e.status === 'void') fail(409, 'Transaksi sudah di-void.')
   if (e.sourceType === 'reversal') fail(409, 'Jurnal balik tidak dapat di-void.')
   if (e.sourceType === 'transfer' && !opts.viaTransfer) fail(409, 'Kas keluar dari transfer di-void lewat pembatalan transfer.')
   // F2b: the LPJ refund belongs to a settled request ("Selesai"); voiding it alone would leave the
-  // settlement inconsistent → not allowed (settlement reversal is a follow-up, see F2b report).
-  if (e.sourceType === 'settlement_refund') fail(409, 'Kas masuk pengembalian LPJ tidak dapat di-void terpisah dari LPJ.')
+  // settlement inconsistent → only through the settlement reversal (E9, lpj.ts reverseSettlement).
+  if (e.sourceType === 'settlement_refund' && !opts.viaSettlement) {
+    fail(409, 'Kas masuk pengembalian LPJ di-void lewat "Batalkan penyelesaian" pada LPJ, bukan dari buku kas.')
+  }
   const lock = await currentLockDate(req)
   const reversalDate = lock && e.entryDate <= lock ? await today(req) : e.entryDate
   const reversal = await postEntry(req, {

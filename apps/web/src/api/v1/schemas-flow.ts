@@ -60,6 +60,7 @@ export const ActionEnum = z
     'lpj_request_revision',
     'lpj_verify',
     'settle',
+    'settle_reverse',
   ])
   .meta({ id: 'RequestAction' })
 
@@ -320,6 +321,9 @@ export const ExpenseRequestDetail = ExpenseRequestListItem.extend({
       settledAt: z.string().nullable(),
       refundCashEntryId: id.nullable(),
       shortfallTransferId: id.nullable(),
+      reversalCount: z.number().int().meta({ description: 'E9: how often the settlement was reversed (void of the refund KM / shortfall transfer).' }),
+      lastReversedAt: z.string().nullable(),
+      lastReversalReason: z.string().nullable(),
     })
     .nullable()
     .meta({ id: 'Settlement', description: 'T5 LPJ (Uang Muka only; null before "Nota Lengkap").' }),
@@ -351,6 +355,24 @@ export const LpjSubmitBody = z
   .meta({ id: 'LpjSubmitBody' })
 
 export const RevisionBody = z.object({ note: reason }).strict().meta({ id: 'LpjRevisionBody' })
+
+export const SettleReverseResult = z
+  .object({
+    request: ExpenseRequestDetail,
+    voided: z
+      .object({
+        type: z.enum(['refund', 'shortfall']),
+        amount: rupiah,
+        refundCashEntryId: id.optional(),
+        refundCashEntryNo: z.string().optional(),
+        shortfallTransferId: id.optional(),
+        shortfallTransferNo: z.string().nullable().optional(),
+        reversalCashEntryId: id.nullable(),
+        reversalCashEntryNo: z.string().nullable(),
+      })
+      .meta({ description: 'Documents voided by the reversal (also in the audit log).' }),
+  })
+  .meta({ id: 'SettleReverseResult' })
 
 export const SettleBody = z
   .object({
@@ -538,7 +560,14 @@ export const NotificationQuery = z
   .meta({ id: 'NotificationQuery' })
 export const ReadAllResult = z.object({ updated: z.number().int() }).meta({ id: 'NotificationsReadAll' })
 
-export const FileCollectionEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'company', 'progress-photos']).meta({ id: 'FileCollection' })
+export const FileCollectionEnum = z.enum(['receipts', 'transfer-proofs', 'signatures', 'attachments', 'company', 'progress-photos', 'selfies']).meta({ id: 'FileCollection' })
+export const SignedMediaUrl = z
+  .object({
+    url: z.string().meta({ description: 'Relative URL: /api/v1/media/{collection}/{id}/file?…&exp=&uid=&sig=' }),
+    expiresAt: z.iso.datetime(),
+    ttlSeconds: z.number().int(),
+  })
+  .meta({ id: 'SignedMediaUrl' })
 export const PdfQuery = z.object({ variant: z.enum(['standard', 'internal']).optional().meta({ description: 'internal = with receipt validation flags (Finance/Owner/Admin).' }) }).meta({ id: 'PdfQuery' })
 
 export const ApprovalInbox = z
