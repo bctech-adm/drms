@@ -627,6 +627,10 @@ export interface CashAccount {
   accountNo?: string | null;
   accountHolder?: string | null;
   openingBalance?: number | null;
+  /**
+   * Tanggal go-live akun ini. Transaksi kas sebelum tanggal ini ditolak; saldo awal terkunci setelah periode sejak tanggal ini ditutup. Kosong = tanpa kunci.
+   */
+  openingBalanceDate?: string | null;
   odooJournalCode?: string | null;
   active?: boolean | null;
   uuid?: string | null;
@@ -1576,7 +1580,8 @@ export interface AuditLog {
     | 'acknowledge_delegated'
     | 'access_denied'
     | 'approval_skipped'
-    | 'retention_purge';
+    | 'retention_purge'
+    | 'import';
   field?: string | null;
   lineNo?: number | null;
   oldValue?:
@@ -2227,6 +2232,7 @@ export interface CashAccountsSelect<T extends boolean = true> {
   accountNo?: T;
   accountHolder?: T;
   openingBalance?: T;
+  openingBalanceDate?: T;
   odooJournalCode?: T;
   active?: T;
   uuid?: T;
