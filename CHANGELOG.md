@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **APK S2 — laporan progress (E4) + absensi lengkap (E6)** (`apps/mobile`, branch
+  `feat/mobile-s2-progress-attendance`). Progress: offline-first reports (project/stage, % never below the stage %,
+  ≤ 5 rear-camera photos compressed on the phone, `progress_report.draft_upsert` or online POST/PATCH when
+  `syncProgressReports` is off), list/detail with photo thumbs, edit ≤ 24 h with reason, conflict screen (server vs
+  phone), K-09 "progress fisik vs anggaran" cards (PM/Direktur home + tab). Absensi: check-in/out at a project or a
+  pusat biaya with distance feedback, monthly recap calendar, "Tim hari ini", PM on-behalf (reason, front/back
+  camera, offline), corrections (online). Local DB schema v2 (`local_progress_reports`, additive). Fix: saving an
+  expense draft no longer deletes queued selfies/progress photos. E5 addendum approval on the APK not yet (backend
+  not on develop).
 - **S2 web A — E4 progress web + E5 Addendum RAB** (`apps/web`, fase1-golive §E4/§E5, US-12/18/29/30/31; branch
   `feat/s2a-progress-web-addendum`):
   - Admin views `/admin/progress` (K-09 progress fisik vs % anggaran per project, KPI tiles, table view),

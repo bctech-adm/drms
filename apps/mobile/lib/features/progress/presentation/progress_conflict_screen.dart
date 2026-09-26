@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/connectivity/connectivity_controller.dart';
 import '../../../core/network/api_exception.dart';
@@ -39,7 +38,7 @@ class _ProgressConflictScreenState extends ConsumerState<ProgressConflictScreen>
     ref.invalidate(progressReportsProvider);
     if (!mounted) return;
     showSnack(context, t.progressUsedServer);
-    context.pop();
+    Navigator.of(context).maybePop();
   }
 
   Future<void> _resend() async {
@@ -58,7 +57,7 @@ class _ProgressConflictScreenState extends ConsumerState<ProgressConflictScreen>
       ref.read(syncCoordinatorProvider.notifier).requestSync(delay: Duration.zero);
       if (!mounted) return;
       showSnack(context, t.progressResent);
-      context.pop();
+      Navigator.of(context).maybePop();
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {

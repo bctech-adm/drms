@@ -2,7 +2,6 @@ import 'package:camera/camera.dart' show CameraLensDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/connectivity/connectivity_controller.dart';
 import '../../../core/media/photo_compressor.dart';
@@ -235,11 +234,11 @@ class _ProgressEditorScreenState extends ConsumerState<ProgressEditorScreen> {
             ? t.progressSent
             : (online ? t.progressQueuedOnline : t.progressQueuedOffline),
       );
-      context.pop();
+      Navigator.of(context).maybePop();
     } on NetworkException {
       if (mounted) {
         showSnack(context, t.progressKeptLocal);
-        context.pop();
+        Navigator.of(context).maybePop();
       }
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
@@ -265,7 +264,7 @@ class _ProgressEditorScreenState extends ConsumerState<ProgressEditorScreen> {
     );
     if (ok != true) return;
     await ref.read(progressServiceProvider).discard(sub, _uuid);
-    if (mounted) context.pop();
+    if (mounted) Navigator.of(context).maybePop();
   }
 
   @override

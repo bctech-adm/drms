@@ -156,8 +156,10 @@ class OutboxRepository {
       );
       return pending.opUuid;
     }
+    // An edit (base_rev set) never reuses the report uuid: the server may already hold the creating item
+    // under that client_uuid and would answer `duplicate` with the old result.
     final anyBefore = await (db.select(db.outbox)..where((t) => t.opUuid.equals(reportUuid))).getSingleOrNull();
-    final opUuid = anyBefore == null ? reportUuid : const Uuid().v7();
+    final opUuid = anyBefore == null && baseRev == null ? reportUuid : const Uuid().v7();
     await db
         .into(db.outbox)
         .insert(

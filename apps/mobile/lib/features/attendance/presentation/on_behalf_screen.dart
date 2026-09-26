@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/connectivity/connectivity_controller.dart';
 import '../../../core/location/location_service.dart';
@@ -92,7 +91,7 @@ class _OnBehalfScreenState extends ConsumerState<OnBehalfScreen> {
       ref.read(syncCoordinatorProvider.notifier).requestSync(delay: Duration.zero);
       if (!mounted) return;
       showSnack(context, online ? t.onBehalfSavedOnline(who.name) : t.onBehalfSavedOffline(who.name));
-      context.pop();
+      Navigator.of(context).maybePop();
     } on LocationException catch (e) {
       setState(() {
         _notice = e.message;
