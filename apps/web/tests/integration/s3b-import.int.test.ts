@@ -26,6 +26,8 @@ const subs = new Map<string, string>(['andi.contoh', 'bunga.fiktif', 'candra.con
 const fileBytes = () => buildSample({ settings })
 
 let pbBefore: number | null = null
+/** Lock date left by other files (shared DB) before this file runs, e.g. 2026-08-31. */
+let lockBefore: string | null = null
 let finance: FlowUser
 
 async function run(mode: 'dry-run' | 'commit', bytes = fileBytes(), kcMap: ReadonlyMap<string, string> = subs): Promise<ImportReport> {
@@ -58,6 +60,7 @@ beforeAll(async () => {
   }
   const c = await sqlAs('app', "SELECT next_value FROM document_sequence_counters WHERE doc_type = 'expense_request' AND period_key = 'ALL'")
   pbBefore = c.rows[0] ? Number(c.rows[0].next_value) : null
+  lockBefore = (await sqlAs('app', 'SELECT pk_cash_lock_date()::text AS d')).rows[0].d
   finance = await makeFlowUser(['pk-finance'], 'impor-finance', null, { signature: false })
 })
 
@@ -137,8 +140,13 @@ describe('E11 go-live import (dry-run → commit → idempotent re-run)', () => 
       { name: 'Kas Kecil Contoh (FIKTIF)', ob: '5000000', opening_balance_date: GO_LIVE },
     ])
     // cut-over: previous period closed, audited
-    expect((await sqlAs('app', "SELECT status FROM period_closings WHERE period = '2020-01'")).rows).toEqual([{ status: 'closed' }])
-    expect(r.cutover).toMatchObject({ goLiveDate: GO_LIVE, pbStartAt: 229, closedPeriod: '2020-01' })
+    // (other files may already have closed a later month → the cut-over only notes that the month is locked)
+    if (lockBefore === null || lockBefore < '2020-01-31') {
+      expect((await sqlAs('app', "SELECT status FROM period_closings WHERE period = '2020-01'")).rows).toEqual([{ status: 'closed' }])
+      expect(r.cutover).toMatchObject({ goLiveDate: GO_LIVE, pbStartAt: 229, closedPeriod: '2020-01' })
+    } else {
+      expect(r.cutover).toMatchObject({ goLiveDate: GO_LIVE, pbStartAt: 229, closedPeriod: null, closeNote: `sudah terkunci s/d ${lockBefore}` })
+    }
     const audits = (await sqlAs('app', "SELECT field, source, reason, new_value FROM audit_logs WHERE action = 'import' AND doc_id = $1 ORDER BY id", [r.runId])).rows
     expect(audits.map((a) => a.field)).toEqual(expect.arrayContaining(['Karyawan', 'Pengguna', 'AkunKas', 'Pengaturan', 'selesai']))
     expect(audits.every((a) => a.source === 'system' && /^Impor data go-live contoh-fiktif\.xlsx \(sha256 [0-9a-f]{12}\) oleh uji integrasi$/.test(a.reason))).toBe(true)
@@ -212,11 +220,14 @@ describe('E11 opening balance lock + go-live date guard (ADR 0005 As implemented
   it('after a period on/after the opening date is closed, the opening balance is locked (hook 409, DB trigger, import dry-run error)', async () => {
     const p = await getTestPayload()
     const acc = (await sqlAs('app', "SELECT id FROM cash_accounts WHERE name = 'Kas Kecil Contoh (FIKTIF)'")).rows[0].id
-    // before the close: Finance may still correct it (reason required)
-    await p.update({ collection: 'cash-accounts', id: acc, data: { openingBalance: 5000001, changeReason: 'koreksi uji' }, overrideAccess: true /* SYSTEM-WRITE: test */ })
-    await p.update({ collection: 'cash-accounts', id: acc, data: { openingBalance: 5000000, changeReason: 'koreksi uji kembali' }, overrideAccess: true /* SYSTEM-WRITE: test */ })
-    await withSystemTransaction(p, null, (req) => p.create({ collection: 'period-closings', data: { period: '2020-02', status: 'closed', note: 'uji kunci saldo awal' }, overrideAccess: true /* SYSTEM-WRITE: test */, req }))
-    await expect(p.update({ collection: 'cash-accounts', id: acc, data: { openingBalance: 1, changeReason: 'tidak boleh' }, overrideAccess: true /* SYSTEM-WRITE: test */ })).rejects.toThrow(/Saldo awal terkunci: periode 2020-02/)
+    const closedLater = await count("SELECT count(*) AS n FROM period_closings WHERE status = 'closed' AND period >= '2020-02'")
+    if (closedLater === 0) {
+      // before the close: Finance may still correct it (reason required)
+      await p.update({ collection: 'cash-accounts', id: acc, data: { openingBalance: 5000001, changeReason: 'koreksi uji' }, overrideAccess: true /* SYSTEM-WRITE: test */ })
+      await p.update({ collection: 'cash-accounts', id: acc, data: { openingBalance: 5000000, changeReason: 'koreksi uji kembali' }, overrideAccess: true /* SYSTEM-WRITE: test */ })
+      await withSystemTransaction(p, null, (req) => p.create({ collection: 'period-closings', data: { period: '2020-02', status: 'closed', note: 'uji kunci saldo awal' }, overrideAccess: true /* SYSTEM-WRITE: test */, req }))
+    } // else: another file (shared DB) already closed a month after the go-live date → already locked
+    await expect(p.update({ collection: 'cash-accounts', id: acc, data: { openingBalance: 1, changeReason: 'tidak boleh' }, overrideAccess: true /* SYSTEM-WRITE: test */ })).rejects.toThrow(/Saldo awal terkunci: periode \d{4}-\d{2} sudah ditutup/)
     const db = await sqlError('app', 'UPDATE cash_accounts SET opening_balance = 1 WHERE id = $1', [acc])
     expect(db?.code).toBe('42501')
     expect(await sqlError('app', "UPDATE cash_accounts SET opening_balance_date = '2020-03-01' WHERE id = $1", [acc])).toMatchObject({ code: '42501' })
