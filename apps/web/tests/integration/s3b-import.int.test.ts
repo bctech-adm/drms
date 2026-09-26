@@ -148,7 +148,10 @@ describe('E11 go-live import (dry-run → commit → idempotent re-run)', () => 
       expect(r.cutover).toMatchObject({ goLiveDate: GO_LIVE, pbStartAt: 229, closedPeriod: null, closeNote: `sudah terkunci s/d ${lockBefore}` })
     }
     const audits = (await sqlAs('app', "SELECT field, source, reason, new_value FROM audit_logs WHERE action = 'import' AND doc_id = $1 ORDER BY id", [r.runId])).rows
-    expect(audits.map((a) => a.field)).toEqual(expect.arrayContaining(['Karyawan', 'Pengguna', 'AkunKas', 'Pengaturan', 'selesai']))
+    // "Pengaturan" is audited only when the cut-over changed something (period closed / PB counter raised);
+    // with a lock left by another file (file order is not fixed) the cut-over is a no-op.
+    const cutoverChanged = lockBefore === null || lockBefore < '2020-01-31'
+    expect(audits.map((a) => a.field)).toEqual(expect.arrayContaining(['Karyawan', 'Pengguna', 'AkunKas', ...(cutoverChanged ? ['Pengaturan'] : []), 'selesai']))
     expect(audits.every((a) => a.source === 'system' && /^Impor data go-live contoh-fiktif\.xlsx \(sha256 [0-9a-f]{12}\) oleh uji integrasi$/.test(a.reason))).toBe(true)
     // business rows carry the same reason (field-level audit of the masters)
     const empAudit = await sqlAs('app', "SELECT reason, source FROM audit_logs WHERE doc_type = 'employee' AND action = 'create' AND doc_id = (SELECT id::text FROM employees WHERE code = 'CTH-001') LIMIT 1")
