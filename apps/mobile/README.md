@@ -64,8 +64,11 @@ CI runs it on every APK it builds. Allow-listed false positives live in `tool/ap
 
 | Value | Flow | Used by |
 |---|---|---|
-| `browser` (default) | Authorization Code + PKCE in a Custom Tab (flutter_appauth, ADR 0003) | `config/prod.json` (prod decision open, F6) |
-| `password` | In-app form, Keycloak Direct Access Grant (`grant_type=password`) to `<issuer>/protocol/openid-connect/token`; logout = `POST <issuer>/protocol/openid-connect/logout` with `client_id` + `refresh_token` | `config/staging.json` |
+| `browser` (default of the code) | Authorization Code + PKCE in a Custom Tab (flutter_appauth, ADR 0003) | rollback only |
+| `password` | In-app form, Keycloak Direct Access Grant (`grant_type=password`) to `<issuer>/protocol/openid-connect/token`; logout = `POST <issuer>/protocol/openid-connect/logout` with `client_id` + `refresh_token` | `config/staging.json`, `config/prod.json` (user decision K3 / GATE G1-3, 2026-09-26: prod login = staging) |
+
+**Prod prerequisite:** Direct Access Grants must be enabled on client `proyekkas-mobile` in realm `drms` (E10)
+before a prod APK is handed out; until then the prod APK shows "Login langsung belum diaktifkan di server".
 
 `password` needs **Direct Access Grants** enabled on Keycloak client `proyekkas-mobile` (otherwise the app shows
 "Login langsung belum diaktifkan di server"). Users with a pending required action (e.g. a temporary password)
@@ -82,6 +85,24 @@ cannot log in this way and must set their password on the web first. Rollback: b
 - **Fallback** `id.co.drms.proyekkas:/oauth2redirect` (private-use scheme, lowercase) is used for builds without
   the stable key, e.g. the CI debug APK (`--dart-define=PK_OIDC_REDIRECT_URI=…`). Keycloak client
   `proyekkas-mobile` must allow this redirect URI.
+
+## Background sync (WorkManager, E3-b)
+
+`workmanager` 0.10.10 (ADR 0010 decision 12). While a user is signed in, a **periodic task** (every 15 min — the
+Android minimum; the OS may delay it under Doze/battery saver) and, when a foreground run leaves items behind or
+the phone is offline, a **one-off task** (both with "network connected") send the encrypted outbox even when the
+app is closed. `lib/features/sync/background/background_sync.dart`:
+
+- the task runs in a separate Flutter engine/isolate: it opens the encrypted DB (same key from the Keystore-backed
+  secure storage), reads the refresh token and uses the normal `SyncEngine` (`/media/*` + `/sync/batch`);
+- refresh tokens rotate, so only one isolate may refresh at a time: when the app's UI isolate is alive in the
+  process (port `pk.sync.foreground`), the task only asks it to sync; while a task works (port
+  `pk.sync.background`) the app's token refresh waits (≤ 30 s, stale ports are detected by a ping);
+- signed out → the task does nothing (the queue stays locked to its user); logout cancels the tasks;
+- no foreground service, no expedited work: the FOREGROUND_SERVICE* / POST_NOTIFICATIONS permissions merged in
+  by `workmanager_android` are removed in `AndroidManifest.xml` (POST_NOTIFICATIONS returns with FCM, E8).
+
+Check on a phone: `f4/f4-e2e-scenario.md` section O (app closed, back online, draft on the server ≤ 15 min).
 
 ## Staging signing key (stable, for App Link verification)
 
@@ -103,3 +124,35 @@ If the secrets are missing, CI builds only the debug APK. The production key (`A
 a separate key with two custodians (ADR 0010 decision 13). Gradle reads signing only from
 `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`
 (see `android/app/build.gradle.kts`).
+
+## Production signing key (E3-c) — custodian steps
+
+The CI job `release-prod` (`.github/workflows/mobile.yml`) builds the **prod** flavor only on a push to `main` or
+a tag `mobile-vX.Y.Z` (must equal `version:` in `pubspec.yaml`), waits for approval of the GitHub environment
+`android-release-prod`, signs with the production key, verifies every APK with `apksigner verify --print-certs`,
+prints the certificate SHA-256 (log + job summary), runs the APK secret scan and uploads
+`proyekkas-prod-release-apk` (APKs + obfuscation symbols, 90 days). Nobody but the custodians ever holds the key
+file; CI decodes it to `$RUNNER_TEMP` and deletes it in an `always()` step.
+
+One-time setup (custodian 1 = client, custodian 2 = vendor; do it together, offline, on a trusted machine):
+
+1. Generate the key (never on a server, never committed; the passwords go into both custodians' password
+   managers):
+   ```sh
+   keytool -genkeypair -v -storetype PKCS12 -keystore proyekkas-prod.jks \
+     -alias proyekkas-prod -keyalg RSA -keysize 4096 -validity 9125 \
+     -dname "CN=ProyekKas, O=DRMS, C=ID"
+   keytool -list -v -keystore proyekkas-prod.jks -alias proyekkas-prod | grep 'SHA256:'   # note it down
+   ```
+   An app signed with this key can only ever be updated with the same key — losing it means users must
+   uninstall and reinstall. Keep **two offline backups** (e.g. two encrypted USB drives, one per custodian).
+2. GitHub → repository **Settings → Environments → New environment** `android-release-prod`:
+   **Required reviewers** = both custodians (or at least one who did not start the release);
+   **Deployment branches and tags** = `main` and tag pattern `mobile-v*`.
+3. In that environment (not as repository secrets) add: `ANDROID_KEYSTORE_B64` (`base64 -w0 proyekkas-prod.jks`),
+   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD` (same as the store password for PKCS12),
+   `ANDROID_KEY_ALIAS` (`proyekkas-prod`). Then delete the base64 text from the clipboard/shell history.
+4. Record the SHA-256 in the prod server env `ANDROID_APP_CERT_SHA256` (App Links) and, when push is enabled
+   (ADR 0011, E8), in the Firebase Android app. The CI summary of every release shows the same value.
+5. Release: bump `version:` in `pubspec.yaml`, merge to `main`, tag `mobile-vX.Y.Z`, approve the job, download
+   the artifact, `apksigner verify --print-certs` locally if desired, distribute the `arm64-v8a` APK.

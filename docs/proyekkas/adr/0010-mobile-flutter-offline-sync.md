@@ -528,6 +528,11 @@ Details and evidence: `docs/proyekkas/f4/f4-gap-analysis.md`. Needs the Lead's r
   `image/jpeg` mime list, so no selfie upload could succeed).
 - **Build (decision 13):** every APK is scanned for secrets in CI (`apps/mobile/tool/apk_secret_scan.sh`).
 - **Background sync (decision 12):** WorkManager still not added (foreground triggers only).
+  *Update 2026-09-26 (E3-b, branch `feat/mobile-e1-e3`):* `workmanager` 0.10.10 added — periodic task (15 min,
+  network connected) + one-off task after an unfinished foreground run; the task opens the encrypted DB and the
+  secure token store in its own isolate; one token owner per process via `IsolateNameServer` ports (see
+  `apps/mobile/README.md` "Background sync"). Workmanager's merged FOREGROUND_SERVICE* / POST_NOTIFICATIONS
+  permissions are removed (no foreground service used).
 
 ### Phone test fixes (branch `fix/mobile-startup-offline-logout`, 2026-09-25) — precisions
 
